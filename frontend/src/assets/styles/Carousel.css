@@ -1,0 +1,34 @@
+.carousel-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background-color: #001f3f; /* Fondo azul oscuro para llenar espacios */
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Centra la imagen verticalmente */
+}
+
+.carousel-image {
+  max-width: 300px; /* Límite al tamaño original */
+  height: auto; /* Mantiene la proporción */
+  object-fit: contain; /* Preserva calidad sin estirar */
+  transition: opacity 1s ease-in-out;
+}
+
+.carousel-text {
+  position: absolute;
+  bottom: 40px;
+  left: 30px;
+  color: white;
+  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
+}
+
+.carousel-text h2 {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.carousel-text p {
+  font-size: 16px;
+}
