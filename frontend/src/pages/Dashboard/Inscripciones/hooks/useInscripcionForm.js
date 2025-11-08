@@ -32,6 +32,12 @@ const initialState = {
     NombreRecibo: '',      
   DireccionRecibo: '',   
   },
+  pagos: [
+    { IdTipoPago: 1, Concepto: 'Inscripción', Monto: 0, Pagado: false },
+    { IdTipoPago: 2, Concepto: 'Mensualidad', Monto: 0, Pagado: false },
+    { IdTipoPago: 4, Concepto: 'Inscripción Mecanografía', Monto: 0, Pagado: false },
+    { IdTipoPago: 3, Concepto: 'Mensualidad Mecanografía', Monto: 0, Pagado: false },
+  ],
   catalogos: {
     grados: [],
     secciones: [],
@@ -76,6 +82,8 @@ function reducer(state, action) {
       return { ...state, siguienteCarnet: action.payload };
     case 'SET_MOSTRAR_NUEVA':
       return { ...state, mostrarNuevaInscripcion: action.payload };  
+    case 'SET_GRADOS':
+      return { ...state, grados: action.payload };  
     default:
       return state;
   }

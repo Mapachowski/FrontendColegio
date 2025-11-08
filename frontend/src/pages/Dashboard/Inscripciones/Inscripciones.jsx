@@ -18,12 +18,7 @@ const Inscripciones = () => {
   const { modales, paso, modo, loading } = state;
 
   // GENERAR RECIBO PDF
-  const generarReciboPDF = (carnet, pago) => {
-    const total = (
-      (pago.pagarInscripcion ? 200 : 0) +
-      (pago.pagarEnero ? Number(state.inscripcion.Mensualidad || 0) : 0)
-    ).toFixed(2);
-
+  const generarReciboPDF = (carnet, pago, total) => {
     const doc = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid #003366; border-radius: 10px;">
         <h1 style="text-align: center; color: #003366;">COLEGIO Nueva Candelaria</h1>
@@ -104,77 +99,99 @@ const Inscripciones = () => {
         IdGrado: state.inscripcion.IdGrado,
         IdSeccion: state.inscripcion.IdSeccion,
         IdJornada: state.inscripcion.IdJornada,
-        CicloEscolar: getCicloEscolar(),
         FechaInscripcion: state.inscripcion.FechaInscripcion,
-        ComentarioEstado: "Inscrito sin observaciones",
+        Mensualidad: state.inscripcion.Mensualidad,
+        CicloEscolar: '2026',
       };
 
       const inscRes = await apiClient.post('/inscripciones', inscPayload);
-      const IdInscripcion = inscRes.data.IdInscripcion || inscRes.data.data?.IdInscripcion;
-      console.log('INSCRIPCIÓN CREADA → IdInscripcion:', IdInscripcion);
+      console.log('INSCRIPCIÓN CREADA:', inscRes.data);
 
-      // 3. CREAR PAGOS (CON LOGS DETALLADOS)
-      const pagos = [];
+      // 3. CREAR PAGOS SI SELECCIONADOS
+      const fechaHoy = moment().format('YYYY-MM-DD');
+      const esPrimeroBasico = state.inscripcion.IdGrado === 7;
+      const pagosCreados = [];
+
+      // Pago Inscripción
       if (state.pago.pagarInscripcion) {
-        const pagoInsc = {
+        const pagoInsc = await apiClient.post('/pagos', {
           IdColaborador: state.user.IdColaborador,
           IdUsuario: state.user.IdColaborador,
-          Fecha: moment().format('YYYY-MM-DD'),
+          Fecha: fechaHoy,
           IdAlumno,
-          IdTipoPago: 1,
-          Concepto: "Inscripción",
-          IdMetodoPago: 1,
-          Monto: 200,
-          NumeroRecibo: state.pago.NumeroRecibo || null,
-          Estado: true,
-          NombreRecibo: state.pago.NombreRecibo || null,
-          DireccionRecibo: state.pago.DireccionRecibo || null,
-        };
-        console.log('PAGO INSCRIPCIÓN →', pagoInsc);
-        pagos.push(pagoInsc);
+          IdTipoPago: 3, // Asumiendo IdTipoPago para Inscripción
+          Concepto: 'Inscripción',
+          IdMetodoPago: 1, // Default o del form si se agrega
+          Monto: state.inscripcion.ValorInscripcion,
+          NumeroRecibo: state.pago.NumeroRecibo,
+          NombreRecibo: state.pago.NombreRecibo,
+          DireccionRecibo: state.pago.DireccionRecibo,
+        });
+        pagosCreados.push(pagoInsc.data);
       }
 
-      if (state.pago.pagarEnero && Number(state.inscripcion.Mensualidad) > 0) {
-        const pagoEnero = {
+      // Pago Enero
+      if (state.pago.pagarEnero) {
+        const pagoEnero = await apiClient.post('/pagos', {
           IdColaborador: state.user.IdColaborador,
           IdUsuario: state.user.IdColaborador,
-          Fecha: moment().format('YYYY-MM-DD'),
+          Fecha: fechaHoy,
           IdAlumno,
-          IdTipoPago: 2,
-          Concepto: "Enero",
+          IdTipoPago: 2, 
+          Concepto: 'Enero',
           IdMetodoPago: 1,
-          Monto: Number(state.inscripcion.Mensualidad),
-          NumeroRecibo: state.pago.NumeroRecibo || null,
-          Estado: true,
-          NombreRecibo: state.pago.NombreRecibo || null,
-          DireccionRecibo: state.pago.DireccionRecibo || null,
-        };
-        console.log('PAGO ENERO →', pagoEnero);
-        pagos.push(pagoEnero);
+          Monto: state.inscripcion.Mensualidad,
+          NumeroRecibo: state.pago.NumeroRecibo,
+          NombreRecibo: state.pago.NombreRecibo,
+          DireccionRecibo: state.pago.DireccionRecibo,
+        });
+        pagosCreados.push(pagoEnero.data);
       }
 
-      if (pagos.length > 0) {
-        console.log('ENVIANDO PAGOS AL BACKEND...');
-        const resultados = await Promise.all(
-          pagos.map(async (pago) => {
-            try {
-              const res = await apiClient.post('/pagos', pago);
-              console.log('PAGO CREADO:', res.data);
-              return res.data;
-            } catch (err) {
-              console.error('ERROR EN PAGO:', pago.Concepto, err.response?.data || err.message);
-              throw err;
-            }
-          })
-        );
-        console.log('TODOS LOS PAGOS CREADOS:', resultados);
-      } else {
-        console.log('NO HAY PAGOS PARA CREAR');
+      // PAGOS EXTRAS PARA PRIMERO BÁSICO
+      if (esPrimeroBasico) {
+        if (state.pago.pagarMecanografiaInsc) {
+          const pagoMecInsc = await apiClient.post('/pagos', {
+            IdColaborador: state.user.IdColaborador,
+            IdUsuario: state.user.IdColaborador,
+            Fecha: fechaHoy,
+            IdAlumno,
+            IdTipoPago: 4, 
+            Concepto: 'Inscripción Mecanografía',
+            IdMetodoPago: 1,
+            Monto: 40,
+            NumeroRecibo: state.pago.NumeroRecibo,
+            NombreRecibo: state.pago.NombreRecibo,
+            DireccionRecibo: state.pago.DireccionRecibo,
+          });
+          pagosCreados.push(pagoMecInsc.data);
+        }
+
+        if (state.pago.pagarMecanografiaEnero) {
+          const pagoMecEnero = await apiClient.post('/pagos', {
+            IdColaborador: state.user.IdColaborador,
+            IdUsuario: state.user.IdColaborador,
+            Fecha: fechaHoy,
+            IdAlumno,
+            IdTipoPago: 3,
+            Concepto: 'Enero',
+            IdMetodoPago: 1,
+            Monto: 40,
+            NumeroRecibo: state.pago.NumeroRecibo,
+            NombreRecibo: state.pago.NombreRecibo,
+            DireccionRecibo: state.pago.DireccionRecibo,
+          });
+          pagosCreados.push(pagoMecEnero.data);
+        }
       }
 
-      // ÉXITO
-      message.success(`¡Inscripción completada! Carnet: ${IdAlumno}`, 5);
-      generarReciboPDF(IdAlumno, state.pago);
+      console.log('PAGOS CREADOS:', pagosCreados);
+
+      message.success('Inscripción completada con éxito');
+
+      // GENERAR RECIBO
+      const totalPagado = pagosCreados.reduce((sum, p) => sum + Number(p.Monto), 0).toFixed(2);
+      generarReciboPDF(IdAlumno, state.pago, totalPagado);
 
       // MOSTRAR BOTÓN NUEVA INSCRIPCIÓN
       dispatch({ type: 'SET_MOSTRAR_NUEVA', payload: true });
@@ -184,12 +201,6 @@ const Inscripciones = () => {
         dispatch({ type: 'RESET' });
         dispatch({ type: 'SET_MOSTRAR_NUEVA', payload: false });
       }, 3000);
-
-      // RESETEAR DESPUÉS
-      setTimeout(() => {
-        dispatch({ type: 'RESET' });
-      }, 2000);
-
 
     } catch (error) {
       console.error('ERROR FINAL:', error.response?.data || error.message);

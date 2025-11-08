@@ -56,7 +56,7 @@ const CrearPago = () => {
   }, []);
 
   const getIdTipoPago = () => {
-    return tipoPago === 'mensualidad' ? 2 : 4;
+    return tipoPago === 'mensualidad' ? 2 : 3;
   };
 
   // CARGAR MESES DESDE SP + LOG DETALLADO
@@ -166,7 +166,7 @@ const CrearPago = () => {
       Fecha: fechaHoy.format('YYYY-MM-DD'),
       IdAlumno: idAlumno,
       IdTipoPago: idTipoPago,
-      Concepto: idTipoPago === 2 ? mes.MesNombre : 'Mecanoografía',
+      Concepto: idTipoPago === 2 ? mes.MesNombre : mes.MesNombre,
       IdMetodoPago: values.IdMetodoPago,
       Monto: mes.Monto || montoFijo,
       NumeroRecibo: values.NumeroRecibo || null,
@@ -408,6 +408,41 @@ const CrearPago = () => {
             Pagar Meses Seleccionados ({selectedMeses.length})
           </Button>
         </Form.Item>
+
+        <Form.Item>
+          <Button
+            onClick={() => {
+              // 1. Reset formulario
+              form.resetFields();
+
+              // 2. Reset TODOS los estados locales a su valor inicial
+              setSelectedAlumno(null);
+              setAlumnoData([]);
+              setSelectedMeses([]);
+              setMesesPago([]);
+              setEsPrimeroBasico(false);
+              setTipoPago('mensualidad'); // valor inicial
+              setCicloEscolar('2026'); // o el valor por defecto que quieras
+
+              // 3. Cerrar modal de búsqueda si está abierto
+              setIsSearchModalOpen(false);
+
+              // 4. Mensaje de confirmación
+              message.success('Listo para un nuevo pago. Todo limpio.');
+
+              // 5. Opcional: enfocar el botón de buscar alumno
+              setTimeout(() => {
+                const btn = document.querySelector('button[children="Buscar Alumno"]');
+                btn?.focus();
+              }, 100);
+            }}
+            style={{ marginLeft: 12 }}
+            type="default"
+          >
+            Nuevo Pago
+          </Button>
+        </Form.Item>
+        
       </Form>
 
       <Modal
@@ -464,12 +499,12 @@ const CrearPago = () => {
       </Modal>
 
       <Modal
-        title="Simulación Exitosa"
+        title="Pago realizado con éxito"
         open={isSuccessModalOpen}
         onOk={() => setIsSuccessModalOpen(false)}
         onCancel={() => setIsSuccessModalOpen(false)}
       >
-        <p>Se simularon {selectedMeses.length} pagos. Revisa la consola.</p>
+
       </Modal>
     </div>
   );

@@ -19,20 +19,28 @@ const Paso2_Inscripcion = ({ state, dispatch }) => {
     }
   }, [inscripcion.FechaInscripcion, dispatch]);
 
-  // CARGAR COSTO AUTOMÁTICO
-  const handleGradoChange = async (IdGrado) => {
-    if (!IdGrado) return;
+  // CARGAR COSTO E INSCRIPCIÓN AUTOMÁTICOS
+  const handleGradoChange = async (idGrado) => {
+    dispatch({ type: 'UPDATE_INSCRIPCION', payload: { IdGrado: idGrado } });
+
+    if (!idGrado) return;
 
     try {
-      const res = await apiClient.get(`/grados/costo/${IdGrado}`);
-      const costo = Number(res.data.costo || res.data.data || 0);
-      dispatch({
-        type: 'UPDATE_INSCRIPCION',
-        payload: { Mensualidad: costo },
-      });
+      const res = await apiClient.get(`/grados/costo/${idGrado}`);
+      if (res.data.success && res.data.data) {
+        const { ValorInscripcion, Mensualidad } = res.data.data;
+
+        dispatch({
+          type: 'UPDATE_INSCRIPCION',
+          payload: {
+            ValorInscripcion: parseFloat(ValorInscripcion) || 0,
+            Mensualidad: parseFloat(Mensualidad) || 0,
+          }
+        });
+      }
     } catch (error) {
-      console.error('Error al cargar costo:', error);
-      message.error('Error al cargar costo');
+      console.error('Error:', error);
+      message.error('Error al cargar costos');
     }
   };
 
