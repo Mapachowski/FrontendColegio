@@ -91,7 +91,7 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
           DPI: dpi || null,
           NIT: nit || null,
           IdFamilia: nuevaFamilia.IdFamilia,
-          idResponsableTipo: tipo,
+          IdResponsableTipo: tipo,
           EsResponsable: esPrincipal,
           IdColaborador: state.user.IdColaborador,
         });
@@ -270,7 +270,7 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
                     >
                       <Select placeholder="Tipo" allowClear>
                         {tiposResponsable.map((t, index) => (
-                          <Option key={t.idResponsableTipo ?? index} value={t.idResponsableTipo}>
+                          <Option key={t.IdResponsableTipo ?? index} value={t.IdResponsableTipo}>
                             {t.Tipo}
                           </Option>
                         ))}
@@ -321,7 +321,7 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
                     >
                       <Select placeholder="Tipo" allowClear>
                         {tiposResponsable.map((t, index) => (
-                          <Option key={t.idResponsableTipo ?? index} value={t.idResponsableTipo}>
+                          <Option key={t.IdResponsableTipo ?? index} value={t.IdResponsableTipo}>
                             {t.Tipo}
                           </Option>
                         ))}

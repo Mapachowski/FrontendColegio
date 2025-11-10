@@ -1,5 +1,5 @@
 // src/pages/dashboard/Inscripciones/Inscripciones.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, Steps, Button, Spin, message } from 'antd';
 import moment from 'moment';
 import { useInscripcionForm } from './hooks/useInscripcionForm';
@@ -10,45 +10,72 @@ import PopUpInicial from './components/PopUpInicial';
 import BuscarAlumnoModal from './components/BuscarAlumnoModal';
 import FamiliaModal from './components/FamiliaModal';
 import apiClient from '../../../api/apiClient';
+import { useNavigate } from 'react-router-dom';
 
 const { Step } = Steps;
 
 const Inscripciones = () => {
   const { state, dispatch } = useInscripcionForm();
   const { modales, paso, modo, loading } = state;
+  const [isModalOpen, setIsModalOpen] = useState(true);
 
-  // GENERAR RECIBO PDF
-  const generarReciboPDF = (carnet, pago, total) => {
-    const doc = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid #003366; border-radius: 10px;">
-        <h1 style="text-align: center; color: #003366;">COLEGIO Nueva Candelaria</h1>
-        <p style="text-align: center; color: #666; font-size: 14px;">RECIBO OFICIAL DE INSCRIPCIÓN</p>
-        <hr style="border: 1px solid #003366;">
-        <table style="width: 100%; font-size: 15px;">
-          <tr><td><strong>Carnet:</strong></td><td>${carnet}</td></tr>
-          <tr><td><strong>Fecha:</strong></td><td>${moment().format('DD/MM/YYYY')}</td></tr>
-          <tr><td><strong>Nombre:</strong></td><td>${pago.NombreRecibo || 'No especificado'}</td></tr>
-          <tr><td><strong>Dirección:</strong></td><td>${pago.DireccionRecibo || 'No especificada'}</td></tr>
-          ${pago.NumeroRecibo ? `<tr><td><strong>No. Recibo:</strong></td><td>${pago.NumeroRecibo}</td></tr>` : ''}
-        </table>
-        <div style="padding: 15px; background: #f0f8ff; text-align: center; border-radius: 8px;">
-          <p style="margin: 0; font-size: 22px; font-weight: bold; color: #d4380d;">
-            TOTAL: Q ${total}
-          </p>
-        </div>
-        <p style="text-align: center; color: #666; margin-top: 30px;">Gracias por su confianza.</p>
-      </div>
-    `;
 
-    const win = window.open('', '_blank');
-    win.document.write(doc);
-    win.document.close();
-    win.print();
-
-    setTimeout(() => {
-      if (win && !win.closed) win.close();
-    }, 5000);
+  const handleOk = (tipo) => {
+    console.log('Tipo seleccionado:', tipo);
+    setIsModalOpen(false); // Cerramos al hacer OK
+    // Aquí puedes redirigir o abrir otro formulario
   };
+
+  const handleCancel = () => {
+    setIsModalOpen(false); // Cerramos al cancelar o con la X
+  };
+    // GENERAR RECIBO PDF
+    const generarReciboPDF = (carnet, pago, total) => {
+      const doc = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid #003366; border-radius: 10px;">
+          <h1 style="text-align: center; color: #003366;">COLEGIO Nueva Candelaria</h1>
+          <p style="text-align: center; color: #666; font-size: 14px;">RECIBO OFICIAL DE INSCRIPCIÓN</p>
+          <hr style="border: 1px solid #003366;">
+          <table style="width: 100%; font-size: 15px;">
+            <tr><td><strong>Carnet:</strong></td><td>${carnet}</td></tr>
+            <tr><td><strong>Fecha:</strong></td><td>${moment().format('DD/MM/YYYY')}</td></tr>
+            <tr><td><strong>Nombre:</strong></td><td>${pago.NombreRecibo || 'No especificado'}</td></tr>
+            <tr><td><strong>Dirección:</strong></td><td>${pago.DireccionRecibo || 'No especificada'}</td></tr>
+            ${pago.NumeroRecibo ? `<tr><td><strong>No. Recibo:</strong></td><td>${pago.NumeroRecibo}</td></tr>` : ''}
+          </table>
+          <div style="padding: 15px; background: #f0f8ff; text-align: center; border-radius: 8px;">
+            <p style="margin: 0; font-size: 22px; font-weight: bold; color: #d4380d;">
+              TOTAL: Q ${total}
+            </p>
+          </div>
+          <p style="text-align: center; color: #666; margin-top: 30px;">Gracias por su confianza.</p>
+        </div>
+      `;
+
+      const win = window.open('', '_blank');
+      win.document.write(doc);
+      win.document.close();
+
+      // ESPERAR A QUE IMPRIMA Y LUEGO LIMPIAR
+      win.print();
+
+      // CERRAR VENTANA Y LIMPIAR FORMULARIO
+      setTimeout(() => {
+        if (win && !win.closed) win.close();
+
+        // LIMPIAR AUTOMÁTICAMENTE
+        dispatch({ type: 'RESET' });
+        dispatch({ type: 'SET_MOSTRAR_NUEVA', payload: false });
+        dispatch({ type: 'LOAD_CATALOGOS' }); // Recargar catálogos
+
+        // MOSTRAR POPUP INICIAL DE NUEVO
+        dispatch({ type: 'SHOW_INITIAL_POPUP' }); // si usas este estado
+
+        // O si usas !modo:
+        // dispatch({ type: 'SET_MODO', payload: null });
+
+      }, 1000); // 1 segundo después de imprimir
+    };
     const getCicloEscolar = () => {
       const hoy = new Date();
       const mes = hoy.getMonth(); // 0 = enero, 10 = noviembre
@@ -63,6 +90,12 @@ const Inscripciones = () => {
     };
 
   // FINALIZAR INSCRIPCIÓN
+  const extraerMonto = (response) => {
+    const data = response?.data?.data || response?.data;
+    const monto = data?.Monto;
+    return monto ? parseFloat(monto) : 0;
+  };
+  const navigate = useNavigate();
   const handleFinalizar = async () => {
     console.log('INICIANDO FINALIZAR INSCRIPCIÓN...');
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -127,7 +160,7 @@ const Inscripciones = () => {
           NombreRecibo: state.pago.NombreRecibo,
           DireccionRecibo: state.pago.DireccionRecibo,
         });
-        pagosCreados.push(pagoInsc.data);
+        pagosCreados.push({ Monto: extraerMonto(pagoInsc) });
       }
 
       // Pago Enero
@@ -145,7 +178,7 @@ const Inscripciones = () => {
           NombreRecibo: state.pago.NombreRecibo,
           DireccionRecibo: state.pago.DireccionRecibo,
         });
-        pagosCreados.push(pagoEnero.data);
+        pagosCreados.push({ Monto: extraerMonto(pagoEnero) });
       }
 
       // PAGOS EXTRAS PARA PRIMERO BÁSICO
@@ -164,7 +197,7 @@ const Inscripciones = () => {
             NombreRecibo: state.pago.NombreRecibo,
             DireccionRecibo: state.pago.DireccionRecibo,
           });
-          pagosCreados.push(pagoMecInsc.data);
+          pagosCreados.push({ Monto: extraerMonto(pagoMecInsc) });
         }
 
         if (state.pago.pagarMecanografiaEnero) {
@@ -181,7 +214,7 @@ const Inscripciones = () => {
             NombreRecibo: state.pago.NombreRecibo,
             DireccionRecibo: state.pago.DireccionRecibo,
           });
-          pagosCreados.push(pagoMecEnero.data);
+          pagosCreados.push({ Monto: extraerMonto(pagoMecEnero) });
         }
       }
 
@@ -189,18 +222,15 @@ const Inscripciones = () => {
 
       message.success('Inscripción completada con éxito');
 
-      // GENERAR RECIBO
-      const totalPagado = pagosCreados.reduce((sum, p) => sum + Number(p.Monto), 0).toFixed(2);
+      // CALCULAR TOTAL
+      const totalPagado = pagosCreados
+        .reduce((sum, p) => sum + (parseFloat(p.Monto) || 0), 0)
+        .toFixed(2);
+
+        
+     // GENERAR RECIBO
       generarReciboPDF(IdAlumno, state.pago, totalPagado);
-
-      // MOSTRAR BOTÓN NUEVA INSCRIPCIÓN
-      dispatch({ type: 'SET_MOSTRAR_NUEVA', payload: true });
-
-      // RESETEAR DESPUÉS DE 3 SEGUNDOS
-      setTimeout(() => {
-        dispatch({ type: 'RESET' });
-        dispatch({ type: 'SET_MOSTRAR_NUEVA', payload: false });
-      }, 3000);
+      navigate('/dashboard');
 
     } catch (error) {
       console.error('ERROR FINAL:', error.response?.data || error.message);
@@ -264,13 +294,18 @@ const steps = [
         </div>
       )}
 
-      <PopUpInicial
+     <PopUpInicial
         open={!modo}
+        dispatch={dispatch}  // ← ¡AÑADE ESTO!
         onOk={(value) => {
           dispatch({ type: 'SET_MODO', payload: value });
+
           if (value === 'reinscribir') {
             dispatch({ type: 'OPEN_MODAL', payload: 'buscarAlumno' });
           }
+        }}
+        onCancel={() => {
+          // Opcional: cerrar sin hacer nada
         }}
       />
 
@@ -314,9 +349,13 @@ const steps = [
               <Button
                 type="primary"
                 size="large"
-                onClick={() => {
+                onClick={async () => {
+                  // 1. Resetear todo
                   dispatch({ type: 'RESET' });
                   dispatch({ type: 'SET_MOSTRAR_NUEVA', payload: false });
+
+                  // 2. Forzar recarga de catálogos
+                  dispatch({ type: 'SET_CATALOGOS' });
                 }}
                 style={{ background: '#52c41a', borderColor: '#52c41a' }}
               >

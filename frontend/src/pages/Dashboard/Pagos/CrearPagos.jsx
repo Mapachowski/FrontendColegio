@@ -167,7 +167,7 @@ const CrearPago = () => {
       IdAlumno: idAlumno,
       IdTipoPago: idTipoPago,
       Concepto: idTipoPago === 2 ? mes.MesNombre : mes.MesNombre,
-      IdMetodoPago: values.IdMetodoPago,
+      IdMetodoPago: 1,
       Monto: mes.Monto || montoFijo,
       NumeroRecibo: values.NumeroRecibo || null,
       Estado: true,
@@ -348,10 +348,18 @@ const CrearPago = () => {
           </div>
         </Form.Item>
 
-        <Form.Item name="IdMetodoPago" label="Método de Pago" rules={[{ required: true }]}>
-          <Select placeholder="Selecciona un método">
+        <Form.Item
+          name="IdMetodoPago"
+          label="Método de Pago"
+        >
+          <Select
+            placeholder="Selecciona un método"
+            defaultValue={metodosPago[0]?.IdMetodoPago} // ← Primer método
+          >
             {metodosPago.map((m) => (
-              <Option key={m.IdMetodoPago} value={m.IdMetodoPago}>{m.NombreMetodoPago}</Option>
+              <Option key={m.IdMetodoPago} value={m.IdMetodoPago}>
+                {m.NombreMetodoPago}
+              </Option>
             ))}
           </Select>
         </Form.Item>

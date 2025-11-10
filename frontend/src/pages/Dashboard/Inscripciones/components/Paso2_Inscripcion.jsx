@@ -114,7 +114,7 @@ const Paso2_Inscripcion = ({ state, dispatch }) => {
         >
           {catalogos.grados.map(g => (
             <Option key={g.IdGrado} value={g.IdGrado}>
-              {g.NombreGrado} (Q {Number(g.CostoMensual || 0).toFixed(2)})
+              {g.NombreGrado}
             </Option>
           ))}
         </Select>

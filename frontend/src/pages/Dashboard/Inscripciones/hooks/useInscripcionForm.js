@@ -7,6 +7,7 @@ const user = JSON.parse(localStorage.getItem('user')) || { IdUsuario: null };
 const initialState = {
   paso: 0,
   modo: null,
+  showInitialPopup: true,
   user: { IdColaborador: user?.IdUsuario || null },
   alumno: {
     Carnet: '',
@@ -84,6 +85,10 @@ function reducer(state, action) {
       return { ...state, mostrarNuevaInscripcion: action.payload };  
     case 'SET_GRADOS':
       return { ...state, grados: action.payload };  
+    case 'SHOW_INITIAL_POPUP':
+      return { ...state, showInitialPopup: true };
+    case 'HIDE_INITIAL_POPUP':
+      return { ...state, showInitialPopup: false };
     default:
       return state;
   }
