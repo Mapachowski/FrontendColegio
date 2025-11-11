@@ -21,7 +21,12 @@ const Dashboard = ({ user }) => {
         <Header user={user} />
         <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', minHeight: 'calc(100vh - 64px)' }}>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Home 
+              usuario={user} 
+              onLogout={() => {
+                window.location.href = '/login'; // ← Redirige al login
+              }} 
+/>} />
             <Route path="/preferencias" element={<Preferencias />} />
             <Route path="/inscripciones/inscripciones" element={<Inscripciones />} />
             <Route path="/pagos/crear" element={<CrearPago />} />

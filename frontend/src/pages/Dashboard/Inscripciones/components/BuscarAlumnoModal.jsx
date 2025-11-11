@@ -1,7 +1,8 @@
 // src/pages/dashboard/Inscripciones/components/BuscarAlumnoModal.jsx
 import React, { useState, useEffect } from 'react';
-import { Modal, Select, Input, Table, Spin, Button } from 'antd';
+import { Modal, Select, Input, Table, Spin, Button,message,Tag } from 'antd';
 import apiClient from '../../../../api/apiClient';
+import { getCicloActual, getCicloAnterior } from '../../../../utils/cicloEscolar';
 
 
 const { Option } = Select;
@@ -9,9 +10,12 @@ const { Option } = Select;
 const BuscarAlumnoModal = ({ open, onCancel, state, dispatch }) => {
   const [alumnos, setAlumnos] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [cicloEscolar, setCicloEscolar] = useState('2025');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const cicloBusqueda = getCicloAnterior(); // 2025
+  const [cicloEscolar, setCicloEscolar] = useState(getCicloAnterior()); // Valor por defecto
+  const cicloActual = getCicloActual();     // 2026
+
 
   // LOG 1: Carga de alumnos para el Select
   useEffect(() => {
@@ -33,47 +37,39 @@ const BuscarAlumnoModal = ({ open, onCancel, state, dispatch }) => {
     if (open) fetchAlumnos();
   }, [open]);
 
-  // LOG 2: Búsqueda del alumno en inscripción
   const handleBuscar = async () => {
-    if (!selectedId) {
-      console.warn('No hay IdAlumno seleccionado');
-      return;
-    }
+    if (!selectedId) return;
 
-    console.log('INICIANDO BÚSQUEDA...', { IdAlumno: selectedId, CicloEscolar: cicloEscolar });
     setLoading(true);
-
     try {
       const url = `/inscripciones/buscar-alumno?IdAlumno=${selectedId}&CicloEscolar=${cicloEscolar}`;
-      console.log('URL completa:', url);
-
       const res = await apiClient.get(url);
 
-      console.log('RESPUESTA COMPLETA DEL SP:', res);
-      console.log('res.data.success:', res.data.success);
-      console.log('res.data.data:', res.data.data);
-
       let finalData = [];
-
-      if (res.data.success && res.data.data && res.data.data.length > 0) {
-        // CORREGIR ESTRUCTURA: { "0": { datos } }
+      if (res.data.success && res.data.data?.length > 0) {
         finalData = res.data.data
-          .filter(item => item && typeof item === 'object' && item[0])
+          .filter(item => item && item[0])
           .map(item => item[0]);
-
-        console.log('PRIMER REGISTRO CORREGIDO:', finalData[0]);
-        console.log('Nombres:', finalData[0]?.Nombres);
-        console.log('IdAlumno:', finalData[0]?.IdAlumno);
-        console.log('Mensualidad:', finalData[0]?.Mensualidad);
-      } else {
-        console.warn('No hay datos válidos en res.data.data');
       }
 
-      console.log('DATA FINAL PARA TABLA:', finalData);
-      setData(finalData);
+      // NUEVO: Validar si ya está inscrito en ciclo actual
+      const promesas = finalData.map(async (alumno) => {
+        try {
+          const check = await apiClient.get(
+            `/inscripciones/ya-inscrito?idAlumno=${alumno.IdAlumno}&ciclo=${cicloActual}`
+          );
+          alumno.yaInscrito = check.data.yaInscrito;
+        } catch {
+          alumno.yaInscrito = false;
+        }
+        return alumno;
+      });
+
+      const dataValidada = await Promise.all(promesas);
+      setData(dataValidada);
 
     } catch (error) {
-      console.error('ERROR EN API /buscar-alumno:', error);
+      console.error(error);
       setData([]);
     } finally {
       setLoading(false);
@@ -143,6 +139,16 @@ const handleRowClick = (record) => {
       key: 'Mensualidad',
       width: 100,
     },
+    {
+      title: 'Estado',
+      key: 'estado',
+      width: 130,
+      render: (_, record) => (
+        record.yaInscrito ? 
+          <Tag color="red" style={{ width: '100%', textAlign: 'center' }}>Ya inscrito</Tag> : 
+          <Tag color="green" style={{ width: '100%', textAlign: 'center' }}>Disponible</Tag>
+      ),
+    },
   ];
 
   return (
@@ -200,9 +206,19 @@ const handleRowClick = (record) => {
           pagination={false}
           scroll={{ x: 1100 }}
           onRow={(record) => ({
-            onClick: () => handleRowClick(record),
-            style: { cursor: 'pointer' },
-          })}
+          onClick: () => {
+            if (record.yaInscrito) {
+              message.warning('Este alumno ya está inscrito en el ciclo actual (2026)');
+              return;
+            }
+            handleRowClick(record);
+          },
+          style: {
+            cursor: record.yaInscrito ? 'not-allowed' : 'pointer',
+            opacity: record.yaInscrito ? 0.5 : 1,
+            background: record.yaInscrito ? '#fff2f0' : 'white',
+          },
+        })}
           locale={{ emptyText: 'No se encontraron resultados. Intente con otro alumno.' }}
         />
       )}

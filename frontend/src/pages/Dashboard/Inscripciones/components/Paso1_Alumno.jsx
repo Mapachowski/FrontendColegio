@@ -1,53 +1,96 @@
-// src/pages/dashboard/Inscripciones/components/Paso1_Alumno.jsx
-import React, { useEffect, useState } from 'react';
-import { Form, Input, DatePicker, Select, Button, Space, message } from 'antd';
+// Paso1_Alumno.jsx (MODIFICADO)
+import React, { useEffect, useState, useCallback } from 'react';
+import { Form, Input, DatePicker, Select, Button, Space, message, Spin } from 'antd';
 import moment from 'moment';
 import apiClient from '../../../../api/apiClient';
+import { getCicloActual } from '../../../../utils/cicloEscolar';
+import debounce from 'lodash.debounce'; // ← NUEVO
 
 const { Option } = Select;
 
 const Paso1_Alumno = ({ state, dispatch }) => {
   const { alumno, catalogos } = state;
   const [siguienteCarnet, setSiguienteCarnet] = useState(null);
+  
+  // NUEVO: Estado para validación de matrícula
+  const [matriculaError, setMatriculaError] = useState('');
+  const [checkingMatricula, setCheckingMatricula] = useState(false);
 
   // CARGAR CARNET FUTURO
-    useEffect(() => {
+  useEffect(() => {
     const fetchCarnet = async () => {
       try {
         const res = await apiClient.get('/alumnos/siguiente-carnet');
         const carnet = res.data.siguienteCarnet || res.data.data || res.data;
         setSiguienteCarnet(carnet);
-        dispatch({ type: 'SET_SIGUIENTE_CARNET', payload: carnet }); // ← GUARDAR
+        dispatch({ type: 'SET_SIGUIENTE_CARNET', payload: carnet });
       } catch (error) {
         message.error('Error al cargar carnet');
       }
     };
     fetchCarnet();
   }, []);
-  // EN Paso1_Alumno.jsx
-    useEffect(() => {
-      console.log('FECHA ACTUAL EN STATE:', alumno.FechaNacimiento);
-    }, [alumno.FechaNacimiento]);
+
+  
+   // NUEVO: Validar con debounce (espera 600ms sin escribir)
+    const validarMatriculaDebounced = useCallback(
+      debounce(async (matricula) => {
+        if (!matricula || matricula.trim() === '') {
+          setMatriculaError('');
+          setCheckingMatricula(false);
+          return;
+        }
+
+        setCheckingMatricula(true);
+        try {
+          const res = await apiClient.get(`/alumnos/existe-matricula?matricula=${encodeURIComponent(matricula)}`);
+          if (res.data.existe) {
+            setMatriculaError('Esta matrícula ya está registrada');
+          } else {
+            setMatriculaError('');
+          }
+        } catch (error) {
+          setMatriculaError('Error al verificar matrícula');
+        } finally {
+          setCheckingMatricula(false);
+        }
+      }, 1200), // ← 600ms de espera
+      []
+    );
+    
+    // Llamar al debounce cuando cambie el input
+    const handleMatriculaChange = (e) => {
+      const val = e.target.value;
+      dispatch({ type: 'UPDATE_ALUMNO', payload: { Matricula: val } });
+      
+      // Cancelar validación anterior si el usuario sigue escribiendo
+      validarMatriculaDebounced(val);
+    };
 
   const handleNext = () => {
     if (!alumno.Nombres || !alumno.Apellidos || !alumno.FechaNacimiento || !alumno.Genero || !alumno.IdFamilia) {
       message.error('Complete todos los campos requeridos');
       return;
     }
-    // LOG COMPLETO DEL PAYLOAD
-  console.log('PAYLOAD ALUMNO AL IR AL PASO 2:', {
-    IdColaborador: state.user.IdColaborador,
-    Matricula: alumno.Matricula || `MAT-${new Date().getFullYear()}-${siguienteCarnet}`,
-    Nombres: alumno.Nombres,
-    Apellidos: alumno.Apellidos,
-    FechaNacimiento: alumno.FechaNacimiento,
-    Genero: alumno.Genero,
-    IdFamilia: alumno.IdFamilia,
-    ComentarioEstado: "Inscrito sin observaciones",
-    NumeroEmergencia: alumno.NumeroEmergencia || "",
-    ComunidadLinguistica: alumno.ComunidadLinguistica || "28",
-    CarnetFuturo: siguienteCarnet,
-  });
+    if (matriculaError) {
+      message.error('Corrija el error de matrícula antes de continuar');
+      return;
+    }
+
+    console.log('PAYLOAD ALUMNO AL IR AL PASO 2:', {
+      IdColaborador: state.user.IdColaborador,
+      Matricula: alumno.Matricula || `MAT-${getCicloActual()}-${siguienteCarnet}`,
+      Nombres: alumno.Nombres,
+      Apellidos: alumno.Apellidos,
+      FechaNacimiento: alumno.FechaNacimiento,
+      Genero: alumno.Genero,
+      IdFamilia: alumno.IdFamilia,
+      ComentarioEstado: "Inscrito sin observaciones",
+      NumeroEmergencia: alumno.NumeroEmergencia || "",
+      ComunidadLinguistica: alumno.ComunidadLinguistica || "28",
+      CarnetFuturo: siguienteCarnet,
+    });
+
     dispatch({ type: 'NEXT_STEP' });
   };
 
@@ -62,14 +105,23 @@ const Paso1_Alumno = ({ state, dispatch }) => {
         </Form.Item>
       )}
 
-      <Form.Item label="Codigo Mineduc">
+      {/* MATRÍCULA CON VALIDACIÓN */}
+      <Form.Item
+        label="Código Mineduc"
+        validateStatus={matriculaError ? 'error' : checkingMatricula ? 'validating' : ''}
+        help={matriculaError || (checkingMatricula ? 'Verificando...' : '')}
+        required
+      >
         <Input
           placeholder="Ej: MAT-2025-001"
           value={alumno.Matricula}
-          onChange={(e) => dispatch({ type: 'UPDATE_ALUMNO', payload: { Matricula: e.target.value } })}
+          onChange={handleMatriculaChange}  // ← CAMBIO AQUÍ
+          addonAfter={checkingMatricula ? <Spin size="small" /> : null}
+          style={{ width: '100%' }}
         />
       </Form.Item>
 
+      {/* ... resto del formulario (sin cambios) */}
       <Form.Item label="Nombres" required>
         <Input
           value={alumno.Nombres}
@@ -90,17 +142,12 @@ const Paso1_Alumno = ({ state, dispatch }) => {
           value={alumno.FechaNacimiento ? moment(alumno.FechaNacimiento, 'YYYY-MM-DD') : null}
           onChange={(date) => {
             const formatted = date ? date.format('YYYY-MM-DD') : null;
-            console.log('FECHA SELECCIONADA:', formatted);
-            dispatch({ 
-              type: 'UPDATE_ALUMNO', 
-              payload: { FechaNacimiento: formatted }
-            });
+            dispatch({ type: 'UPDATE_ALUMNO', payload: { FechaNacimiento: formatted } });
           }}
           format="DD/MM/YYYY"
           placeholder="DD/MM/AAAA"
           allowClear
         />
-
       </Form.Item>
 
       <Form.Item label="Género" required>
@@ -120,7 +167,7 @@ const Paso1_Alumno = ({ state, dispatch }) => {
           value={alumno.ComunidadLinguistica}
           onChange={(value) => dispatch({ type: 'UPDATE_ALUMNO', payload: { ComunidadLinguistica: value } })}
         >
-          <Option value="Mam ">Mam </Option>
+          <Option value="Mam">Mam</Option>
           <Option value="Ladino">Ladino</Option>
         </Select>
       </Form.Item>
@@ -137,17 +184,20 @@ const Paso1_Alumno = ({ state, dispatch }) => {
               {catalogos.familias.find(f => f.IdFamilia === alumno.IdFamilia)?.NombreFamilia || 'Ninguna'}
             </Option>
           </Select>
-          <Button
-            type="primary"
-            onClick={() => dispatch({ type: 'OPEN_MODAL', payload: 'familia' })}
-          >
+          <Button type="primary" onClick={() => dispatch({ type: 'OPEN_MODAL', payload: 'familia' })}>
             Familias
           </Button>
         </Space.Compact>
       </Form.Item>
 
       <Form.Item>
-        <Button type="primary" size="large" onClick={handleNext} style={{ width: '100%' }}>
+        <Button
+          type="primary"
+          size="large"
+          onClick={handleNext}
+          style={{ width: '100%' }}
+          disabled={!!matriculaError || checkingMatricula}
+        >
           Siguiente
         </Button>
       </Form.Item>

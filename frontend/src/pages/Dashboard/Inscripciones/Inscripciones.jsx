@@ -373,6 +373,18 @@ const steps = [
                 Siguiente
               </Button>
             )}
+
+          </div>
+          <div style={{ marginTop: 24, textAlign: 'right' }}>
+            <Button 
+              type="default" 
+              size="large"
+              onClick={() => {
+                 navigate('/dashboard');
+              }}
+            >
+              Salir al Dashboard
+            </Button>
           </div>
         </>
       )}

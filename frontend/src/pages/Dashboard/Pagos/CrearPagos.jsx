@@ -15,6 +15,7 @@ import {
   Radio 
 } from 'antd';
 import apiClient from '../../../api/apiClient';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -54,7 +55,7 @@ const CrearPago = () => {
     };
     fetchData();
   }, []);
-
+  const navigate = useNavigate();
   const getIdTipoPago = () => {
     return tipoPago === 'mensualidad' ? 2 : 3;
   };
@@ -442,39 +443,49 @@ const CrearPago = () => {
           </Button>
         </Form.Item>
 
-        <Form.Item>
+       <Form.Item>
+        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+          {/* Botón Nuevo Pago (ya lo tienes) */}
           <Button
             onClick={() => {
-              // 1. Reset formulario
               form.resetFields();
-
-              // 2. Reset TODOS los estados locales a su valor inicial
               setSelectedAlumno(null);
               setAlumnoData([]);
               setSelectedMeses([]);
               setMesesPago([]);
               setEsPrimeroBasico(false);
-              setTipoPago('mensualidad'); // valor inicial
-              setCicloEscolar('2026'); // o el valor por defecto que quieras
-
-              // 3. Cerrar modal de búsqueda si está abierto
+              setTipoPago('mensualidad');
+              setCicloEscolar('2026');
               setIsSearchModalOpen(false);
-
-              // 4. Mensaje de confirmación
               message.success('Listo para un nuevo pago. Todo limpio.');
-
-              // 5. Opcional: enfocar el botón de buscar alumno
               setTimeout(() => {
                 const btn = document.querySelector('button[children="Buscar Alumno"]');
                 btn?.focus();
               }, 100);
             }}
-            style={{ marginLeft: 12 }}
             type="default"
           >
             Nuevo Pago
           </Button>
-        </Form.Item>
+
+          {/* NUEVO BOTÓN: SALIR AL DASHBOARD */}
+          <Button
+            type="default"
+            danger
+            size="large"
+            onClick={() => {
+              navigate('/dashboard');
+            }}
+            style={{
+              backgroundColor: '#d4380d',
+              borderColor: '#d4380d',
+              color: 'white',
+            }}
+          >
+            Salir al Dashboard
+          </Button>
+        </Space>
+      </Form.Item>
         
       </Form>
 

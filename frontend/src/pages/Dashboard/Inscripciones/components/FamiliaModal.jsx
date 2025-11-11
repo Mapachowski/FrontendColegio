@@ -12,6 +12,7 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
   const [modo, setModo] = useState('buscar');
   const [responsablePrincipal, setResponsablePrincipal] = useState(null); // 'padre' | 'madre' | null
   const [showOtroResponsable, setShowOtroResponsable] = useState(false);
+  const userFromStorage = JSON.parse(localStorage.getItem('user') || '{}');
 
   // CARGAR FAMILIAS Y TIPOS DE RESPONSABLE
   useEffect(() => {
@@ -66,12 +67,38 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
         return;
       }
 
+      if (!state.user?.IdColaborador) {
+        message.error('Error: No se detecta el usuario logueado. Verifica sesión.');
+        return;
+      }
+
+      // LOGS DE DEPURACIÓN (NO LOS BORRES HASTA QUE FUNCIONE)
+        console.log('LOCALSTORAGE USER (raw):', localStorage.getItem('user'));
+        console.log('LOCALSTORAGE USER (parsed):', JSON.parse(localStorage.getItem('user') || '{}'));
+
+        const userFromStorage = JSON.parse(localStorage.getItem('user') || '{}');
+        console.log('userFromStorage.IdUsuario:', userFromStorage.IdUsuario);
+        console.log('userFromStorage.rol:', userFromStorage.rol);
+
+        if (!userFromStorage?.IdUsuario) {
+          console.error('ERROR: IdUsuario no existe o es null');
+          message.error('No se detectó usuario. Recarga la página.');
+          return;
+        }
+
+        console.log('ENVIANDO A BACKEND:', {
+          NombreFamilia: values.NombreFamilia,
+          IdColaborador: userFromStorage.IdUsuario,
+          DireccionRecibo: values.DireccionRecibo,
+          DPI_Representante: values.DPI_Representante,
+        });  
+
       const familiaRes = await apiClient.post('/familias', {
         NombreFamilia: values.NombreFamilia,
         Direccion: values.Direccion,
         TelefonoContacto: values.TelefonoContacto,
         EmailContacto: values.EmailContacto,
-        IdColaborador: state.user.IdColaborador,
+        IdColaborador: userFromStorage.IdUsuario,// ← ESTE ES EL BUENO
         NombreRecibo: values.NombreRecibo || null,
         DireccionRecibo: values.DireccionRecibo || null,
       });
@@ -239,13 +266,17 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
           </div>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="NombreRecibo" label="DPI del Representante">
+              <Form.Item name="NombreRecibo"
+               label="DPI del Representante"
+               rules={[{ required: true, message: 'El DPI es obligatorio' }]}>
                 <Input placeholder="Ej: 1234567890101" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="DireccionRecibo" label="Dirección en el Recibo">
-                <Input placeholder="Ej: 10ma avenida 5-20, Zona 1" />
+              <Form.Item name="DireccionRecibo"
+               label="Dirección en el Recibo"
+               rules={[{ required: true, message: 'La dirección es obligatoria' }]}>
+                <Input placeholder="Ej: San Juan Ostuncalco" />
               </Form.Item>
             </Col>
           </Row>
