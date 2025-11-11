@@ -19,6 +19,10 @@ const Paso2_Inscripcion = ({ state, dispatch }) => {
     }
   }, [inscripcion.FechaInscripcion, dispatch]);
 
+  useEffect(() => {
+    console.log('GRADOS EN PASO 2:', catalogos.grados);
+  }, [catalogos.grados]);
+
   // CARGAR COSTO E INSCRIPCIÓN AUTOMÁTICOS
   const handleGradoChange = async (idGrado) => {
     dispatch({ type: 'UPDATE_INSCRIPCION', payload: { IdGrado: idGrado } });
@@ -104,21 +108,27 @@ const Paso2_Inscripcion = ({ state, dispatch }) => {
       </Form.Item>
 
       {/* GRADO */}
-      <Form.Item label="Grado" required>
-        <Select
-          placeholder="Seleccione grado"
-          value={inscripcion.IdGrado}
-          onChange={onGradoSelect}
-          showSearch
-          optionFilterProp="children"
-        >
-          {catalogos.grados.map(g => (
+     <Form.Item label="Grado" required>
+      <Select
+        key={catalogos.grados.map(g => g.IdGrado).join('-')} // ← CLAVE
+        placeholder="Seleccione grado"
+        value={inscripcion.IdGrado}
+        onChange={onGradoSelect}
+        showSearch
+        optionFilterProp="children"
+        loading={catalogos.grados.length === 0}
+      >
+        {catalogos.grados.length === 0 ? (
+          <Option disabled>Cargando grados...</Option>
+        ) : (
+          catalogos.grados.map(g => (
             <Option key={g.IdGrado} value={g.IdGrado}>
               {g.NombreGrado}
             </Option>
-          ))}
-        </Select>
-      </Form.Item>
+          ))
+        )}
+      </Select>
+    </Form.Item>
 
       {/* SECCIÓN */}
       <Form.Item label="Sección" required>

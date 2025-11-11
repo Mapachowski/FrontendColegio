@@ -98,40 +98,56 @@ export const useInscripcionForm = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
   
 
-useEffect(() => {
-  const fetchCatalogos = async () => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      const [gradosRes, seccionesRes, jornadasRes, familiasRes] = await Promise.all([
-        apiClient.get('/grados').catch(() => ({ data: { data: [] } })),
-        apiClient.get('/secciones').catch(() => ({ data: { data: [] } })),   // ← CORRECTO
-        apiClient.get('/jornadas').catch(() => ({ data: { data: [] } })),     // ← CORRECTO
-        apiClient.get('/familias').catch(() => ({ data: { data: [] } })),
-      ]);
+  useEffect(() => {
+    let isMounted = true;
 
-      // LOG PARA DEBUG
-      console.log('SECCIONES RES:', seccionesRes.data);
-      console.log('JORNADAS RES:', jornadasRes.data);
+    const fetchCatalogos = async () => {
+      if (!isMounted) return; // ← Evita ejecución si ya se desmontó
 
-      dispatch({
-        type: 'SET_CATALOGOS',
-        payload: {
-          grados: gradosRes.data.data || [],
-          secciones: seccionesRes.data.data || seccionesRes.data || [],  // ← FLEXIBLE
-          jornadas: jornadasRes.data.data || jornadasRes.data || [],     // ← FLEXIBLE
-          familias: familiasRes.data.data || familiasRes.data || [],
-        },
-      });
-    } catch (error) {
-      console.error('Error cargando catálogos:', error);
-      //message.error('Error al cargar datos');
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
+      dispatch({ type: 'SET_LOADING', payload: true });
+      try {
+        const [gradosRes, seccionesRes, jornadasRes, familiasRes] = await Promise.all([
+          apiClient.get('/grados').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/secciones').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/jornadas').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/familias').catch(() => ({ data: { data: [] } })),
+        ]);
 
-  fetchCatalogos();
-}, []);
+        // ORDENAR GRADOS
+        const gradosCrudos = gradosRes.data.data || [];
+        const gradosOrdenados = [...gradosCrudos].sort((a, b) => {
+          const nivelA = parseInt(a.IdNivel, 10);
+          const nivelB = parseInt(b.IdNivel, 10);
+          if (nivelA !== nivelB) return nivelA - nivelB;
+          return a.IdGrado - b.IdGrado;
+        });
+
+        console.log('GRADOS ORDENADOS (final):', gradosOrdenados);
+
+        dispatch({
+          type: 'SET_CATALOGOS',
+          payload: {
+            grados: gradosOrdenados,
+            secciones: seccionesRes.data.data || seccionesRes.data || [],
+            jornadas: jornadasRes.data.data || jornadasRes.data || [],
+            familias: familiasRes.data.data || familiasRes.data || [],
+          },
+        });
+      } catch (error) {
+        console.error('Error cargando catálogos:', error);
+      } finally {
+        if (isMounted) {
+          dispatch({ type: 'SET_LOADING', payload: false });
+        }
+      }
+    };
+
+    fetchCatalogos();
+
+    return () => {
+      isMounted = false; // ← Limpieza
+    };
+  }, []); // ← Mantiene [] para que sea solo al montar
 
 // RECARGAR FAMILIAS DESPUÉS DE CREAR
 useEffect(() => {

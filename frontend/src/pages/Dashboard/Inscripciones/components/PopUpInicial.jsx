@@ -1,7 +1,7 @@
 // src/pages/dashboard/Inscripciones/components/PopUpInicial.jsx
 import React, { useEffect, useRef } from 'react';
-import { Modal, Radio, Space, message } from 'antd';
-import apiClient from '../../../../api/apiClient';
+import { Modal, Radio, Space } from 'antd';
+
 
 const PopUpInicial = ({ open, onOk, onCancel, dispatch }) => {
   const [value, setValue] = React.useState(null);
@@ -15,37 +15,7 @@ const PopUpInicial = ({ open, onOk, onCancel, dispatch }) => {
     }
   }, [open]);
 
-  // CARGAR CATÁLOGOS SOLO UNA VEZ CUANDO SE ABRE
-  useEffect(() => {
-    if (!open || !dispatch || hasLoaded.current) return;
 
-    console.log('CARGANDO CATÁLOGOS (PRIMERA VEZ)...');
-    hasLoaded.current = true;
-
-    const cargarCatalogos = async () => {
-      try {
-        const [gradosRes, seccionesRes, jornadasRes] = await Promise.all([
-          apiClient.get('/grados'),
-          apiClient.get('/secciones'),
-          apiClient.get('/jornadas'),
-        ]);
-
-        const payload = {
-          grados: gradosRes.data.data || gradosRes.data,
-          secciones: seccionesRes.data.data || seccionesRes.data,
-          jornadas: jornadasRes.data.data || jornadasRes.data,
-        };
-
-        console.log('CATÁLOGOS CARGADOS:', payload);
-        dispatch({ type: 'SET_CATALOGOS', payload });
-      } catch (error) {
-        console.error('ERROR AL CARGAR CATÁLOGOS:', error);
-        message.error('Error al cargar catálogos');
-      }
-    };
-
-    cargarCatalogos();
-  }, [open, dispatch]);
 
   return (
     <Modal

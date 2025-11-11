@@ -11,6 +11,7 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
   const [tiposResponsable, setTiposResponsable] = useState([]);
   const [modo, setModo] = useState('buscar');
   const [responsablePrincipal, setResponsablePrincipal] = useState(null); // 'padre' | 'madre' | null
+  const [showOtroResponsable, setShowOtroResponsable] = useState(false);
 
   // CARGAR FAMILIAS Y TIPOS DE RESPONSABLE
   useEffect(() => {
@@ -43,9 +44,10 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
 
   const handleCrear = async () => {
     try {
+      form.setFieldsValue({ OtroTipo: 11 });
       const values = await form.validateFields();
 
-      if (!values.PadreNombre && !values.MadreNombre) {
+      if (!values.PadreNombre && !values.MadreNombre && !values.OtroNombre) {
         message.error('Debe ingresar al menos un responsable');
         return;
       }
@@ -112,7 +114,16 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
         values.MadreTipo,
         responsablePrincipal === 'madre'
       );
-
+      // OTRO RESPONSABLE
+      if (values.OtroNombre) {
+        await crearResponsable(
+          values.OtroNombre,
+          values.OtroDPI,
+          values.OtroNIT,
+          11, // Tipo fijo: Otro
+          responsablePrincipal === 'otro'
+        );
+      }
       message.success('Familia y responsables creados');
       form.resetFields();
       setResponsablePrincipal(null);
@@ -239,6 +250,18 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
             </Col>
           </Row>
 
+        <div style={{ margin: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontWeight: 'bold' }}>Responsables</div>
+          {!showOtroResponsable && (
+            <Button 
+              size="small" 
+              onClick={() => setShowOtroResponsable(true)}
+              style={{ fontSize: 12 }}
+            >
+              Otro Responsable
+            </Button>
+          )}
+        </div>
           <div style={{ margin: '16px 0', fontWeight: 'bold' }}>Responsables</div>
 
           {/* PADRE - CON shouldUpdate PARA REACTIVIDAD */}
@@ -342,7 +365,56 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
               );
             }}
           </Form.Item>
-
+              {/* OTRO RESPONSABLE - CONDICIONAL */}
+          {showOtroResponsable && (
+            <Form.Item shouldUpdate={(prev, curr) => prev.OtroNombre !== curr.OtroNombre} noStyle>
+              {({ getFieldValue }) => {
+                const tieneNombreOtro = !!getFieldValue('OtroNombre');
+                return (
+                  <Row gutter={16} align="middle" style={{ backgroundColor: '#f9f9f9', padding: '8px', borderRadius: '6px', marginBottom: 16 }}>
+                    <Col span={9}>
+                      <Form.Item 
+                        name="OtroNombre" 
+                        label="Nombre del Otro Responsable"
+                        rules={[{ required: showOtroResponsable, message: 'Requerido si se muestra' }]}
+                      >
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col span={4}>
+                      <Form.Item name="OtroDPI" label="DPI">
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col span={4}>
+                      <Form.Item name="OtroNIT" label="NIT">
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col span={4}>
+                      <Form.Item label="Tipo">
+                        <Input value="Otro" disabled style={{ backgroundColor: '#f5f5f5' }} />
+                        {/* Campo oculto para enviar el ID 11 */}
+                        <Form.Item name="OtroTipo" noStyle>
+                          <Input type="hidden" />
+                        </Form.Item>
+                      </Form.Item>
+                    </Col>
+                    <Col span={3} style={{ display: 'flex', justifyContent: 'center' }}>
+                      <Checkbox
+                        checked={responsablePrincipal === 'otro'}
+                        onChange={() => handlePrincipalChange('otro')}
+                        disabled={!tieneNombreOtro}
+                        style={{ marginTop: 28 }}
+                      >
+                        Principal
+                      </Checkbox>
+                    </Col>
+                  </Row>
+                );
+              }}
+            </Form.Item>
+          )}
           <Button 
             type="primary" 
             onClick={handleCrear} 

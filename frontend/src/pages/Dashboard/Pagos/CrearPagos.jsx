@@ -7,7 +7,8 @@ import {
   message, 
   Modal, 
   Table, 
-  Checkbox, 
+  Checkbox,
+  DatePicker, 
   Tag, 
   Space, 
   Typography, 
@@ -34,8 +35,7 @@ const CrearPago = () => {
   const [selectedMeses, setSelectedMeses] = useState([]);
   const [loadingMeses, setLoadingMeses] = useState(false);
   const user = JSON.parse(localStorage.getItem('user')) || { IdUsuario: null, rol: null };
-
-  const fechaHoy = dayjs();
+  const [fechaPago, setFechaPago] = useState(dayjs()); // por defecto hoy
 
   useEffect(() => {
     const fetchData = async () => {
@@ -95,6 +95,8 @@ const CrearPago = () => {
           FechaPagado: item.FechaPago 
             ? dayjs(item.FechaPago).format('DD/MM/YYYY')
             : null,
+          NumeroRecibo: item.NumeroRecibo || '-',  // ← NUEVO
+          NombreRecibo: item.NombreRecibo || '-',  // ← NUEVO
           index,
         };
       });
@@ -163,7 +165,7 @@ const CrearPago = () => {
     const pagos = selectedMeses.map(mes => ({
       IdColaborador: user.IdUsuario,
       IdUsuario: user.IdUsuario,
-      Fecha: fechaHoy.format('YYYY-MM-DD'),
+      Fecha: fechaPago.format('YYYY-MM-DD'),
       IdAlumno: idAlumno,
       IdTipoPago: idTipoPago,
       Concepto: idTipoPago === 2 ? mes.MesNombre : mes.MesNombre,
@@ -284,6 +286,18 @@ const CrearPago = () => {
     { title: 'Monto', dataIndex: 'Monto', key: 'Monto', render: (m) => `Q${m.toFixed(2)}` },
     { title: 'Fecha Pagado', dataIndex: 'FechaPagado', key: 'FechaPagado', render: (f) => f || '-' },
     {
+      title: 'Número Recibo',
+      dataIndex: 'NumeroRecibo',
+      key: 'NumeroRecibo',
+      render: (text) => text === '-' ? '-' : <Tag color="blue">{text}</Tag>,
+    },
+    {
+      title: 'Nombre en Recibo',
+      dataIndex: 'NombreRecibo',
+      key: 'NombreRecibo',
+      render: (text) => text === '-' ? '-' : text,
+    },
+    {
       title: 'Pagar',
       width: 100,
       align: 'center',
@@ -324,9 +338,20 @@ const CrearPago = () => {
       </div>
 
       <Form form={form} name="createPago" onFinish={onFinish} layout="vertical">
-        <Form.Item label="Fecha" required>
-          <Input value={fechaHoy.format('DD/MM/YYYY')} disabled style={{ fontWeight: 'bold' }} />
-        </Form.Item>
+        <Form.Item 
+            label="Fecha de Pago" 
+            required
+            rules={[{ required: true, message: 'Selecciona la fecha' }]}
+          >
+            <DatePicker
+              format="DD/MM/YYYY"
+              value={fechaPago}
+              onChange={(date) => setFechaPago(date)}
+              style={{ width: '100%' }}
+              placeholder="Selecciona fecha"
+              allowClear={false}
+            />
+          </Form.Item>
 
         <Form.Item label="Alumno">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
