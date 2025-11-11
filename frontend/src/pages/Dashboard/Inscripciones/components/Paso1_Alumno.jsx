@@ -42,19 +42,25 @@ const Paso1_Alumno = ({ state, dispatch }) => {
         }
 
         setCheckingMatricula(true);
-        try {
-          const res = await apiClient.get(`/alumnos/existe-matricula?matricula=${encodeURIComponent(matricula)}`);
-          if (res.data.existe) {
-            setMatriculaError('Esta matrícula ya está registrada');
-          } else {
+            
+            // VALIDACIÓN DE MATRÍCULA DESACTIVADA (TEMPORAL)
+            // try {
+            //   const res = await apiClient.get(`/alumnos/existe-matricula?matricula=${encodeURIComponent(matricula)}`);
+            //   if (res.data.existe) {
+            //     setMatriculaError('Esta matrícula ya está registrada');
+            //   } else {
+            //     setMatriculaError('');
+            //   }
+            // } catch (error) {
+            //   setMatriculaError('Error al verificar matrícula');
+            // } finally {
+            //   setCheckingMatricula(false);
+            // }
+
+            // Forzar: siempre válido
             setMatriculaError('');
-          }
-        } catch (error) {
-          setMatriculaError('Error al verificar matrícula');
-        } finally {
-          setCheckingMatricula(false);
-        }
-      }, 1200), // ← 600ms de espera
+            setCheckingMatricula(false);
+          }, 1200),
       []
     );
     
@@ -196,7 +202,7 @@ const Paso1_Alumno = ({ state, dispatch }) => {
           size="large"
           onClick={handleNext}
           style={{ width: '100%' }}
-          disabled={!!matriculaError || checkingMatricula}
+          disabled={checkingMatricula}  // ← Solo spinner, no error
         >
           Siguiente
         </Button>

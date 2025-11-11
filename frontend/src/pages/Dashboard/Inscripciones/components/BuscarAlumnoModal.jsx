@@ -54,14 +54,17 @@ const BuscarAlumnoModal = ({ open, onCancel, state, dispatch }) => {
 
       // NUEVO: Validar si ya está inscrito en ciclo actual
       const promesas = finalData.map(async (alumno) => {
-        try {
-          const check = await apiClient.get(
-            `/inscripciones/ya-inscrito?idAlumno=${alumno.IdAlumno}&ciclo=${cicloActual}`
-          );
-          alumno.yaInscrito = check.data.yaInscrito;
-        } catch {
-          alumno.yaInscrito = false;
-        }
+        // try {
+        //   const check = await apiClient.get(
+        //     `/inscripciones/ya-inscrito?idAlumno=${alumno.IdAlumno}&ciclo=${cicloActual}`
+        //   );
+        //   alumno.yaInscrito = check.data.yaInscrito;
+        // } catch {
+        //   alumno.yaInscrito = false;
+        // }
+        
+        // Forzar: siempre disponible
+        alumno.yaInscrito = false;
         return alumno;
       });
 
@@ -207,16 +210,16 @@ const handleRowClick = (record) => {
           scroll={{ x: 1100 }}
           onRow={(record) => ({
           onClick: () => {
-            if (record.yaInscrito) {
-              message.warning('Este alumno ya está inscrito en el ciclo actual (2026)');
-              return;
-            }
+            // if (record.yaInscrito) {
+            //   message.warning('Este alumno ya está inscrito en el ciclo actual (2026)');
+            //   return;
+            // }
             handleRowClick(record);
           },
           style: {
-            cursor: record.yaInscrito ? 'not-allowed' : 'pointer',
-            opacity: record.yaInscrito ? 0.5 : 1,
-            background: record.yaInscrito ? '#fff2f0' : 'white',
+            cursor: 'pointer',
+            opacity: 1,
+            background: 'white',
           },
         })}
           locale={{ emptyText: 'No se encontraron resultados. Intente con otro alumno.' }}
