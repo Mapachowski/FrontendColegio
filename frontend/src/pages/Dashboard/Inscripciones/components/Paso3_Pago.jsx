@@ -151,6 +151,21 @@ const Paso3_Pago = ({ state, dispatch, onFinalizar }) => {
           onChange={(e) => dispatch({ type: 'UPDATE_PAGO', payload: { NumeroRecibo: e.target.value } })}
         />
       </Form.Item>
+      {/* RECIBO MECANOGRAFÍA - SOLO SI SE PAGA ALGO */}
+      {(pago.pagarMecanografiaInsc || pago.pagarMecanografiaEnero) && (
+        <Form.Item
+          label="Número de Recibo (Mecanografía)"
+          help="Recibo independiente para Inscripción y Enero de Mecanografía"
+        >
+          <Input
+            placeholder="Ej: MEC-2025-001"
+            value={pago.NumeroReciboMecanografia || ''}
+            onChange={(e) => 
+              dispatch({ type: 'UPDATE_PAGO', payload: { NumeroReciboMecanografia: e.target.value } })
+            }
+          />
+        </Form.Item>
+      )}
 
       <Form.Item label="Nombre en el Recibo">
         <Input

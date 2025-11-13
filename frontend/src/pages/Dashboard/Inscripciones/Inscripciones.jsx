@@ -29,53 +29,60 @@ const Inscripciones = () => {
   const handleCancel = () => {
     setIsModalOpen(false); // Cerramos al cancelar o con la X
   };
-    // GENERAR RECIBO PDF
-    const generarReciboPDF = (carnet, pago, total) => {
-      const doc = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid #003366; border-radius: 10px;">
-          <h1 style="text-align: center; color: #003366;">COLEGIO Nueva Candelaria</h1>
-          <p style="text-align: center; color: #666; font-size: 14px;">RECIBO OFICIAL DE INSCRIPCIÓN</p>
-          <hr style="border: 1px solid #003366;">
-          <table style="width: 100%; font-size: 15px;">
-            <tr><td><strong>Carnet:</strong></td><td>${carnet}</td></tr>
-            <tr><td><strong>Fecha:</strong></td><td>${moment().format('DD/MM/YYYY')}</td></tr>
-            <tr><td><strong>Nombre:</strong></td><td>${pago.NombreRecibo || 'No especificado'}</td></tr>
-            <tr><td><strong>Dirección:</strong></td><td>${pago.DireccionRecibo || 'No especificada'}</td></tr>
-            ${pago.NumeroRecibo ? `<tr><td><strong>No. Recibo:</strong></td><td>${pago.NumeroRecibo}</td></tr>` : ''}
-          </table>
-          <div style="padding: 15px; background: #f0f8ff; text-align: center; border-radius: 8px;">
-            <p style="margin: 0; font-size: 22px; font-weight: bold; color: #d4380d;">
-              TOTAL: Q ${total}
-            </p>
-          </div>
-          <p style="text-align: center; color: #666; margin-top: 30px;">Gracias por su confianza.</p>
+  const generarReciboPDF = (carnet, pago, total, esMecanografia = false) => {
+    const numeroRecibo = esMecanografia 
+      ? (pago.NumeroReciboMecanografia || 'MEC-SIN-NUM') 
+      : (pago.NumeroRecibo || 'SIN-NUM');
+    
+    const titulo = esMecanografia 
+      ? 'RECIBO OFICIAL - MECANOGRAFÍA' 
+      : 'RECIBO OFICIAL DE INSCRIPCIÓN';
+
+    const color = esMecanografia ? '#d4380d' : '#003366';
+
+    const doc = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid ${color}; border-radius: 10px;">
+        <h1 style="text-align: center; color: ${color};">COLEGIO Nueva Candelaria</h1>
+        <p style="text-align: center; color: #666; font-size: 14px;">${titulo}</p>
+        <hr style="border: 1px solid ${color};">
+        <table style="width: 100%; font-size: 15px;">
+          <tr><td><strong>Carnet:</strong></td><td>${carnet}</td></tr>
+          <tr><td><strong>Fecha:</strong></td><td>${moment().format('DD/MM/YYYY')}</td></tr>
+          <tr><td><strong>Nombre:</strong></td><td>${pago.NombreRecibo || 'No especificado'}</td></tr>
+          <tr><td><strong>Dirección:</strong></td><td>${pago.DireccionRecibo || 'No especificada'}</td></tr>
+          <tr><td><strong>No. Recibo:</strong></td><td>${numeroRecibo}</td></tr>
+        </table>
+        <div style="padding: 15px; background: #f0f8ff; text-align: center; border-radius: 8px;">
+          <p style="margin: 0; font-size: 22px; font-weight: bold; color: #d4380d;">
+            TOTAL: Q ${total}
+          </p>
         </div>
-      `;
+        <p style="text-align: center; color: #666; margin-top: 30px;">Gracias por su confianza.</p>
+      </div>
+    `;
 
-      const win = window.open('', '_blank');
-      win.document.write(doc);
-      win.document.close();
+    // Fallback seguro para window.open
+    let win;
+    try {
+      win = window.open('', '_blank', 'width=800,height=600');
+      if (!win) throw new Error('Popup bloqueado');
+    } catch (e) {
+      message.error('No se pudo abrir la ventana. Permite popups o usa Ctrl+P');
+      return;
+    }
 
-      // ESPERAR A QUE IMPRIMA Y LUEGO LIMPIAR
-      win.print();
+    win.document.write(doc);
+    win.document.close();
+    win.focus();
 
-      // CERRAR VENTANA Y LIMPIAR FORMULARIO
-      setTimeout(() => {
-        if (win && !win.closed) win.close();
+    // Imprimir y cerrar
+    win.print();
 
-        // LIMPIAR AUTOMÁTICAMENTE
-        dispatch({ type: 'RESET' });
-        dispatch({ type: 'SET_MOSTRAR_NUEVA', payload: false });
-        dispatch({ type: 'LOAD_CATALOGOS' }); // Recargar catálogos
+    setTimeout(() => {
+      if (win && !win.closed) win.close();
+    }, 1000);
+  };
 
-        // MOSTRAR POPUP INICIAL DE NUEVO
-        dispatch({ type: 'SHOW_INITIAL_POPUP' }); // si usas este estado
-
-        // O si usas !modo:
-        // dispatch({ type: 'SET_MODO', payload: null });
-
-      }, 1000); // 1 segundo después de imprimir
-    };
     const getCicloEscolar = () => {
       const hoy = new Date();
       const mes = hoy.getMonth(); // 0 = enero, 10 = noviembre
@@ -193,7 +200,7 @@ const Inscripciones = () => {
             Concepto: 'Inscripción Mecanografía',
             IdMetodoPago: 1,
             Monto: 40,
-            NumeroRecibo: state.pago.NumeroRecibo,
+            NumeroRecibo: state.pago.NumeroReciboMecanografia || state.pago.NumeroRecibo,
             NombreRecibo: state.pago.NombreRecibo,
             DireccionRecibo: state.pago.DireccionRecibo,
           });
@@ -210,7 +217,7 @@ const Inscripciones = () => {
             Concepto: 'Enero',
             IdMetodoPago: 1,
             Monto: 40,
-            NumeroRecibo: state.pago.NumeroRecibo,
+            NumeroRecibo: state.pago.NumeroReciboMecanografia || state.pago.NumeroRecibo,
             NombreRecibo: state.pago.NombreRecibo,
             DireccionRecibo: state.pago.DireccionRecibo,
           });
@@ -228,8 +235,27 @@ const Inscripciones = () => {
         .toFixed(2);
 
         
-     // GENERAR RECIBO
-      generarReciboPDF(IdAlumno, state.pago, totalPagado);
+    // === RECIBO 1: INSCRIPCIÓN + ENERO (NORMAL) ===
+    const totalNormal = (
+      (state.pago.pagarInscripcion ? parseFloat(state.inscripcion.ValorInscripcion || 0) : 0) +
+      (state.pago.pagarEnero ? parseFloat(state.inscripcion.Mensualidad || 0) : 0)
+    ).toFixed(2);
+
+    if (parseFloat(totalNormal) > 0) {
+      generarReciboPDF(IdAlumno, state.pago, totalNormal, false);
+    }
+
+    // === RECIBO 2: MECANOGRAFÍA (SOLO UNO) ===
+    const totalMecanografia = (
+      (state.pago.pagarMecanografiaInsc ? 40 : 0) +
+      (state.pago.pagarMecanografiaEnero ? 40 : 0)
+    ).toFixed(2);
+
+    if (parseFloat(totalMecanografia) > 0) {
+      setTimeout(() => {
+        generarReciboPDF(IdAlumno, state.pago, totalMecanografia, true);
+      }, 1500); // Espera para que se imprima el primero
+    }
       navigate('/dashboard');
 
     } catch (error) {
