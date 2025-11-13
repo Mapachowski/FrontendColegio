@@ -53,19 +53,16 @@ const BuscarAlumnoModal = ({ open, onCancel, state, dispatch }) => {
       }
 
       // NUEVO: Validar si ya está inscrito en ciclo actual
-      const promesas = finalData.map(async (alumno) => {
-        // try {
-        //   const check = await apiClient.get(
-        //     `/inscripciones/ya-inscrito?idAlumno=${alumno.IdAlumno}&ciclo=${cicloActual}`
-        //   );
-        //   alumno.yaInscrito = check.data.yaInscrito;
-        // } catch {
-        //   alumno.yaInscrito = false;
-        // }
-        
-        // Forzar: siempre disponible
-        alumno.yaInscrito = false;
-        return alumno;
+    const promesas = finalData.map(async (alumno) => {
+          try {
+            const check = await apiClient.get(
+              `/inscripciones/ya-inscrito?idAlumno=${alumno.IdAlumno}&ciclo=${cicloActual}`
+            );
+            alumno.yaInscrito = check.data.yaInscrito;
+          } catch {
+            alumno.yaInscrito = false;
+          }
+          return alumno;
       });
 
       const dataValidada = await Promise.all(promesas);
@@ -210,10 +207,10 @@ const handleRowClick = (record) => {
           scroll={{ x: 1100 }}
           onRow={(record) => ({
           onClick: () => {
-            // if (record.yaInscrito) {
-            //   message.warning('Este alumno ya está inscrito en el ciclo actual (2026)');
-            //   return;
-            // }
+            if (record.yaInscrito) {
+              message.warning(`Este alumno ya está inscrito en el ciclo actual (${cicloActual})`);
+              return;
+            }
             handleRowClick(record);
           },
           style: {

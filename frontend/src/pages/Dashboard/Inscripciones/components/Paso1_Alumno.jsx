@@ -33,36 +33,32 @@ const Paso1_Alumno = ({ state, dispatch }) => {
 
   
    // NUEVO: Validar con debounce (espera 600ms sin escribir)
-    const validarMatriculaDebounced = useCallback(
-      debounce(async (matricula) => {
-        if (!matricula || matricula.trim() === '') {
+// VALIDAR MATRÍCULA CON DEBOUNCE
+  const validarMatriculaDebounced = useCallback(
+    debounce(async (matricula) => {
+      if (!matricula || matricula.trim() === '') {
+        setMatriculaError('');
+        setCheckingMatricula(false);
+        return;
+      }
+
+      setCheckingMatricula(true);
+
+      try {
+        const res = await apiClient.get(`/alumnos/existe-matricula?matricula=${encodeURIComponent(matricula.trim())}`);
+        if (res.data.existe) {
+          setMatriculaError('Esta matrícula ya está registrada');
+        } else {
           setMatriculaError('');
-          setCheckingMatricula(false);
-          return;
         }
-
-        setCheckingMatricula(true);
-            
-            // VALIDACIÓN DE MATRÍCULA DESACTIVADA (TEMPORAL)
-            // try {
-            //   const res = await apiClient.get(`/alumnos/existe-matricula?matricula=${encodeURIComponent(matricula)}`);
-            //   if (res.data.existe) {
-            //     setMatriculaError('Esta matrícula ya está registrada');
-            //   } else {
-            //     setMatriculaError('');
-            //   }
-            // } catch (error) {
-            //   setMatriculaError('Error al verificar matrícula');
-            // } finally {
-            //   setCheckingMatricula(false);
-            // }
-
-            // Forzar: siempre válido
-            setMatriculaError('');
-            setCheckingMatricula(false);
-          }, 1200),
-      []
-    );
+      } catch (error) {
+        setMatriculaError('Error al verificar matrícula');
+      } finally {
+        setCheckingMatricula(false);
+      }
+    }, 1200),
+    []
+  );
     
     // Llamar al debounce cuando cambie el input
     const handleMatriculaChange = (e) => {
