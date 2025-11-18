@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import apiClient from '../../api/apiClient';
 import './Login.css';
 import Carousel from '../../components/Carousel';
+import { message } from 'antd';
 
 const Login = ({ onLoginSuccess }) => {
   const [NombreUsuario, setNombreUsuario] = useState('');
@@ -9,38 +10,55 @@ const Login = ({ onLoginSuccess }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const API_URL = process.env.REACT_APP_API_URL; // ← Usamos variable de entorno
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+
     const trimmedNombreUsuario = NombreUsuario.trim();
     if (!trimmedNombreUsuario || !Contrasena) {
       setError('Por favor, completa todos los campos.');
       setIsLoading(false);
       return;
     }
+
     try {
-      const response = await apiClient.post('/login', {
-        NombreUsuario: trimmedNombreUsuario,
-        Contrasena,
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          NombreUsuario: trimmedNombreUsuario,
+          Contrasena,
+        }),
       });
-      if (response.data.token) {
-        const { token, usuario } = response.data;
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error en el servidor');
+      }
+
+      // En handleSubmit
+      if (data.token && data.usuario) {
+        const { token, usuario } = data;
+
+        const userData = {
+          IdUsuario: usuario.IdUsuario,
+          NombreUsuario: usuario.NombreUsuario,
+          NombreCompleto: usuario.NombreCompleto || 'Sin nombre', // GUARDADO
+          rol: usuario.IdRol
+        };
+
         localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify({
-          IdUsuario: usuario.id, // Usamos usuario.id como IdUsuario
-          rol: usuario.rol,     // Usamos usuario.rol como rol
-        }));
-        onLoginSuccess({ IdUsuario: usuario.id, rol: usuario.rol }); // Pasa los datos al padre
+        localStorage.setItem('user', JSON.stringify(userData));
+
+        message.success(`¡Bienvenido, ${usuario.NombreUsuario}!`);
+        onLoginSuccess(userData);
       }
     } catch (err) {
-      if (err.response) {
-        setError(err.response.data.message || 'Usuario o contraseña incorrectos.');
-      } else if (err.request) {
-        setError('No se pudo conectar al servidor. Verifica tu conexión.');
-      } else {
-        setError('Ocurrió un error inesperado.');
-      }
+      setError(err.message || 'Usuario o contraseña incorrectos.');
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +79,6 @@ const Login = ({ onLoginSuccess }) => {
                 onChange={(e) => setNombreUsuario(e.target.value)}
                 placeholder="Ingresa tu email o usuario"
                 required
-                aria-describedby="username-error"
               />
             </div>
             <div className="input-group">
@@ -73,17 +90,12 @@ const Login = ({ onLoginSuccess }) => {
                 onChange={(e) => setContrasena(e.target.value)}
                 placeholder="Ingresa tu contraseña"
                 required
-                aria-describedby="password-error"
               />
             </div>
             <button type="submit" disabled={isLoading}>
               {isLoading ? 'Cargando...' : 'Ingresar'}
             </button>
-            {error && (
-              <p id="error-message" className="error-text">
-                {error}
-              </p>
-            )}
+            {error && <p className="error-text">{error}</p>}
           </form>
         </div>
         <div className="carousel-section">

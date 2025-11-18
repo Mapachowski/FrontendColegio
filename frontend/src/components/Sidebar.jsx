@@ -83,7 +83,7 @@ const Sidebar = ({ user }) => {
       label: 'Estudiantes',
       children: [
         { key: '2-1', label: 'Inscribir Estudiante', path: '/dashboard/inscripciones/inscripciones', icon: <UserAddOutlined /> },
-        { key: '2-2', label: 'Modificar Estudiante', path: '/modificar-estudiante', icon: <EditOutlined /> },
+        { key: '2-2', label: 'Modificar Estudiante', path: '/dashboard/alumnos/editar', icon: <EditOutlined /> },
         { key: '2-3', label: 'Admisiones', path: '/admisiones', icon: <SolutionOutlined /> },
         { key: '2-4', label: 'Listados Estudiantes', path: '/listados-estudiantes', icon: <UnorderedListOutlined /> },
         { key: '2-5', label: 'Estudiantes Retirados', path: '/estudiantes-retirados', icon: <UserDeleteOutlined /> },
@@ -163,32 +163,64 @@ const Sidebar = ({ user }) => {
         { key: '8-1', label: 'Reportes Personalizados', path: '/reportes-personalizados', icon: <FileProtectOutlined /> },
       ],
     },
-  ].filter((item) => {
-    if (user.rol === 1) return true;
-    if (user.rol === 2) return ['6'].includes(item.key);
-    if (user.rol === 3) return ['3', '4'].includes(item.key);
-    if (user.rol === 4) {
-      return item.key === '3' || (item.key === '4' && item.children.some(sub => sub.path === '/boletas-calificaciones'));
+  ].map((item) => {
+    // Administrador (rol 1): ve todo
+    if (user.rol === 1) return item;
+
+    // Operador (rol 2): Estudiantes, Pagos, Académico, Informes Académicos, Configurar Académico
+    if (user.rol === 2) {
+      if (['2', '3', '4', '5', '6'].includes(item.key)) {
+        return item;
+      }
+      return null;
     }
-    return false;
-  });
+
+    // Familia (rol 3): solo ciertas opciones en Académico e Informes Académicos
+    if (user.rol === 3) {
+      if (item.key === '3') {
+        return {
+          ...item,
+          children: item.children.filter((child) =>
+            ['3-1', '3-2'].includes(child.key) // Aula Candelaria y Calendario Tareas
+          ),
+        };
+      }
+      if (item.key === '4') {
+        return {
+          ...item,
+          children: item.children.filter((child) =>
+            ['4-1', '4-5'].includes(child.key) // Boletas y Promedios
+          ),
+        };
+      }
+      return null;
+    }
+
+    // Docente (rol 4): acceso completo a Académico e Informes Académicos
+    if (user.rol === 4) {
+      if (['3', '4'].includes(item.key)) {
+        return item;
+      }
+      return null;
+    }
+
+    return null;
+  })
+  .filter(Boolean); // Elimina elementos null
 
   // Personalizar ítems del menú con íconos solo en la etiqueta
- const customizedMenuItems = menuItems.map((item) => ({
+const customizedMenuItems = menuItems.map((item) => ({
   ...item,
   label: <Link to={item.path || '#'}>{item.label}</Link>,
-  children: item.children?.map((child) => {
-    //console.log('Navigating to:', child.path); // Depuración
-    return {
-      key: child.key,
-      label: (
-        <Link to={child.path}>
-          {child.icon} {child.label}
-        </Link>
-      ),
-      icon: null, // Evita duplicación de íconos
-    };
-  }),
+  children: item.children?.map((child) => ({
+    key: child.key,
+    label: (
+      <Link to={child.path}>
+        {child.icon} {child.label}
+      </Link>
+    ),
+    icon: null,
+  })),
 }));
 
   return (
