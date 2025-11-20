@@ -8,6 +8,7 @@ import Preferencias from './Preferencias';
 import Inscripciones from './Inscripciones/Inscripciones';
 import CrearPago from './Pagos/CrearPagos';
 import EditarAlumno from './Alumnos/EditarAlumno';
+import ListadoAlumnos from './Alumnos/FiltrosInscripciones';
 import './Dashboard.css';
 
 const { Content } = Layout;
@@ -32,6 +33,7 @@ const Dashboard = ({ user }) => {
             <Route path="/inscripciones/inscripciones" element={<Inscripciones />} />
             <Route path="/pagos/crear" element={<CrearPago />} />
             <Route path="/alumnos/editar" element={<EditarAlumno />} />
+            <Route path="/alumnos/listado" element={<ListadoAlumnos />} />
             {/* Agrega más rutas */}
           </Routes>
         </Content>
