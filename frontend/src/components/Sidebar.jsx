@@ -75,6 +75,7 @@ const Sidebar = ({ user }) => {
         { key: '1-4', label: 'Jornadas', path: '/jornadas', icon: <ClockCircleOutlined /> },
         { key: '1-5', label: 'Secciones', path: '/secciones', icon: <PartitionOutlined /> },
         { key: '1-6', label: 'Uso de Plataforma', path: '/uso-plataforma', icon: <DesktopOutlined /> },
+        { key: '1-7', label: 'Docentes', path: '/dashboard/docentes', icon: <TeamOutlined /> },
       ],
     },
     {
