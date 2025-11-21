@@ -86,7 +86,7 @@ const Sidebar = ({ user }) => {
         { key: '2-1', label: 'Inscribir Estudiante', path: '/dashboard/inscripciones/inscripciones', icon: <UserAddOutlined /> },
         { key: '2-2', label: 'Modificar Estudiante', path: '/dashboard/alumnos/editar', icon: <EditOutlined /> },
         { key: '2-3', label: 'Admisiones', path: '/admisiones', icon: <SolutionOutlined /> },
-        { key: '2-4', label: 'Listados Estudiantes', path: '/listados-estudiantes', icon: <UnorderedListOutlined /> },
+        { key: '2-4', label: 'Listados Estudiantes', path: '/dashboard/alumnos/listado', icon: <UnorderedListOutlined /> },
         { key: '2-5', label: 'Estudiantes Retirados', path: '/estudiantes-retirados', icon: <UserDeleteOutlined /> },
         { key: '2-6', label: 'Informes de Asistencia', path: '/informes-asistencia', icon: <IdcardOutlined /> },
         { key: '2-7', label: 'Credenciales de Acceso', path: '/credenciales-acceso', icon: <IdcardOutlined /> },
