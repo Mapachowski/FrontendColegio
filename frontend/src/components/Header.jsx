@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Dropdown, Menu, Modal, Form, Input, message, Avatar } from 'antd';
 import { UserOutlined, BellOutlined, LogoutOutlined, LockOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 
 const { Header } = Layout;
 
@@ -14,8 +14,6 @@ const HeaderComponent = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
-
-  const API_URL = process.env.REACT_APP_API_URL;
 
   // Cargar usuario y roles
   useEffect(() => {
@@ -31,10 +29,9 @@ const HeaderComponent = () => {
     }
 
     // Cargar roles desde API
-    // En useEffect
     const fetchRoles = async () => {
       try {
-        const res = await axios.get(`${API_URL}/roles`); // ruta: /api/roles
+        const res = await apiClient.get('/roles');
         if (res.data.success) {
           const rolesMap = {};
           res.data.data.forEach(r => {
@@ -48,7 +45,7 @@ const HeaderComponent = () => {
     };
 
     fetchRoles();
-  }, [API_URL]);
+  }, []);
 
   if (!user) {
     return (
@@ -75,7 +72,7 @@ const HeaderComponent = () => {
         ContrasenaActual: values.currentPassword,
         IdColaborador: idUsuario
       };
-      const response = await axios.put(`${API_URL}/usuarios/${idUsuario}`, payload);
+      const response = await apiClient.put(`/usuarios/${encodeURIComponent(idUsuario)}`, payload);
       if (response.data.success) {
         message.success('Contraseña cambiada exitosamente');
         handleCancel();
