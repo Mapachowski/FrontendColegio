@@ -91,19 +91,55 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
           IdColaborador: userFromStorage.IdUsuario,
           DireccionRecibo: values.DireccionRecibo,
           DPI_Representante: values.DPI_Representante,
-        });  
+        });
 
+      // PASO 1: CREAR USUARIO DE LA FAMILIA PRIMERO
+      let IdUsuarioFamilia = null;
+      try {
+        // Generar nombre de usuario: "familia_" + apellidos en minúsculas sin espacios
+        const apellidosFamilia = state.alumno.Apellidos.trim().toLowerCase().replace(/\s+/g, '_');
+        const nombreUsuarioFamilia = `familia_${apellidosFamilia}`;
+
+        const usuarioFamiliaPayload = {
+          NombreUsuario: nombreUsuarioFamilia,
+          NombreCompleto: values.NombreFamilia,
+          Contrasena: nombreUsuarioFamilia, // La contraseña es igual al usuario
+          IdRol: 3, // Rol de familia
+          IdColaborador: userFromStorage.IdUsuario
+        };
+
+        console.log('=== CREANDO USUARIO FAMILIA ===');
+        console.log('Payload:', usuarioFamiliaPayload);
+
+        const usuarioFamiliaRes = await apiClient.post('/usuarios', usuarioFamiliaPayload);
+        console.log('Response usuario familia:', usuarioFamiliaRes.data);
+
+        // Capturar IdUsuario de la respuesta
+        IdUsuarioFamilia = usuarioFamiliaRes.data.IdUsuario || usuarioFamiliaRes.data.data?.IdUsuario;
+        console.log('✅ Usuario de la familia creado → IdUsuario:', IdUsuarioFamilia);
+
+        message.success(`Usuario creado: ${nombreUsuarioFamilia}`);
+      } catch (errorUsuario) {
+        console.error('❌ Error al crear usuario de la familia:', errorUsuario);
+        console.error('Response:', errorUsuario.response?.data);
+        // Continuamos sin IdUsuario si falla
+        message.warning('Error al crear usuario de la familia. Se creará la familia sin usuario.');
+      }
+
+      // PASO 2: CREAR FAMILIA CON EL IdUsuario
       const familiaRes = await apiClient.post('/familias', {
         NombreFamilia: values.NombreFamilia,
         Direccion: values.Direccion,
         TelefonoContacto: values.TelefonoContacto,
         EmailContacto: values.EmailContacto,
-        IdColaborador: userFromStorage.IdUsuario,// ← ESTE ES EL BUENO
+        IdColaborador: userFromStorage.IdUsuario,
         NombreRecibo: values.NombreRecibo || null,
         DireccionRecibo: values.DireccionRecibo || null,
+        IdUsuario: IdUsuarioFamilia, // Incluir el IdUsuario si se creó
       });
 
       const nuevaFamilia = familiaRes.data.data || familiaRes.data;
+      console.log('✅ Familia creada con IdUsuario:', IdUsuarioFamilia);
 
       dispatch({
         type: 'UPDATE_PAGO',

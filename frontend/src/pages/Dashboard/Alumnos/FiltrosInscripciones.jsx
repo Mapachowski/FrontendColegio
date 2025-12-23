@@ -1,15 +1,18 @@
 // src/pages/dashboard/Alumnos/FiltrosInscripciones.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Input, Select, Button, Table, message, Typography } from 'antd';
 import { SearchOutlined, DownloadOutlined } from '@ant-design/icons';
 import apiClient from '../../../api/apiClient';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import { getCicloActual } from '../../../utils/cicloEscolar';
+import { registrarDescargaExcel } from '../../../utils/bitacora';
 
 const { Title } = Typography;
 
 const FiltrosInscripciones = () => {
+  const navigate = useNavigate();
   const [filtros, setFiltros] = useState({
     p_CicloEscolar: getCicloActual().toString(),
     IdGrado: null,
@@ -72,7 +75,14 @@ const FiltrosInscripciones = () => {
         const raw = res.data.data[0];
         const alumnos = Object.values(raw)
           .filter(item => item && typeof item === 'object')
-          .map(item => item);
+          .map(item => item)
+          .sort((a, b) => {
+            // Ordenar primero por Apellidos
+            const apellidoCompare = (a.Apellidos || '').localeCompare(b.Apellidos || '');
+            if (apellidoCompare !== 0) return apellidoCompare;
+            // Si los apellidos son iguales, ordenar por Nombres
+            return (a.Nombres || '').localeCompare(b.Nombres || '');
+          });
 
         setData(alumnos);
         message.success(`${alumnos.length} alumno${alumnos.length !== 1 ? 's' : ''} encontrado${alumnos.length !== 1 ? 's' : ''}`);
@@ -97,8 +107,11 @@ const FiltrosInscripciones = () => {
   }, [filtros]);
 
 // ← REEMPLAZA toda la función exportarExcel con esta ↓
-const exportarExcel = () => {
+const exportarExcel = async () => {
   if (data.length === 0) return message.info('No hay datos para exportar');
+
+  // Registrar en bitácora
+  await registrarDescargaExcel('Listado de Alumnos Inscritos');
 
   // Nombres de filtros para el reporte
   const grado = catalogos.grados.find(g => g.IdGrado === filtros.IdGrado)?.NombreGrado || 'Todos los grados';
@@ -108,7 +121,7 @@ const exportarExcel = () => {
   // Datos limpios para la tabla
   const filas = data.map((a, i) => ({
     '#': i + 1,
-    'NIE': a.IdAlumno,
+    'Carnet': a.IdAlumno,
     'Matrícula': a.Matricula || '-',
     'Nombres': a.Nombres,
     'Apellidos': a.Apellidos,
@@ -208,7 +221,7 @@ const exportarExcel = () => {
   // COLUMNAS DE LA TABLA (sin mensualidad ni ciclo)
   const columns = [
     { title: '#', render: (_, __, i) => i + 1, width: 60, fixed: 'left' },
-    { title: 'NIE', dataIndex: 'IdAlumno', width: 110 },
+    { title: 'Carnet', dataIndex: 'IdAlumno', width: 110 },
     { title: 'Matrícula', dataIndex: 'Matricula', width: 130 },
     { title: 'Nombres', dataIndex: 'Nombres' },
     { title: 'Apellidos', dataIndex: 'Apellidos' },
@@ -316,6 +329,17 @@ const exportarExcel = () => {
           />
         </Card>
       )}
+
+      {/* BOTÓN REGRESAR AL DASHBOARD */}
+      <div style={{ marginTop: 40, textAlign: 'center', paddingBottom: 24 }}>
+        <Button
+          size="large"
+          onClick={() => navigate('/dashboard')}
+          style={{ minWidth: 200 }}
+        >
+          Regresar al Dashboard
+        </Button>
+      </div>
     </div>
   );
 };

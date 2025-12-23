@@ -11,6 +11,8 @@ import BuscarAlumnoModal from './components/BuscarAlumnoModal';
 import FamiliaModal from './components/FamiliaModal';
 import apiClient from '../../../api/apiClient';
 import { useNavigate } from 'react-router-dom';
+import { escapeHTML } from '../../../utils/sanitize';
+import { getCicloActual } from '../../../utils/cicloEscolar';
 
 const { Step } = Steps;
 
@@ -30,15 +32,22 @@ const Inscripciones = () => {
     setIsModalOpen(false); // Cerramos al cancelar o con la X
   };
   const generarReciboPDF = (carnet, pago, total, esMecanografia = false) => {
-    const numeroRecibo = esMecanografia 
-      ? (pago.NumeroReciboMecanografia || 'MEC-SIN-NUM') 
-      : (pago.NumeroRecibo || 'SIN-NUM');
-    
-    const titulo = esMecanografia 
-      ? 'RECIBO OFICIAL - MECANOGRAFÍA' 
+    // Sanitizar todos los datos del usuario para prevenir XSS
+    const numeroRecibo = esMecanografia
+      ? escapeHTML(pago.NumeroReciboMecanografia || 'MEC-SIN-NUM')
+      : escapeHTML(pago.NumeroRecibo || 'SIN-NUM');
+
+    const titulo = esMecanografia
+      ? 'RECIBO OFICIAL - MECANOGRAFÍA'
       : 'RECIBO OFICIAL DE INSCRIPCIÓN';
 
     const color = esMecanografia ? '#d4380d' : '#003366';
+
+    // Sanitizar todos los valores que vienen del usuario
+    const carnetSafe = escapeHTML(String(carnet));
+    const nombreSafe = escapeHTML(pago.NombreRecibo || 'No especificado');
+    const direccionSafe = escapeHTML(pago.DireccionRecibo || 'No especificada');
+    const totalSafe = escapeHTML(String(total));
 
     const doc = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid ${color}; border-radius: 10px;">
@@ -46,15 +55,15 @@ const Inscripciones = () => {
         <p style="text-align: center; color: #666; font-size: 14px;">${titulo}</p>
         <hr style="border: 1px solid ${color};">
         <table style="width: 100%; font-size: 15px;">
-          <tr><td><strong>Carnet:</strong></td><td>${carnet}</td></tr>
+          <tr><td><strong>Carnet:</strong></td><td>${carnetSafe}</td></tr>
           <tr><td><strong>Fecha:</strong></td><td>${moment().format('DD/MM/YYYY')}</td></tr>
-          <tr><td><strong>Nombre:</strong></td><td>${pago.NombreRecibo || 'No especificado'}</td></tr>
-          <tr><td><strong>Dirección:</strong></td><td>${pago.DireccionRecibo || 'No especificada'}</td></tr>
+          <tr><td><strong>Nombre:</strong></td><td>${nombreSafe}</td></tr>
+          <tr><td><strong>Dirección:</strong></td><td>${direccionSafe}</td></tr>
           <tr><td><strong>No. Recibo:</strong></td><td>${numeroRecibo}</td></tr>
         </table>
         <div style="padding: 15px; background: #f0f8ff; text-align: center; border-radius: 8px;">
           <p style="margin: 0; font-size: 22px; font-weight: bold; color: #d4380d;">
-            TOTAL: Q ${total}
+            TOTAL: Q ${totalSafe}
           </p>
         </div>
         <p style="text-align: center; color: #666; margin-top: 30px;">Gracias por su confianza.</p>
@@ -129,6 +138,51 @@ const Inscripciones = () => {
         const res = await apiClient.post('/alumnos', alumnoPayload);
         IdAlumno = res.data.IdAlumno || res.data.data?.IdAlumno;
         console.log('ALUMNO CREADO → IdAlumno:', IdAlumno);
+
+        // 1.1. CREAR USUARIO DEL ESTUDIANTE
+        try {
+          const nombreCompleto = `${state.alumno.Nombres.trim()} ${state.alumno.Apellidos.trim()}`;
+          const usuarioEstudiantePayload = {
+            NombreUsuario: String(IdAlumno),
+            NombreCompleto: nombreCompleto,
+            Contrasena: String(IdAlumno),
+            IdRol: 5, // Rol de estudiante
+            IdColaborador: state.user.IdColaborador
+          };
+
+          console.log('=== CREANDO USUARIO ESTUDIANTE ===');
+          console.log('Payload:', usuarioEstudiantePayload);
+
+          const usuarioRes = await apiClient.post('/usuarios', usuarioEstudiantePayload);
+          console.log('Response usuario:', usuarioRes.data);
+
+          // Capturar IdUsuario de la respuesta
+          const IdUsuario = usuarioRes.data.IdUsuario || usuarioRes.data.data?.IdUsuario;
+          console.log('✅ Usuario del estudiante creado → IdUsuario:', IdUsuario);
+
+          // 1.2. ACTUALIZAR ALUMNO CON EL IdUsuario
+          if (IdUsuario) {
+            try {
+              console.log('=== ACTUALIZANDO ALUMNO CON IdUsuario ===');
+              await apiClient.put(`/alumnos/${IdAlumno}`, {
+                IdColaborador: state.user.IdColaborador, // Campo obligatorio
+                IdUsuario: IdUsuario
+              });
+              console.log('✅ Alumno actualizado con IdUsuario');
+            } catch (errorUpdate) {
+              console.error('❌ Error al actualizar alumno con IdUsuario:', errorUpdate);
+              console.error('Response:', errorUpdate.response?.data);
+              message.warning('Usuario creado, pero no se pudo vincular al alumno');
+            }
+          } else {
+            console.warn('⚠️ No se pudo obtener IdUsuario de la respuesta');
+          }
+        } catch (errorUsuario) {
+          console.error('❌ Error al crear usuario del estudiante:', errorUsuario);
+          console.error('Response:', errorUsuario.response?.data);
+          // No bloqueamos la inscripción si falla la creación del usuario
+          message.warning('Estudiante creado, pero hubo un error al crear su usuario de acceso');
+        }
       }
 
       // 2. CREAR INSCRIPCIÓN
@@ -166,6 +220,7 @@ const Inscripciones = () => {
           NumeroRecibo: state.pago.NumeroRecibo,
           NombreRecibo: state.pago.NombreRecibo,
           DireccionRecibo: state.pago.DireccionRecibo,
+          Anio: getCicloActual(),
         });
         pagosCreados.push({ Monto: extraerMonto(pagoInsc) });
       }
@@ -177,13 +232,14 @@ const Inscripciones = () => {
           IdUsuario: state.user.IdColaborador,
           Fecha: fechaHoy,
           IdAlumno,
-          IdTipoPago: 2, 
+          IdTipoPago: 2,
           Concepto: 'Enero',
           IdMetodoPago: 1,
           Monto: state.inscripcion.Mensualidad,
           NumeroRecibo: state.pago.NumeroRecibo,
           NombreRecibo: state.pago.NombreRecibo,
           DireccionRecibo: state.pago.DireccionRecibo,
+          Anio: getCicloActual(),
         });
         pagosCreados.push({ Monto: extraerMonto(pagoEnero) });
       }
@@ -196,13 +252,14 @@ const Inscripciones = () => {
             IdUsuario: state.user.IdColaborador,
             Fecha: fechaHoy,
             IdAlumno,
-            IdTipoPago: 4, 
+            IdTipoPago: 4,
             Concepto: 'Inscripción Mecanografía',
             IdMetodoPago: 1,
             Monto: 40,
             NumeroRecibo: state.pago.NumeroReciboMecanografia || state.pago.NumeroRecibo,
             NombreRecibo: state.pago.NombreRecibo,
             DireccionRecibo: state.pago.DireccionRecibo,
+            Anio: getCicloActual(),
           });
           pagosCreados.push({ Monto: extraerMonto(pagoMecInsc) });
         }
@@ -220,6 +277,7 @@ const Inscripciones = () => {
             NumeroRecibo: state.pago.NumeroReciboMecanografia || state.pago.NumeroRecibo,
             NombreRecibo: state.pago.NombreRecibo,
             DireccionRecibo: state.pago.DireccionRecibo,
+            Anio: getCicloActual(),
           });
           pagosCreados.push({ Monto: extraerMonto(pagoMecEnero) });
         }
@@ -260,7 +318,9 @@ const Inscripciones = () => {
 
     } catch (error) {
       console.error('ERROR FINAL:', error.response?.data || error.message);
-      message.error(`Error: ${error.response?.data?.message || error.message}`);
+      // Sanitizar mensaje de error del servidor para prevenir XSS
+      const errorMsg = escapeHTML(error.response?.data?.message || error.message);
+      message.error(`Error: ${errorMsg}`);
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }

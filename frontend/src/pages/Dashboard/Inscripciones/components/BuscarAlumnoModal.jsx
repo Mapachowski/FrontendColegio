@@ -42,7 +42,7 @@ const BuscarAlumnoModal = ({ open, onCancel, state, dispatch }) => {
 
     setLoading(true);
     try {
-      const url = `/inscripciones/buscar-alumno?IdAlumno=${selectedId}&CicloEscolar=${cicloEscolar}`;
+      const url = `/inscripciones/buscar-alumno?IdAlumno=${encodeURIComponent(selectedId)}&CicloEscolar=${encodeURIComponent(cicloEscolar)}`;
       const res = await apiClient.get(url);
 
       let finalData = [];
@@ -56,7 +56,7 @@ const BuscarAlumnoModal = ({ open, onCancel, state, dispatch }) => {
     const promesas = finalData.map(async (alumno) => {
           try {
             const check = await apiClient.get(
-              `/inscripciones/ya-inscrito?idAlumno=${alumno.IdAlumno}&ciclo=${cicloActual}`
+              `/inscripciones/ya-inscrito?idAlumno=${encodeURIComponent(alumno.IdAlumno)}&ciclo=${encodeURIComponent(cicloActual)}`
             );
             alumno.yaInscrito = check.data.yaInscrito;
           } catch {

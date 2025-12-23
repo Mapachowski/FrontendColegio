@@ -3,6 +3,7 @@ import apiClient from '../../api/apiClient';
 import './Login.css';
 import Carousel from '../../components/Carousel';
 import { message } from 'antd';
+import { sanitizeHTML } from '../../utils/sanitize';
 
 const Login = ({ onLoginSuccess }) => {
   const [NombreUsuario, setNombreUsuario] = useState('');
@@ -54,7 +55,29 @@ const Login = ({ onLoginSuccess }) => {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
 
-        message.success(`¡Bienvenido, ${usuario.NombreUsuario}!`);
+        // Registrar en bitácora
+        try {
+          await fetch(`${API_URL}/bitacoras`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              Accion: `Inicio de sesión - ${trimmedNombreUsuario}`,
+              FechaBitacora: new Date().toISOString(),
+              Ordenador: window.navigator.userAgent,
+              IdUsuario: usuario.IdUsuario
+            })
+          });
+        } catch (errBitacora) {
+          console.error('Error al registrar bitácora:', errBitacora);
+          // No bloquear el login si falla el registro de bitácora
+        }
+
+        // Sanitizar nombre de usuario para prevenir XSS en mensajes
+        const nombreSeguro = sanitizeHTML(usuario.NombreUsuario);
+        message.success(`¡Bienvenido, ${nombreSeguro}!`);
         onLoginSuccess(userData);
       }
     } catch (err) {

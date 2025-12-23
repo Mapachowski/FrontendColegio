@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Form, 
-  Input, 
-  Button, 
-  Select, 
-  message, 
-  Modal, 
-  Table, 
+import {
+  Form,
+  Input,
+  Button,
+  Select,
+  message,
+  Modal,
+  Table,
   Checkbox,
   DatePicker, 
   Tag, 
@@ -17,6 +17,8 @@ import {
 import apiClient from '../../../api/apiClient';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
+import { sanitizeHTML } from '../../../utils/sanitize';
+import { getCicloActual } from '../../../utils/cicloEscolar';
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -68,7 +70,7 @@ const CrearPago = () => {
     try {
 
       const response = await apiClient.get(
-        `/pagos/meses-pagados/${idAlumno}/${idTipoPago}/${ciclo}`
+        `/pagos/meses-pagados/${encodeURIComponent(idAlumno)}/${encodeURIComponent(idTipoPago)}/${encodeURIComponent(ciclo)}`
       );
 
       let rawData = response.data?.data;
@@ -128,7 +130,10 @@ const CrearPago = () => {
       for (let i = 0; i < index; i++) {
         const mesAnterior = meses[i];
         if (mesAnterior.Estado !== 'Pagado' && !selectedMeses.some(s => s.MesNombre === mesAnterior.MesNombre)) {
-          message.warning(`Debes pagar ${mesAnterior.MesNombre} antes de ${record.MesNombre}`);
+          // Sanitizar nombres de meses para prevenir XSS
+          const mesAnteriorSafe = sanitizeHTML(mesAnterior.MesNombre);
+          const mesSafe = sanitizeHTML(record.MesNombre);
+          message.warning(`Debes pagar ${mesAnteriorSafe} antes de ${mesSafe}`);
           return;
         }
       }
@@ -144,7 +149,8 @@ const CrearPago = () => {
         prev.filter(m => !mesesADesmarcar.some(d => d.MesNombre === m.MesNombre))
       );
 
-      message.info(`Se deseleccionaron ${mesesADesmarcar.length} mes(es) posteriores a ${record.MesNombre}`);
+      const mesSafe = sanitizeHTML(record.MesNombre);
+      message.info(`Se deseleccionaron ${mesesADesmarcar.length} mes(es) posteriores a ${mesSafe}`);
     }
   };
 
@@ -176,13 +182,21 @@ const CrearPago = () => {
       Estado: true,
       NombreRecibo: values.NombreRecibo || null,
       DireccionRecibo: values.DireccionRecibo || null,
+      Anio: getCicloActual(),
     }));
 
     try {
       setLoadingMeses(true);
 
+      // LOG: Ver estructura de pagos antes de enviar
+      console.log('📦 PAGOS A ENVIAR:', JSON.stringify(pagos, null, 2));
+      console.log('📦 Cantidad de pagos:', pagos.length);
+
       const responses = await Promise.all(
-        pagos.map(payload => apiClient.post('/pagos', payload))
+        pagos.map(payload => {
+          console.log('📤 Enviando pago individual:', payload);
+          return apiClient.post('/pagos', payload);
+        })
       );
 
 
@@ -193,8 +207,13 @@ const CrearPago = () => {
       await cargarMesesDesdeSP(idAlumno, idTipoPago, cicloEscolar);
 
     } catch (error) {
-      console.error('Error al registrar pagos:', error);
-      message.error('Error al registrar los pagos. Intenta de nuevo.');
+      console.error('❌ Error al registrar pagos:', error);
+      console.error('❌ Respuesta del servidor:', error.response?.data);
+      console.error('❌ Status:', error.response?.status);
+      console.error('❌ Headers:', error.response?.headers);
+
+      const mensajeError = error.response?.data?.error || error.response?.data?.message || 'Error al registrar los pagos. Intenta de nuevo.';
+      message.error(mensajeError);
     } finally {
       setLoadingMeses(false);
     }
@@ -208,7 +227,7 @@ const CrearPago = () => {
 
     try {
       const response = await apiClient.get(
-        `/inscripciones/buscar-alumno?IdAlumno=${selectedAlumno}&CicloEscolar=${cicloEscolar}`
+        `/inscripciones/buscar-alumno?IdAlumno=${encodeURIComponent(selectedAlumno)}&CicloEscolar=${encodeURIComponent(cicloEscolar)}`
       );
 
       if (response.data.success && response.data.data?.length > 0) {
@@ -244,7 +263,7 @@ const CrearPago = () => {
 
     if (data.IdFamilia) {
       try {
-        const familiaRes = await apiClient.get(`/familias/${data.IdFamilia}`);
+        const familiaRes = await apiClient.get(`/familias/${encodeURIComponent(data.IdFamilia)}`);
         const familia = familiaRes.data.data || familiaRes.data;
         form.setFieldsValue({
           NombreRecibo: familia.NombreRecibo || familia.NombreFamilia || '',

@@ -8,45 +8,30 @@ import {
   FileTextOutlined,
   DollarOutlined,
   BarChartOutlined,
-  FileOutlined,
   ToolOutlined,
-  BookFilled,
-  ProfileOutlined,
-  ClockCircleOutlined,
-  PartitionOutlined,
   DesktopOutlined,
   UserAddOutlined,
   EditOutlined,
-  SolutionOutlined,
   UnorderedListOutlined,
   UserDeleteOutlined,
   IdcardOutlined,
   TeamOutlined,
   DownloadOutlined,
   CalendarOutlined,
-  SmileOutlined,
-  CheckSquareOutlined,
-  FrownOutlined,
   FilePdfOutlined,
-  LineChartOutlined,
   TableOutlined,
-  UsergroupAddOutlined,
   UserSwitchOutlined,
   PlusSquareOutlined,
   AppstoreAddOutlined,
   SwapOutlined,
-  ScheduleOutlined,
   WalletOutlined,
-  SearchOutlined,
   SettingFilled,
   ExclamationCircleOutlined,
   CloseCircleOutlined,
   CreditCardOutlined,
   FundViewOutlined,
   HistoryOutlined,
-  SafetyCertificateOutlined,
-  ClockCircleFilled,
-  FileProtectOutlined,
+  FileSearchOutlined,
 } from '@ant-design/icons';
 
 const { Sider } = Layout;
@@ -69,12 +54,11 @@ const Sidebar = ({ user }) => {
       icon: <SettingOutlined />,
       label: 'Establecimiento',
       children: [
-        { key: '1-1', label: 'Preferencias', path: '/preferencias', icon: <ToolOutlined /> },
-        { key: '1-2', label: 'Niveles Académicos', path: '/niveles-academicos', icon: <BookFilled /> },
-        { key: '1-3', label: 'Grados', path: '/grados', icon: <ProfileOutlined /> },
-        { key: '1-4', label: 'Jornadas', path: '/jornadas', icon: <ClockCircleOutlined /> },
-        { key: '1-5', label: 'Secciones', path: '/secciones', icon: <PartitionOutlined /> },
-        { key: '1-6', label: 'Uso de Plataforma', path: '/uso-plataforma', icon: <DesktopOutlined /> },
+        { key: '1-1', label: 'Preferencias', path: '/dashboard/preferencias', icon: <ToolOutlined /> },
+        { key: '1-2', label: 'Uso de Plataforma', path: '/uso-plataforma', icon: <DesktopOutlined /> },
+        { key: '1-3', label: 'Credenciales de acceso Docente', path: '/dashboard/establecimiento/credenciales-docente', icon: <IdcardOutlined /> },
+        { key: '1-4', label: 'Docentes', path: '/dashboard/establecimiento/docentes', icon: <TeamOutlined /> },
+        { key: '1-5', label: 'Cursos', path: '/dashboard/establecimiento/cursos', icon: <BookOutlined /> },
       ],
     },
     {
@@ -84,13 +68,11 @@ const Sidebar = ({ user }) => {
       children: [
         { key: '2-1', label: 'Inscribir Estudiante', path: '/dashboard/inscripciones/inscripciones', icon: <UserAddOutlined /> },
         { key: '2-2', label: 'Modificar Estudiante', path: '/dashboard/alumnos/editar', icon: <EditOutlined /> },
-        { key: '2-3', label: 'Admisiones', path: '/admisiones', icon: <SolutionOutlined /> },
-        { key: '2-4', label: 'Listados Estudiantes', path: '/dashboard/alumnos/listado', icon: <UnorderedListOutlined /> },
-        { key: '2-5', label: 'Estudiantes Retirados', path: '/estudiantes-retirados', icon: <UserDeleteOutlined /> },
-        { key: '2-6', label: 'Informes de Asistencia', path: '/informes-asistencia', icon: <IdcardOutlined /> },
-        { key: '2-7', label: 'Credenciales de Acceso', path: '/credenciales-acceso', icon: <IdcardOutlined /> },
-        { key: '2-8', label: 'Listado Padres de Familia', path: '/listado-padres', icon: <TeamOutlined /> },
-        { key: '2-9', label: 'Exportar Información', path: '/exportar-informacion', icon: <DownloadOutlined /> },
+        { key: '2-3', label: 'Listados Estudiantes', path: '/dashboard/alumnos/listado', icon: <UnorderedListOutlined /> },
+        { key: '2-4', label: 'Estudiantes Retirados', path: '/dashboard/alumnos/estudiantes-retirados', icon: <UserDeleteOutlined /> },
+        { key: '2-5', label: 'Credenciales de Acceso', path: '/dashboard/estudiantes/credenciales-acceso', icon: <IdcardOutlined /> },
+        { key: '2-6', label: 'Listado Padres de Familia', path: '/dashboard/alumnos/listado-responsables', icon: <TeamOutlined /> },
+        { key: '2-7', label: 'Exportar Información', path: '/exportar-informacion', icon: <DownloadOutlined /> },
       ],
     },
     {
@@ -100,9 +82,6 @@ const Sidebar = ({ user }) => {
       children: [
         { key: '3-1', label: 'Aula Candelaria', path: '/aula-candelaria', icon: <BookOutlined /> },
         { key: '3-2', label: 'Calendario Tareas', path: '/calendario-tareas', icon: <CalendarOutlined /> },
-        { key: '3-3', label: 'Actitudinales', path: '/actitudinales', icon: <SmileOutlined /> },
-        { key: '3-4', label: 'Asistencia', path: '/asistencia', icon: <CheckSquareOutlined /> },
-        { key: '3-5', label: 'Comportamiento', path: '/comportamiento', icon: <FrownOutlined /> },
       ],
     },
     {
@@ -111,11 +90,8 @@ const Sidebar = ({ user }) => {
       label: 'Informes Académicos',
       children: [
         { key: '4-1', label: 'Boletas de Calificaciones', path: '/boletas-calificaciones', icon: <FilePdfOutlined /> },
-        { key: '4-2', label: 'Informes Estadísticos', path: '/informes-estadisticos', icon: <LineChartOutlined /> },
         { key: '4-3', label: 'Detalle Calificaciones', path: '/detalle-calificaciones', icon: <TableOutlined /> },
-        { key: '4-4', label: 'Calificaciones Maestros', path: '/calificaciones-maestros', icon: <UsergroupAddOutlined /> },
         { key: '4-5', label: 'Promedios', path: '/promedios', icon: <BarChartOutlined /> },
-        { key: '4-6', label: 'Informes Contenido por Curso', path: '/informes-contenido', icon: <FileTextOutlined /> },
         { key: '4-7', label: 'Maestros Asignados', path: '/maestros-asignados', icon: <UserSwitchOutlined /> },
       ],
     },
@@ -126,9 +102,8 @@ const Sidebar = ({ user }) => {
       children: [
         { key: '5-1', label: 'Tipos de Actividades', path: '/tipos-actividades', icon: <PlusSquareOutlined /> },
         { key: '5-2', label: 'Administrar Cursos', path: '/administrar-cursos', icon: <AppstoreAddOutlined /> },
-        { key: '5-3', label: 'Asignación de Cursos', path: '/asignacion-cursos', icon: <SwapOutlined /> },
+        { key: '5-3', label: 'Asignación de Cursos', path: '/dashboard/configurar-academico/asignacion-cursos', icon: <SwapOutlined /> },
         { key: '5-4', label: 'Configurar Unidades', path: '/configurar-unidades', icon: <UnorderedListOutlined /> },
-        { key: '5-5', label: 'Fechas de Publicación', path: '/fechas-publicacion', icon: <ScheduleOutlined /> },
       ],
     },
     {
@@ -137,11 +112,11 @@ const Sidebar = ({ user }) => {
       label: 'Pagos',
       children: [
         { key: '6-1', label: 'Ingreso de Pagos', path: '/dashboard/pagos/crear', icon: <WalletOutlined /> },
-        { key: '6-2', label: 'Buscar Recibo', path: '/buscar-recibo', icon: <SearchOutlined /> },
-        { key: '6-3', label: 'Configuración de Rubros', path: '/configurar-rubros', icon: <SettingFilled /> },
-        { key: '6-4', label: 'Mora y Recargo', path: '/mora-recargo', icon: <ExclamationCircleOutlined /> },
-        { key: '6-5', label: 'Exoneración Mora', path: '/exoneracion-mora', icon: <CloseCircleOutlined /> },
-        { key: '6-6', label: 'Métodos de Pago', path: '/metodos-pago', icon: <CreditCardOutlined /> },
+        { key: '6-2', label: 'Buscar Recibo', path: '/dashboard/pagos/buscar-recibo', icon: <FileSearchOutlined /> },
+        { key: '6-5', label: 'Configuración de Rubros', path: '/configurar-rubros', icon: <SettingFilled /> },
+        { key: '6-6', label: 'Insolventes', path: '/dashboard/pagos/insolventes', icon: <ExclamationCircleOutlined /> },
+        { key: '6-7', label: 'Exoneración Mora', path: '/exoneracion-mora', icon: <CloseCircleOutlined /> },
+        { key: '6-8', label: 'Métodos de Pago', path: '/metodos-pago', icon: <CreditCardOutlined /> },
       ],
     },
     {
@@ -149,18 +124,8 @@ const Sidebar = ({ user }) => {
       icon: <BarChartOutlined />,
       label: 'Informes Financieros',
       children: [
-        { key: '7-1', label: 'Informe Diario Ingresos', path: '/informe-diario-ingresos', icon: <FundViewOutlined /> },
-        { key: '7-2', label: 'Historial Pagos', path: '/historial-pagos', icon: <HistoryOutlined /> },
-        { key: '7-3', label: 'Solvencias por Alumno', path: '/solvencias-alumno', icon: <SafetyCertificateOutlined /> },
-        { key: '7-4', label: 'Pagos Vencidos', path: '/pagos-vencidos', icon: <ClockCircleFilled /> },
-      ],
-    },
-    {
-      key: '8',
-      icon: <FileOutlined />,
-      label: 'Informes Generales',
-      children: [
-        { key: '8-1', label: 'Reportes Personalizados', path: '/reportes-personalizados', icon: <FileProtectOutlined /> },
+        { key: '7-1', label: 'Informe Diario Ingresos', path: '/dashboard/pagos/pagos-hoy', icon: <FundViewOutlined /> },
+        { key: '7-2', label: 'Historial Pagos', path: '/dashboard/pagos/reporte-fechas', icon: <HistoryOutlined /> },
       ],
     },
   ].map((item) => {
@@ -198,6 +163,14 @@ const Sidebar = ({ user }) => {
 
     // Docente (rol 4): acceso completo a Académico e Informes Académicos
     if (user.rol === 4) {
+      if (['3', '4'].includes(item.key)) {
+        return item;
+      }
+      return null;
+    }
+
+    // Alumno (rol 5): solo Académico e Informes Académicos (completos)
+    if (user.rol === 5) {
       if (['3', '4'].includes(item.key)) {
         return item;
       }

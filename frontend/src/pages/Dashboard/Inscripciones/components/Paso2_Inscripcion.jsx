@@ -30,7 +30,7 @@ const Paso2_Inscripcion = ({ state, dispatch }) => {
     if (!idGrado) return;
 
     try {
-      const res = await apiClient.get(`/grados/costo/${idGrado}`);
+      const res = await apiClient.get(`/grados/costo/${encodeURIComponent(idGrado)}`);
       if (res.data.success && res.data.data) {
         const { ValorInscripcion, Mensualidad } = res.data.data;
 
