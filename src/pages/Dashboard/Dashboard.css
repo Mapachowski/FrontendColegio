@@ -1,0 +1,27 @@
+.content-area {
+  padding: 24px;
+  background: #f0f2f5;
+}
+/* src/pages/Dashboard/Dashboard.css */
+.ant-menu-inline .ant-menu-submenu-open {
+  background: #003366; /* Azul más claro al expandir Establecimiento */
+}
+
+.ant-menu-inline .ant-menu-item {
+  color: #fff !important; /* Letras blancas en todos los ítems */
+}
+
+.ant-menu-inline .ant-menu-submenu-title {
+  color: #fff !important; /* Letras blancas en títulos de menú */
+}
+
+.ant-menu-inline .ant-menu-item-selected {
+  background: #003366 !important; /* Azul claro al seleccionar */
+}
+
+.ant-menu-inline .ant-menu-submenu-open .ant-menu-submenu-title {
+  background: #003366 !important; /* Azul claro al abrir */
+}
+.ant-layout-content {
+  overflow: auto; /* Permite scroll si el contenido es largo */
+}

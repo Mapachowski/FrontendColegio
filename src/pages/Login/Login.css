@@ -1,0 +1,154 @@
+/* === Contenedor general === */
+.login-container {
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #001f3f 0%, #003366 100%);
+  background-attachment: fixed;
+}
+
+/* === Caja del login === */
+.login-box {
+  display: flex;
+  width: 900px;
+  height: 500px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  background: white;
+}
+
+/* === Formulario === */
+.login-form {
+  flex: 1;
+  padding: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login-form h2 {
+  margin-bottom: 30px;
+  color: #e60000;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.input-group input {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+button {
+  background-color: #003366;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background-color: #00254d;
+  transform: translateY(-2px);
+}
+
+.signup-text {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #555;
+}
+
+.signup-text a {
+  color: #001f3f;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.signup-text a:hover {
+  text-decoration: underline;
+}
+
+.carousel-section {
+  flex: 1.2;
+  position: relative;
+  background-color: #003366;
+  background-image: url('../../assets/images/Patron.png'); /* <- RUTA CORREGIDA */
+  background-size: cover;
+  background-repeat: repeat;
+  background-position: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+}
+
+/* Capa oscura para mejor contraste */
+.carousel-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4); /* Suaviza el patrón */
+  z-index: 1;
+}
+
+.carousel-section img {
+  width: 90%;
+  height: auto;
+  border-radius: 10px;
+  z-index: 2;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.carousel-text {
+  position: absolute;
+  bottom: 30px;
+  left: 30px;
+  color: white;
+  z-index: 3;
+  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.carousel-text h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.carousel-text p {
+  font-size: 15px;
+  opacity: 0.9;
+}
+
+/* Animación */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
