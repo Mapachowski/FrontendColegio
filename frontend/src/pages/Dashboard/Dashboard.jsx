@@ -21,6 +21,8 @@ import ListadoResponsables from './Alumnos/ListadoResponsables';
 import CredencialesAcceso from './Estudiantes/CredencialesAcceso';
 import AsignacionCursos from './ConfigurarAcademico/AsignacionCursos/AsignacionCursos';
 import AsignacionMasiva from './ConfigurarAcademico/AsignacionCursos/AsignacionMasiva';
+import AulaCandelaria from './Academico/AulaCandelaria/AulaCandelaria';
+import CalendarioTareas from './Academico/CalendarioTareas/CalendarioTareas';
 import './Dashboard.css';
 
 const { Content } = Layout;
@@ -58,6 +60,8 @@ const Dashboard = ({ user }) => {
             <Route path="/estudiantes/credenciales-acceso" element={<CredencialesAcceso />} />
             <Route path="/configurar-academico/asignacion-cursos" element={<AsignacionCursos />} />
             <Route path="/configurar-academico/asignacion-masiva" element={<AsignacionMasiva />} />
+            <Route path="/academico/aula-candelaria" element={<AulaCandelaria />} />
+            <Route path="/academico/calendario-tareas" element={<CalendarioTareas />} />
             {/* Agrega más rutas */}
           </Routes>
         </Content>

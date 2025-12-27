@@ -80,8 +80,8 @@ const Sidebar = ({ user }) => {
       icon: <BookOutlined />,
       label: 'Académico',
       children: [
-        { key: '3-1', label: 'Aula Candelaria', path: '/aula-candelaria', icon: <BookOutlined /> },
-        { key: '3-2', label: 'Calendario Tareas', path: '/calendario-tareas', icon: <CalendarOutlined /> },
+        { key: '3-1', label: 'Aula Candelaria', path: '/dashboard/academico/aula-candelaria', icon: <BookOutlined /> },
+        { key: '3-2', label: 'Calendario de Tareas', path: '/dashboard/academico/calendario-tareas', icon: <CalendarOutlined /> },
       ],
     },
     {
