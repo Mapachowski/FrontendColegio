@@ -922,6 +922,7 @@ const Actividades = () => {
         visible={modalSolicitarReaperturaVisible}
         unidad={unidadSeleccionada}
         asignacion={asignacionSeleccionada}
+        idDocente={idDocenteLogueado}
         onCancel={() => setModalSolicitarReaperturaVisible(false)}
         onSuccess={() => {
           message.info('Puedes ver el estado de tu solicitud en "Mis Solicitudes de Reapertura"');

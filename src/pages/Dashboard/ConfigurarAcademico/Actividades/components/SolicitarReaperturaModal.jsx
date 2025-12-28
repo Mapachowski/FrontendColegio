@@ -5,7 +5,7 @@ import apiClient from '../../../../../api/apiClient';
 
 const { TextArea } = Input;
 
-const SolicitarReaperturaModal = ({ visible, onCancel, unidad, asignacion, onSuccess }) => {
+const SolicitarReaperturaModal = ({ visible, onCancel, unidad, asignacion, idDocente, onSuccess }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
@@ -15,12 +15,33 @@ const SolicitarReaperturaModal = ({ visible, onCancel, unidad, asignacion, onSuc
       return;
     }
 
+    if (!asignacion) {
+      message.error('No se encontró la información de la asignación');
+      return;
+    }
+
+    if (!idDocente) {
+      message.error('No se pudo identificar al docente');
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await apiClient.post('/solicitudes-reapertura', {
+      // Puede ser IdAsignacionCursoDocente o IdAsignacionDocente dependiendo del backend
+      const idAsignacion = asignacion.IdAsignacionCursoDocente || asignacion.IdAsignacionDocente;
+
+      const payload = {
         IdUnidad: unidad.IdUnidad,
+        IdAsignacionCursoDocente: idAsignacion,
+        IdDocente: idDocente,
         Motivo: values.Motivo
-      });
+      };
+
+      console.log('Enviando solicitud de reapertura:', payload);
+      console.log('Asignación completa:', asignacion);
+      console.log('IdDocente:', idDocente);
+
+      const response = await apiClient.post('/solicitudes-reapertura', payload);
 
       if (response.data.success) {
         message.success(response.data.message || 'Solicitud enviada al administrador');
