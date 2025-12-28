@@ -24,6 +24,8 @@ import AsignacionMasiva from './ConfigurarAcademico/AsignacionCursos/AsignacionM
 import Unidades from './ConfigurarAcademico/Unidades/Unidades';
 import Actividades from './ConfigurarAcademico/Actividades/Actividades';
 import CalificarActividad from './ConfigurarAcademico/Calificaciones/CalificarActividad';
+import MisSolicitudesReapertura from './ConfigurarAcademico/MisSolicitudesReapertura';
+import GestionarSolicitudesReapertura from './Administrador/GestionarSolicitudesReapertura';
 import './Dashboard.css';
 
 const { Content } = Layout;
@@ -64,6 +66,8 @@ const Dashboard = ({ user }) => {
             <Route path="/configurar-academico/configurar-unidades" element={<Unidades />} />
             <Route path="/configurar-academico/configurar-actividades" element={<Actividades />} />
             <Route path="/configurar-academico/calificar-actividad" element={<CalificarActividad />} />
+            <Route path="/configurar-academico/mis-solicitudes-reapertura" element={<MisSolicitudesReapertura />} />
+            <Route path="/administrador/gestionar-solicitudes-reapertura" element={<GestionarSolicitudesReapertura />} />
             {/* Agrega más rutas */}
           </Routes>
         </Content>

@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Table, Button, Space, message, Tag, Card, Row, Col, Select, Tooltip, Badge, Popconfirm } from 'antd';
-import { PlusOutlined, EditOutlined, EyeOutlined, DeleteOutlined, CheckCircleOutlined, CloseCircleOutlined, UnorderedListOutlined, CalendarOutlined, FormOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, EyeOutlined, DeleteOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, UnorderedListOutlined, CalendarOutlined, FormOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
 import apiClient from '../../../../api/apiClient';
 import { getCicloActual } from '../../../../utils/cicloEscolar';
 import CrearEditarActividadModal from './components/CrearEditarActividadModal';
 import VerActividadModal from './components/VerActividadModal';
+import CerrarUnidadModal from './components/CerrarUnidadModal';
+import SolicitarReaperturaModal from './components/SolicitarReaperturaModal';
+import CalificarActividadModal from './components/CalificarActividadModal';
 
 const { Option } = Select;
 
 const Actividades = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [asignaciones, setAsignaciones] = useState([]);
   const [unidades, setUnidades] = useState([]);
   const [actividades, setActividades] = useState([]);
@@ -29,6 +33,9 @@ const Actividades = () => {
   // Modales
   const [modalCrearEditarVisible, setModalCrearEditarVisible] = useState(false);
   const [modalVerVisible, setModalVerVisible] = useState(false);
+  const [modalCerrarUnidadVisible, setModalCerrarUnidadVisible] = useState(false);
+  const [modalSolicitarReaperturaVisible, setModalSolicitarReaperturaVisible] = useState(false);
+  const [modalCalificarVisible, setModalCalificarVisible] = useState(false);
   const [actividadSeleccionada, setActividadSeleccionada] = useState(null);
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(null);
   const [asignacionSeleccionada, setAsignacionSeleccionada] = useState(null);
@@ -176,14 +183,26 @@ const Actividades = () => {
   const cargarActividadesUnidad = async (idUnidad) => {
     setLoadingActividades(true);
     try {
+      console.log('Cargando actividades para unidad:', idUnidad);
       const response = await apiClient.get(`/actividades/unidad/${idUnidad}`);
+      console.log('Respuesta completa de actividades:', response.data);
+
       if (response.data.success) {
-        setActividades(response.data.data || []);
+        const actividadesData = response.data.data || [];
+        console.log('Actividades recibidas:', actividadesData);
+        console.log('Cantidad de actividades:', actividadesData.length);
+        setActividades(actividadesData);
       } else {
+        console.error('Backend retornó success: false:', response.data);
         setActividades([]);
       }
     } catch (error) {
       console.error('Error al cargar actividades:', error);
+      console.error('Detalles del error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       message.error('Error al cargar las actividades');
       setActividades([]);
     } finally {
@@ -248,13 +267,8 @@ const Actividades = () => {
   };
 
   const irACalificar = (actividad) => {
-    navigate('/dashboard/configurar-academico/calificar-actividad', {
-      state: {
-        actividad,
-        unidad: unidadSeleccionada,
-        asignacion: asignacionSeleccionada
-      }
-    });
+    setActividadSeleccionada(actividad);
+    setModalCalificarVisible(true);
   };
 
   const handleEliminarActividad = async (idActividad) => {
@@ -452,6 +466,32 @@ const Actividades = () => {
       width: 120,
       align: 'center',
       render: (fecha) => fecha ? new Date(fecha).toLocaleDateString('es-GT') : '-'
+    },
+    {
+      title: 'Calificaciones',
+      key: 'Calificaciones',
+      width: 140,
+      align: 'center',
+      render: (_, record) => {
+        const calificados = record.AlumnosCalificados || 0;
+        const total = record.TotalAlumnos || 0;
+        const porcentaje = total > 0 ? Math.round((calificados / total) * 100) : 0;
+        const completo = calificados === total && total > 0;
+
+        return (
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Tag
+              icon={completo ? <CheckCircleOutlined /> : <ClockCircleOutlined />}
+              color={completo ? 'success' : 'warning'}
+            >
+              {completo ? 'Calificada' : 'Pendiente'}
+            </Tag>
+            <span style={{ fontSize: '11px', color: '#666' }}>
+              {calificados}/{total} ({porcentaje}%)
+            </span>
+          </Space>
+        );
+      }
     },
     {
       title: 'Estado',
@@ -712,22 +752,46 @@ const Actividades = () => {
           }
           extra={
             !esAlumno && (
-              <Tooltip
-                title={
-                  esDocente && unidadSeleccionada?.Activa !== 1
-                    ? 'Solo puedes crear actividades en la unidad activa'
-                    : ''
-                }
-              >
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={abrirModalCrear}
-                  disabled={esDocente && unidadSeleccionada?.Activa !== 1}
-                >
-                  Nueva Actividad
-                </Button>
-              </Tooltip>
+              <Space>
+                {esDocente && unidadSeleccionada?.Activa !== 1 ? (
+                  <Button
+                    type="primary"
+                    icon={<UnlockOutlined />}
+                    onClick={() => setModalSolicitarReaperturaVisible(true)}
+                  >
+                    Solicitar Reapertura
+                  </Button>
+                ) : (
+                  <>
+                    <Tooltip
+                      title={
+                        esDocente && unidadSeleccionada?.Activa !== 1
+                          ? 'Solo puedes crear actividades en la unidad activa'
+                          : ''
+                      }
+                    >
+                      <Button
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={abrirModalCrear}
+                        disabled={esDocente && unidadSeleccionada?.Activa !== 1}
+                      >
+                        Nueva Actividad
+                      </Button>
+                    </Tooltip>
+                    {esDocente && unidadSeleccionada?.Activa === 1 && (
+                      <Button
+                        type="default"
+                        danger
+                        icon={<LockOutlined />}
+                        onClick={() => setModalCerrarUnidadVisible(true)}
+                      >
+                        Cerrar Unidad
+                      </Button>
+                    )}
+                  </>
+                )}
+              </Space>
             )
           }
         >
@@ -835,6 +899,49 @@ const Actividades = () => {
         onCancel={() => {
           setModalVerVisible(false);
           setActividadSeleccionada(null);
+        }}
+      />
+
+      <CerrarUnidadModal
+        visible={modalCerrarUnidadVisible}
+        unidad={unidadSeleccionada}
+        asignacion={asignacionSeleccionada}
+        onCancel={() => setModalCerrarUnidadVisible(false)}
+        onSuccess={async () => {
+          // Recargar unidades para reflejar el cambio de estado
+          if (asignacionSeleccionada) {
+            await cargarUnidadesAsignacion(asignacionSeleccionada.IdAsignacionDocente);
+          }
+          // Limpiar la selección de unidad
+          setUnidadSeleccionada(null);
+          setActividades([]);
+        }}
+      />
+
+      <SolicitarReaperturaModal
+        visible={modalSolicitarReaperturaVisible}
+        unidad={unidadSeleccionada}
+        asignacion={asignacionSeleccionada}
+        onCancel={() => setModalSolicitarReaperturaVisible(false)}
+        onSuccess={() => {
+          message.info('Puedes ver el estado de tu solicitud en "Mis Solicitudes de Reapertura"');
+        }}
+      />
+
+      <CalificarActividadModal
+        visible={modalCalificarVisible}
+        onClose={() => {
+          setModalCalificarVisible(false);
+          setActividadSeleccionada(null);
+        }}
+        actividad={actividadSeleccionada}
+        unidad={unidadSeleccionada}
+        asignacion={asignacionSeleccionada}
+        onCalificacionesGuardadas={() => {
+          // Recargar actividades para actualizar contadores
+          if (unidadSeleccionada) {
+            cargarActividadesUnidad(unidadSeleccionada.IdUnidad);
+          }
         }}
       />
     </div>

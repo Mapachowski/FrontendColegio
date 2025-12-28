@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Layout, Menu } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Layout, Menu, Badge } from 'antd';
 import { Link } from 'react-router-dom';
+import apiClient from '../api/apiClient';
 import {
   SettingOutlined,
   UserOutlined,
@@ -20,6 +21,7 @@ import {
   CalendarOutlined,
   FilePdfOutlined,
   TableOutlined,
+  UnlockOutlined,
   UserSwitchOutlined,
   PlusSquareOutlined,
   AppstoreAddOutlined,
@@ -38,6 +40,29 @@ const { Sider } = Layout;
 
 const Sidebar = ({ user }) => {
   const [openKeys, setOpenKeys] = useState(['1']);
+  const [pendientesSolicitudes, setPendientesSolicitudes] = useState(0);
+
+  useEffect(() => {
+    // Solo cargar solicitudes pendientes para administradores y operadores
+    if (user.rol === 1 || user.rol === 2) {
+      cargarSolicitudesPendientes();
+      // Actualizar cada 2 minutos
+      const interval = setInterval(cargarSolicitudesPendientes, 120000);
+      return () => clearInterval(interval);
+    }
+  }, [user.rol]);
+
+  const cargarSolicitudesPendientes = async () => {
+    try {
+      const response = await apiClient.get('/solicitudes-reapertura/pendientes');
+      if (response.data.success) {
+        const pendientes = response.data.data.filter(s => s.Estado === 'pendiente').length;
+        setPendientesSolicitudes(pendientes);
+      }
+    } catch (error) {
+      console.error('Error al cargar solicitudes pendientes:', error);
+    }
+  };
 
   const onOpenChange = (keys) => {
     const latestOpenKey = keys.find((key) => !openKeys.includes(key));
@@ -59,6 +84,7 @@ const Sidebar = ({ user }) => {
         { key: '1-3', label: 'Credenciales de acceso Docente', path: '/dashboard/establecimiento/credenciales-docente', icon: <IdcardOutlined /> },
         { key: '1-4', label: 'Docentes', path: '/dashboard/establecimiento/docentes', icon: <TeamOutlined /> },
         { key: '1-5', label: 'Cursos', path: '/dashboard/establecimiento/cursos', icon: <BookOutlined /> },
+        { key: '1-6', label: 'Solicitudes de Reapertura', path: '/dashboard/administrador/gestionar-solicitudes-reapertura', icon: <UnlockOutlined />, badge: pendientesSolicitudes },
       ],
     },
     {
@@ -84,6 +110,7 @@ const Sidebar = ({ user }) => {
         { key: '3-2', label: 'Calendario Tareas', path: '/calendario-tareas', icon: <CalendarOutlined /> },
         { key: '3-3', label: 'Configurar Unidades', path: '/dashboard/configurar-academico/configurar-unidades', icon: <UnorderedListOutlined /> },
         { key: '3-4', label: 'Configurar Actividades', path: '/dashboard/configurar-academico/configurar-actividades', icon: <CalendarOutlined /> },
+        { key: '3-5', label: 'Mis Solicitudes Reapertura', path: '/dashboard/configurar-academico/mis-solicitudes-reapertura', icon: <UnlockOutlined /> },
       ],
     },
     {
@@ -193,6 +220,13 @@ const customizedMenuItems = menuItems.map((item) => ({
     label: (
       <Link to={child.path}>
         {child.icon} {child.label}
+        {child.badge > 0 && (
+          <Badge
+            count={child.badge}
+            style={{ marginLeft: 8 }}
+            overflowCount={99}
+          />
+        )}
       </Link>
     ),
     icon: null,

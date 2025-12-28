@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Card, Table, InputNumber, Input, Button, message, Statistic, Row, Col,
-  Space, Tag, Alert, Progress, Tooltip, Spin
+  Space, Tag, Progress, Spin, Alert
 } from 'antd';
 import {
   SaveOutlined, ArrowLeftOutlined, CheckCircleOutlined,
-  ClockCircleOutlined, TrophyOutlined, BarChartOutlined
+  ClockCircleOutlined, TrophyOutlined, BarChartOutlined, WarningOutlined
 } from '@ant-design/icons';
 import apiClient from '../../../../api/apiClient';
 import dayjs from 'dayjs';
@@ -18,11 +18,24 @@ const CalificarActividad = () => {
   const location = useLocation();
   const { actividad, unidad, asignacion } = location.state || {};
 
+  const volverAActividades = () => {
+    // Guardar contexto en sessionStorage para restaurarlo
+    sessionStorage.setItem('contextoActividades', JSON.stringify({
+      asignacionSeleccionada: asignacion,
+      unidadSeleccionada: unidad
+    }));
+
+    // Navegar de vuelta
+    navigate('/dashboard/configurar-academico/actividades');
+  };
+
   const [alumnos, setAlumnos] = useState([]);
   const [calificaciones, setCalificaciones] = useState({});
   const [loading, setLoading] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [estadisticas, setEstadisticas] = useState(null);
+  const [zonasCompletas, setZonasCompletas] = useState(true);
+  const [notasZonaPorAlumno, setNotasZonaPorAlumno] = useState({}); // { IdAlumno: notaZonaTotal }
 
   useEffect(() => {
     if (!actividad) {
@@ -31,11 +44,99 @@ const CalificarActividad = () => {
       return;
     }
     cargarAlumnos();
+    // Si es actividad final, verificar que las zonas estén completas y cargar notas de zona
+    if (actividad.TipoActividad === 'final') {
+      verificarZonasCompletas();
+      cargarNotasZona();
+    }
   }, [actividad]);
 
   useEffect(() => {
     calcularEstadisticas();
   }, [calificaciones, alumnos]);
+
+  const verificarZonasCompletas = async () => {
+    try {
+      // Obtener todas las actividades de zona de esta unidad
+      const response = await apiClient.get(`/actividades/unidad/${unidad.IdUnidad}`);
+      if (response.data.success) {
+        const actividades = response.data.data || [];
+        const actividadesZona = actividades.filter(a =>
+          a.TipoActividad === 'zona' && (a.Estado === true || a.Estado === 1)
+        );
+
+        if (actividadesZona.length === 0) {
+          // No hay actividades de zona, permitir calificar finales
+          setZonasCompletas(true);
+          return;
+        }
+
+        // Verificar que todas las actividades de zona tengan calificaciones completas
+        let todasCompletas = true;
+        for (const actZona of actividadesZona) {
+          const respCalif = await apiClient.get(`/actividades/${actZona.IdActividad}/alumnos`);
+          if (respCalif.data.success) {
+            const alumnosZona = respCalif.data.data || [];
+            const sinCalificar = alumnosZona.filter(alumno =>
+              !alumno.IdCalificacion || alumno.Punteo === null || alumno.Punteo === undefined
+            );
+            if (sinCalificar.length > 0) {
+              todasCompletas = false;
+              break;
+            }
+          }
+        }
+
+        setZonasCompletas(todasCompletas);
+
+        if (!todasCompletas) {
+          message.warning({
+            content: 'Debes completar todas las calificaciones de zona antes de calificar actividades finales',
+            duration: 8
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error al verificar zonas completas:', error);
+      setZonasCompletas(false);
+    }
+  };
+
+  const cargarNotasZona = async () => {
+    try {
+      // Obtener todas las actividades de zona de esta unidad
+      const response = await apiClient.get(`/actividades/unidad/${unidad.IdUnidad}`);
+      if (response.data.success) {
+        const actividades = response.data.data || [];
+        const actividadesZona = actividades.filter(a =>
+          a.TipoActividad === 'zona' && (a.Estado === true || a.Estado === 1)
+        );
+
+        // Objeto para acumular notas por alumno
+        const notasZona = {};
+
+        // Cargar calificaciones de cada actividad de zona
+        for (const actZona of actividadesZona) {
+          const respCalif = await apiClient.get(`/actividades/${actZona.IdActividad}/alumnos`);
+          if (respCalif.data.success) {
+            const alumnosZona = respCalif.data.data || [];
+            alumnosZona.forEach(alumno => {
+              if (alumno.Punteo !== null && alumno.Punteo !== undefined) {
+                if (!notasZona[alumno.IdAlumno]) {
+                  notasZona[alumno.IdAlumno] = 0;
+                }
+                notasZona[alumno.IdAlumno] += parseFloat(alumno.Punteo);
+              }
+            });
+          }
+        }
+
+        setNotasZonaPorAlumno(notasZona);
+      }
+    } catch (error) {
+      console.error('Error al cargar notas de zona:', error);
+    }
+  };
 
   const cargarAlumnos = async () => {
     setLoading(true);
@@ -86,33 +187,7 @@ const CalificarActividad = () => {
     }));
   };
 
-  const validarFechaLimite = () => {
-    if (!actividad.FechaActividad) return true;
-
-    const fechaActividad = dayjs(actividad.FechaActividad);
-    const fechaLimite = fechaActividad.add(4, 'days');
-    const hoy = dayjs();
-
-    return hoy.isBefore(fechaLimite) || hoy.isSame(fechaLimite, 'day');
-  };
-
-  const diasRestantes = () => {
-    if (!actividad.FechaActividad) return null;
-
-    const fechaActividad = dayjs(actividad.FechaActividad);
-    const fechaLimite = fechaActividad.add(4, 'days');
-    const hoy = dayjs();
-
-    return fechaLimite.diff(hoy, 'days');
-  };
-
   const handleGuardar = async () => {
-    const dentroDelPlazo = validarFechaLimite();
-    if (!dentroDelPlazo) {
-      message.warning('El plazo para calificar esta actividad ha expirado (4 días después de la fecha de actividad)');
-      return;
-    }
-
     // Preparar array de calificaciones
     const calificacionesArray = Object.entries(calificaciones)
       .filter(([_, data]) => data.Punteo !== undefined && data.Punteo !== null)
@@ -143,7 +218,16 @@ const CalificarActividad = () => {
       }
     } catch (error) {
       console.error('Error al guardar calificaciones:', error);
-      message.error(error.response?.data?.error || 'Error al guardar las calificaciones');
+
+      // Manejar error específico de unidad cerrada
+      if (error.response?.data?.unidadCerrada) {
+        message.error({
+          content: error.response.data.error || 'La unidad está cerrada. Debes solicitar reapertura al administrador.',
+          duration: 5
+        });
+      } else {
+        message.error(error.response?.data?.error || 'Error al guardar las calificaciones');
+      }
     } finally {
       setGuardando(false);
     }
@@ -200,22 +284,57 @@ const CalificarActividad = () => {
       sorter: (a, b) => a.Nombres.localeCompare(b.Nombres)
     },
     {
-      title: `Punteo (0 - ${actividad?.PunteoMaximo || 0} pts)`,
+      title: actividad?.TipoActividad === 'final'
+        ? `Punteo Final (0 - ${actividad?.PunteoMaximo || 0} pts)`
+        : `Punteo (0 - ${actividad?.PunteoMaximo || 0} pts)`,
       key: 'Punteo',
-      width: 200,
-      render: (_, record) => (
-        <InputNumber
-          min={0}
-          max={parseFloat(actividad.PunteoMaximo)}
-          step={0.25}
-          precision={2}
-          value={calificaciones[record.IdAlumno]?.Punteo}
-          onChange={(valor) => handlePunteoChange(record.IdAlumno, valor)}
-          style={{ width: '100%' }}
-          placeholder="0.00"
-          disabled={!validarFechaLimite()}
-        />
-      )
+      width: actividad?.TipoActividad === 'final' ? 280 : 200,
+      render: (_, record) => {
+        const notaZona = parseFloat(notasZonaPorAlumno[record.IdAlumno]) || 0;
+        const punteoFinal = parseFloat(calificaciones[record.IdAlumno]?.Punteo) || 0;
+        const total = notaZona + punteoFinal;
+        const aprueba = total >= 60;
+
+        return (
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <InputNumber
+              min={0}
+              max={parseFloat(actividad.PunteoMaximo)}
+              step={0.25}
+              precision={2}
+              value={calificaciones[record.IdAlumno]?.Punteo}
+              onChange={(valor) => handlePunteoChange(record.IdAlumno, valor)}
+              style={{ width: '100%' }}
+              placeholder="0.00"
+              disabled={actividad?.TipoActividad === 'final' && !zonasCompletas}
+            />
+            {actividad?.TipoActividad === 'final' && notaZona > 0 && (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '100%',
+                padding: '4px 8px',
+                backgroundColor: punteoFinal > 0 ? (aprueba ? '#f6ffed' : '#fff2e8') : '#fafafa',
+                borderRadius: '4px',
+                border: punteoFinal > 0 ? (aprueba ? '1px solid #b7eb8f' : '1px solid #ffbb96') : '1px solid #d9d9d9'
+              }}>
+                <span style={{ fontSize: '11px', color: '#666' }}>
+                  Zona: <strong style={{ color: '#1890ff' }}>{notaZona.toFixed(2)}</strong>
+                </span>
+                {punteoFinal > 0 && (
+                  <Tag
+                    color={aprueba ? 'success' : 'error'}
+                    style={{ margin: 0, fontWeight: 'bold' }}
+                  >
+                    Total: {Math.round(total)} {aprueba ? '✓' : '✗'}
+                  </Tag>
+                )}
+              </div>
+            )}
+          </Space>
+        );
+      }
     },
     {
       title: 'Observaciones',
@@ -228,7 +347,7 @@ const CalificarActividad = () => {
           onChange={(e) => handleObservacionChange(record.IdAlumno, e.target.value)}
           placeholder="Observaciones opcionales"
           maxLength={200}
-          disabled={!validarFechaLimite()}
+          disabled={actividad?.TipoActividad === 'final' && !zonasCompletas}
         />
       )
     },
@@ -249,9 +368,6 @@ const CalificarActividad = () => {
     }
   ];
 
-  const dias = diasRestantes();
-  const fueraDePlazo = !validarFechaLimite();
-
   return (
     <div style={{ padding: '24px' }}>
       <Card
@@ -260,7 +376,7 @@ const CalificarActividad = () => {
             <Button
               type="link"
               icon={<ArrowLeftOutlined />}
-              onClick={() => navigate(-1)}
+              onClick={volverAActividades}
               style={{ paddingLeft: 0 }}
             >
               Volver a Actividades
@@ -278,11 +394,6 @@ const CalificarActividad = () => {
               <Tag color="purple">
                 Fecha: {actividad?.FechaActividad ? dayjs(actividad.FechaActividad).format('DD/MM/YYYY') : 'Sin fecha'}
               </Tag>
-              {dias !== null && (
-                <Tag color={dias >= 0 ? 'green' : 'red'}>
-                  {dias >= 0 ? `${dias} días restantes` : 'Plazo vencido'}
-                </Tag>
-              )}
             </Space>
             <div style={{ fontSize: '14px', color: '#666' }}>
               {unidad?.NombreUnidad} - {asignacion?.NombreCurso} ({asignacion?.NombreGrado} {asignacion?.NombreSeccion})
@@ -297,20 +408,23 @@ const CalificarActividad = () => {
               onClick={handleGuardar}
               loading={guardando}
               size="large"
-              disabled={fueraDePlazo}
+              disabled={actividad?.TipoActividad === 'final' && !zonasCompletas}
             >
               Guardar Calificaciones
             </Button>
           </Space>
         }
       >
-        {fueraDePlazo && (
+        {/* Alerta cuando es actividad final y zonas no están completas */}
+        {actividad?.TipoActividad === 'final' && !zonasCompletas && (
           <Alert
-            message="Plazo de calificación vencido"
-            description={`El plazo para calificar esta actividad expiró ${Math.abs(dias)} días atrás. Solo puedes visualizar las calificaciones.`}
+            message="No puedes calificar actividades finales aún"
+            description="Primero debes completar todas las calificaciones de las actividades de zona de esta unidad. Una vez completadas, podrás ingresar las calificaciones finales."
             type="warning"
             showIcon
+            icon={<WarningOutlined />}
             style={{ marginBottom: 16 }}
+            closable
           />
         )}
 
