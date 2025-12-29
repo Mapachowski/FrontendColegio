@@ -55,7 +55,14 @@ const SolicitarReaperturaModal = ({ visible, onCancel, unidad, asignacion, idDoc
       console.log('💬 Mensaje a mostrar:', errorMsg);
       console.log('🚨 Llamando a message.error con:', errorMsg);
 
-      message.error(errorMsg, 5); // Mostrar por 5 segundos
+      // Usar message.error con configuración explícita para asegurar visibilidad
+      message.error({
+        content: errorMsg,
+        duration: 5,
+        style: {
+          marginTop: '20vh',
+        },
+      });
 
       console.log('✅ message.error fue llamado');
     } finally {
