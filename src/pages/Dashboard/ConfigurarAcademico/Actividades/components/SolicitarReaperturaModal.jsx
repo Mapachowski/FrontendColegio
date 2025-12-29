@@ -42,18 +42,13 @@ const SolicitarReaperturaModal = ({ visible, onCancel, unidad, asignacion, idDoc
         onCancel();
       }
     } catch (error) {
-      console.error('❌ Error al enviar solicitud:', error);
-      console.error('📦 Datos del error:', error.response?.data);
-      console.error('🔢 Status code:', error.response?.status);
+      console.error('Error al enviar solicitud:', error);
 
       // Extraer el mensaje de error del backend
       const errorMsg = error.response?.data?.error ||
                        error.response?.data?.message ||
                        error.message ||
                        'Error al enviar la solicitud de reapertura';
-
-      console.log('💬 Mensaje a mostrar:', errorMsg);
-      console.log('🚨 Llamando a message.error con:', errorMsg);
 
       // Usar message.error con configuración explícita para asegurar visibilidad
       message.error({
@@ -63,8 +58,6 @@ const SolicitarReaperturaModal = ({ visible, onCancel, unidad, asignacion, idDoc
           marginTop: '20vh',
         },
       });
-
-      console.log('✅ message.error fue llamado');
     } finally {
       setLoading(false);
     }

@@ -16,17 +16,12 @@ const MisSolicitudesReapertura = () => {
     setLoading(true);
     try {
       const response = await apiClient.get('/solicitudes-reapertura/mis-solicitudes');
-      console.log('Respuesta del endpoint mis-solicitudes:', response.data);
 
       if (response.data.success) {
-        console.log('Solicitudes recibidas:', response.data.data);
         setSolicitudes(response.data.data || []);
-      } else {
-        console.log('La respuesta no tiene success=true');
       }
     } catch (error) {
       console.error('Error al cargar solicitudes:', error);
-      console.error('Detalles del error:', error.response?.data);
       message.error('Error al cargar las solicitudes de reapertura');
     } finally {
       setLoading(false);
