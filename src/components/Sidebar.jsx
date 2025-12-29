@@ -61,6 +61,8 @@ const Sidebar = ({ user }) => {
       }
     } catch (error) {
       console.error('Error al cargar solicitudes pendientes:', error);
+      // Si falla, establecer en 0 para evitar problemas de renderizado
+      setPendientesSolicitudes(0);
     }
   };
 
