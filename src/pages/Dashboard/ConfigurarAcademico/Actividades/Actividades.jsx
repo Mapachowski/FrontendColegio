@@ -30,8 +30,9 @@ const Actividades = () => {
   // Estado para el idDocente del usuario logueado (si es docente)
   const [idDocenteLogueado, setIdDocenteLogueado] = useState(null);
 
-  // Estado para verificar si hay solicitud de reapertura pendiente
+  // Estado para verificar si hay solicitud de reapertura pendiente o aprobada
   const [tieneSolicitudPendiente, setTieneSolicitudPendiente] = useState(false);
+  const [estadoSolicitud, setEstadoSolicitud] = useState(null); // 'pendiente', 'aprobada', null
 
   // Modales
   const [modalCrearEditarVisible, setModalCrearEditarVisible] = useState(false);
@@ -238,6 +239,7 @@ const Actividades = () => {
   const verificarSolicitudPendiente = async (idUnidad) => {
     if (!esDocente) {
       setTieneSolicitudPendiente(false);
+      setEstadoSolicitud(null);
       return;
     }
 
@@ -245,21 +247,30 @@ const Actividades = () => {
       const response = await apiClient.get('/solicitudes-reapertura/mis-solicitudes');
       if (response.data.success) {
         const solicitudes = response.data.data || [];
-        // Verificar si hay alguna solicitud pendiente para esta unidad
-        const tienePendiente = solicitudes.some(
-          sol => sol.IdUnidad === idUnidad && sol.Estado === 'pendiente'
+        // Buscar solicitud pendiente o aprobada para esta unidad
+        const solicitud = solicitudes.find(
+          sol => sol.IdUnidad === idUnidad && (sol.Estado === 'pendiente' || sol.Estado === 'aprobada')
         );
-        setTieneSolicitudPendiente(tienePendiente);
+
+        if (solicitud) {
+          setTieneSolicitudPendiente(true);
+          setEstadoSolicitud(solicitud.Estado);
+        } else {
+          setTieneSolicitudPendiente(false);
+          setEstadoSolicitud(null);
+        }
       }
     } catch (error) {
       console.error('Error al verificar solicitud pendiente:', error);
       setTieneSolicitudPendiente(false);
+      setEstadoSolicitud(null);
     }
   };
 
   const handleSeleccionarUnidad = async (unidad) => {
     setUnidadSeleccionada(unidad);
     setTieneSolicitudPendiente(false); // Reset mientras carga
+    setEstadoSolicitud(null); // Reset estado
     await cargarActividadesUnidad(unidad.IdUnidad);
     await verificarSolicitudPendiente(unidad.IdUnidad);
   };
@@ -784,17 +795,24 @@ const Actividades = () => {
                   <Tooltip
                     title={
                       tieneSolicitudPendiente
-                        ? 'Ya existe una solicitud de reapertura pendiente para esta unidad'
+                        ? estadoSolicitud === 'aprobada'
+                          ? 'Tu solicitud fue aprobada. El administrador reabrirá la unidad pronto.'
+                          : 'Ya existe una solicitud de reapertura pendiente para esta unidad'
                         : 'Solicitar la reapertura de esta unidad al administrador'
                     }
                   >
                     <Button
-                      type="primary"
+                      type={estadoSolicitud === 'aprobada' ? 'default' : 'primary'}
                       icon={<UnlockOutlined />}
                       onClick={() => setModalSolicitarReaperturaVisible(true)}
                       disabled={tieneSolicitudPendiente}
                     >
-                      {tieneSolicitudPendiente ? 'Solicitud Pendiente' : 'Solicitar Reapertura'}
+                      {tieneSolicitudPendiente
+                        ? estadoSolicitud === 'aprobada'
+                          ? 'Solicitud Aprobada'
+                          : 'Solicitud Pendiente'
+                        : 'Solicitar Reapertura'
+                      }
                     </Button>
                   </Tooltip>
                 ) : (
@@ -964,6 +982,7 @@ const Actividades = () => {
           message.info('Puedes ver el estado de tu solicitud en "Mis Solicitudes de Reapertura"');
           // Marcar que ahora hay una solicitud pendiente para esta unidad
           setTieneSolicitudPendiente(true);
+          setEstadoSolicitud('pendiente');
         }}
       />
 
