@@ -57,6 +57,14 @@ apiClient.interceptors.response.use(
       return Promise.reject(new Error('Sesión expirada. Por favor, inicia sesión nuevamente.'));
     }
 
+    // 400 Bad Request - Solicitud incorrecta (datos inválidos, validaciones fallidas, etc.)
+    if (status === 400) {
+      console.warn('⚠️ Solicitud incorrecta - Datos inválidos');
+      console.warn('   Error del servidor:', error.response?.data);
+      // Mantener el error completo para que el componente pueda acceder a error.response.data
+      return Promise.reject(error);
+    }
+
     // 403 Forbidden - Usuario no tiene permisos
     if (status === 403) {
       console.warn('⛔ Acceso prohibido - Permisos insuficientes');

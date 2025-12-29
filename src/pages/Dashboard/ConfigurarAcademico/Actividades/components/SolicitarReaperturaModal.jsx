@@ -27,19 +27,11 @@ const SolicitarReaperturaModal = ({ visible, onCancel, unidad, asignacion, idDoc
 
     setLoading(true);
     try {
-      // Puede ser IdAsignacionCursoDocente o IdAsignacionDocente dependiendo del backend
-      const idAsignacion = asignacion.IdAsignacionCursoDocente || asignacion.IdAsignacionDocente;
-
       const payload = {
         IdUnidad: unidad.IdUnidad,
-        IdAsignacionCursoDocente: idAsignacion,
         IdDocente: idDocente,
         Motivo: values.Motivo
       };
-
-      console.log('Enviando solicitud de reapertura:', payload);
-      console.log('Asignación completa:', asignacion);
-      console.log('IdDocente:', idDocente);
 
       const response = await apiClient.post('/solicitudes-reapertura', payload);
 
@@ -50,9 +42,22 @@ const SolicitarReaperturaModal = ({ visible, onCancel, unidad, asignacion, idDoc
         onCancel();
       }
     } catch (error) {
-      console.error('Error al enviar solicitud:', error);
-      const errorMsg = error.response?.data?.error || 'Error al enviar la solicitud de reapertura';
-      message.error(errorMsg);
+      console.error('❌ Error al enviar solicitud:', error);
+      console.error('📦 Datos del error:', error.response?.data);
+      console.error('🔢 Status code:', error.response?.status);
+
+      // Extraer el mensaje de error del backend
+      const errorMsg = error.response?.data?.error ||
+                       error.response?.data?.message ||
+                       error.message ||
+                       'Error al enviar la solicitud de reapertura';
+
+      console.log('💬 Mensaje a mostrar:', errorMsg);
+      console.log('🚨 Llamando a message.error con:', errorMsg);
+
+      message.error(errorMsg, 5); // Mostrar por 5 segundos
+
+      console.log('✅ message.error fue llamado');
     } finally {
       setLoading(false);
     }
