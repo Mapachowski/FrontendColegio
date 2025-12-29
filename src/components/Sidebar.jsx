@@ -118,7 +118,7 @@ const Sidebar = ({ user }) => {
       icon: <FileTextOutlined />,
       label: 'Informes Académicos',
       children: [
-        { key: '4-1', label: 'Boletas de Calificaciones', path: '/boletas-calificaciones', icon: <FilePdfOutlined /> },
+        { key: '4-1', label: 'Boletas de Calificaciones', path: '/administrador/boleta-calificaciones', icon: <FilePdfOutlined /> },
         { key: '4-3', label: 'Detalle Calificaciones', path: '/detalle-calificaciones', icon: <TableOutlined /> },
         { key: '4-5', label: 'Promedios', path: '/promedios', icon: <BarChartOutlined /> },
         { key: '4-7', label: 'Maestros Asignados', path: '/maestros-asignados', icon: <UserSwitchOutlined /> },
