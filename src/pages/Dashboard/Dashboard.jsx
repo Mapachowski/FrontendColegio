@@ -26,6 +26,7 @@ import Actividades from './ConfigurarAcademico/Actividades/Actividades';
 import CalificarActividad from './ConfigurarAcademico/Calificaciones/CalificarActividad';
 import MisSolicitudesReapertura from './ConfigurarAcademico/MisSolicitudesReapertura';
 import GestionarSolicitudesReapertura from './Administrador/GestionarSolicitudesReapertura';
+import CierreUnidades from './Administrador/CierreUnidades';
 import BoletaCalificaciones from './Administrador/BoletaCalificaciones';
 import './Dashboard.css';
 
@@ -69,6 +70,7 @@ const Dashboard = ({ user }) => {
             <Route path="/configurar-academico/calificar-actividad" element={<CalificarActividad />} />
             <Route path="/configurar-academico/mis-solicitudes-reapertura" element={<MisSolicitudesReapertura />} />
             <Route path="/administrador/gestionar-solicitudes-reapertura" element={<GestionarSolicitudesReapertura />} />
+            <Route path="/administrador/cierre-unidades" element={<CierreUnidades user={user} />} />
             <Route path="/administrador/boleta-calificaciones" element={<BoletaCalificaciones />} />
             {/* Agrega más rutas */}
           </Routes>

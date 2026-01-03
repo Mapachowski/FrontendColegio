@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Table, Button, Space, message, Tag, Card, Row, Col, Select, Tooltip, Badge, Popconfirm } from 'antd';
-import { PlusOutlined, EditOutlined, EyeOutlined, DeleteOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, UnorderedListOutlined, CalendarOutlined, FormOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
+import { Table, Button, Space, message, Tag, Card, Row, Col, Select, Tooltip, Badge } from 'antd';
+import { PlusOutlined, EditOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, UnorderedListOutlined, CalendarOutlined, FormOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
 import apiClient from '../../../../api/apiClient';
 import { getCicloActual } from '../../../../utils/cicloEscolar';
 import CrearEditarActividadModal from './components/CrearEditarActividadModal';
@@ -309,7 +309,8 @@ const Actividades = () => {
     setModalCalificarVisible(true);
   };
 
-  const handleEliminarActividad = async (idActividad) => {
+  // Función de eliminar deshabilitada - Ahora se usa el Switch de Estado en el modal de Editar
+  /* const handleEliminarActividad = async (idActividad) => {
     // Validar que la unidad esté activa si es docente
     if (esDocente && unidadSeleccionada && unidadSeleccionada.Activa !== 1) {
       message.warning('Solo puedes eliminar actividades de la unidad activa');
@@ -326,7 +327,7 @@ const Actividades = () => {
       console.error('Error al eliminar actividad:', error);
       message.error(error.response?.data?.error || 'Error al eliminar actividad');
     }
-  };
+  }; */
 
   // Filtrar actividades según el estado seleccionado
   const actividadesFiltradas = actividades.filter(actividad => {
@@ -548,7 +549,7 @@ const Actividades = () => {
     {
       title: 'Acciones',
       key: 'acciones',
-      width: 280,
+      width: 220,
       fixed: 'right',
       render: (_, record) => (
         <Space size="small" wrap>
@@ -584,7 +585,8 @@ const Actividades = () => {
               Editar
             </Button>
           </Tooltip>
-          <Popconfirm
+          {/* Botón de Eliminar oculto - Ahora se usa el Switch de Estado en el modal de Editar */}
+          {/* <Popconfirm
             title="¿Eliminar actividad?"
             description="Esta acción no se puede deshacer"
             onConfirm={() => handleEliminarActividad(record.IdActividad)}
@@ -604,7 +606,7 @@ const Actividades = () => {
                 Eliminar
               </Button>
             </Tooltip>
-          </Popconfirm>
+          </Popconfirm> */}
         </Space>
       )
     }

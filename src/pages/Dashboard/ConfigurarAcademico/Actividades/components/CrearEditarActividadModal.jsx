@@ -347,6 +347,7 @@ const CrearEditarActividadModal = ({ visible, actividad, unidad, modoEdicion, on
           name="Estado"
           label="Estado de la Actividad"
           valuePropName="checked"
+          help="Las actividades inactivas no se mostrarán a los estudiantes ni contarán para el puntaje total"
         >
           <Switch
             checkedChildren="Activa"
