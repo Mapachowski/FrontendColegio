@@ -64,10 +64,11 @@ const Login = ({ onLoginSuccess }) => {
               'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-              Accion: `Inicio de sesión - ${trimmedNombreUsuario}`,
+              Accion: 'Inicio de sesión',
               FechaBitacora: new Date().toISOString(),
               Ordenador: window.navigator.userAgent,
-              IdUsuario: usuario.IdUsuario
+              IdUsuario: usuario.IdUsuario,
+              Observacion: `Usuario logueado: ${trimmedNombreUsuario}`
             })
           });
         } catch (errBitacora) {

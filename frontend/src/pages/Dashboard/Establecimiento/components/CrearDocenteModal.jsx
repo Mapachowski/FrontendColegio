@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Form, Input, message, Divider } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, BookOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, BookOutlined, IdcardOutlined } from '@ant-design/icons';
 import apiClient from '../../../../api/apiClient';
 
 const CrearDocenteModal = ({ visible, onCancel, onSuccess }) => {
@@ -19,7 +19,7 @@ const CrearDocenteModal = ({ visible, onCancel, onSuccess }) => {
         NombreCompleto: values.NombreCompleto,
         Contrasena: values.Contrasena,
         IdRol: 4, // Rol de Docente
-        IdColaborador: IdColaborador,
+        CreadoPor: String(IdColaborador),
       };
 
       const responseUsuario = await apiClient.post('/usuarios', usuarioPayload);
@@ -34,6 +34,7 @@ const CrearDocenteModal = ({ visible, onCancel, onSuccess }) => {
       const docentePayload = {
         idUsuario: idUsuarioCreado,
         NombreDocente: values.NombreCompleto, // Usa el mismo nombre completo del usuario
+        DPI: values.DPI,
         Email: values.Email,
         Telefono: values.Telefono,
         Especialidad: values.Especialidad,
@@ -148,6 +149,21 @@ const CrearDocenteModal = ({ visible, onCancel, onSuccess }) => {
         </Form.Item>
 
         <Divider orientation="left">Datos del Docente</Divider>
+
+        <Form.Item
+          name="DPI"
+          label="DPI"
+          rules={[
+            { required: true, message: 'Por favor ingrese el DPI del docente' },
+            { pattern: /^[0-9]{13}$/, message: 'El DPI debe tener exactamente 13 dígitos' }
+          ]}
+        >
+          <Input
+            prefix={<IdcardOutlined />}
+            placeholder="1234567890101"
+            maxLength={13}
+          />
+        </Form.Item>
 
         <Form.Item
           name="Email"

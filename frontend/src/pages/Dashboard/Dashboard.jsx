@@ -8,6 +8,8 @@ import Preferencias from './Establecimiento/Preferencias';
 import Docentes from './Establecimiento/Docentes';
 import Cursos from './Establecimiento/Cursos';
 import CredencialesAccesoDocentes from './Establecimiento/CredencialesAccesoDocentes';
+import UsoPlataforma from './Establecimiento/UsoPlataforma';
+import MigracionUsuarios from './Establecimiento/MigracionUsuarios';
 import Inscripciones from './Inscripciones/Inscripciones';
 import CrearPago from './Pagos/CrearPagos';
 import BuscarRecibo from './Pagos/BuscarRecibo';
@@ -47,6 +49,8 @@ const Dashboard = ({ user }) => {
             <Route path="/establecimiento/docentes" element={<Docentes />} />
             <Route path="/establecimiento/cursos" element={<Cursos />} />
             <Route path="/establecimiento/credenciales-docente" element={<CredencialesAccesoDocentes />} />
+            <Route path="/uso-plataforma" element={<UsoPlataforma />} />
+            <Route path="/migracion-usuarios" element={<MigracionUsuarios />} />
             <Route path="/inscripciones/inscripciones" element={<Inscripciones />} />
             <Route path="/pagos/crear" element={<CrearPago />} />
             <Route path="/pagos/buscar-recibo" element={<BuscarRecibo />} />

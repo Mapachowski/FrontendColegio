@@ -55,10 +55,11 @@ const Sidebar = ({ user }) => {
       label: 'Establecimiento',
       children: [
         { key: '1-1', label: 'Preferencias', path: '/dashboard/preferencias', icon: <ToolOutlined /> },
-        { key: '1-2', label: 'Uso de Plataforma', path: '/uso-plataforma', icon: <DesktopOutlined /> },
-        { key: '1-3', label: 'Credenciales de acceso Docente', path: '/dashboard/establecimiento/credenciales-docente', icon: <IdcardOutlined /> },
-        { key: '1-4', label: 'Docentes', path: '/dashboard/establecimiento/docentes', icon: <TeamOutlined /> },
-        { key: '1-5', label: 'Cursos', path: '/dashboard/establecimiento/cursos', icon: <BookOutlined /> },
+        { key: '1-2', label: 'Uso de Plataforma', path: '/dashboard/uso-plataforma', icon: <DesktopOutlined /> },
+        { key: '1-3', label: 'Migración de Usuarios', path: '/dashboard/migracion-usuarios', icon: <UserAddOutlined /> },
+        { key: '1-4', label: 'Credenciales de acceso Docente', path: '/dashboard/establecimiento/credenciales-docente', icon: <IdcardOutlined /> },
+        { key: '1-5', label: 'Docentes', path: '/dashboard/establecimiento/docentes', icon: <TeamOutlined /> },
+        { key: '1-6', label: 'Cursos', path: '/dashboard/establecimiento/cursos', icon: <BookOutlined /> },
       ],
     },
     {

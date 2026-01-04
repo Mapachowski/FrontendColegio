@@ -154,6 +154,12 @@ const HeaderComponent = () => {
           <BellOutlined style={{ fontSize: 20, cursor: 'pointer', marginRight: 24, color: '#fff' }} />
         </Dropdown>
 
+        <LogoutOutlined
+          style={{ fontSize: 20, cursor: 'pointer', marginRight: 24, color: '#fff' }}
+          onClick={handleLogout}
+          title="Cerrar sesión"
+        />
+
         <Dropdown overlay={userMenu} trigger={['click']}>
           <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
             <span style={{ marginRight: 8, color: '#fff', fontWeight: 500 }}>

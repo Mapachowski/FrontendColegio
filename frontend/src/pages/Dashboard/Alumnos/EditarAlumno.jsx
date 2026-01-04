@@ -77,18 +77,36 @@ const EditarAlumno = () => {
       setInscripcionActiva(esActivo);
       setObservacion(record.ComentarioEstado || '');
 
-      // Mapear datos de familia directamente del SP (no necesita llamada adicional)
+      // Cargar datos completos de familia desde el endpoint
       if (record.IdFamilia) {
-        const familiaFromRecord = {
-          IdFamilia: record.IdFamilia,
-          NombreFamilia: record.NombreFamilia,
-          NombreRecibo: record.NombreFamilia, // Usar NombreFamilia si no viene NombreRecibo
-          TelefonoRecibo: record.TelefonoContacto,
-          CorreoElectronico: record.EmailContacto,
-          DireccionRecibo: record.Direccion,
-        };
-        setFamiliaData(familiaFromRecord);
-        console.log('FAMILIA MAPEADA:', familiaFromRecord);
+        try {
+          const familiaResponse = await apiClient.get(`/familias/${record.IdFamilia}`);
+          const familiaCompleta = familiaResponse.data.data || familiaResponse.data;
+
+          const familiaFromAPI = {
+            IdFamilia: record.IdFamilia,
+            NombreFamilia: record.NombreFamilia,
+            NombreRecibo: familiaCompleta.NombreRecibo || '', // Campo real de facturación (DPI/NIT)
+            TelefonoRecibo: familiaCompleta.TelefonoContacto || record.TelefonoContacto || '',
+            CorreoElectronico: familiaCompleta.EmailContacto || record.EmailContacto || '',
+            DireccionRecibo: familiaCompleta.DireccionRecibo || record.Direccion || '',
+          };
+          setFamiliaData(familiaFromAPI);
+          console.log('FAMILIA CARGADA DESDE API:', familiaFromAPI);
+        } catch (error) {
+          console.error('Error al cargar datos de familia:', error);
+          // Fallback a datos del SP si falla la llamada
+          const familiaFromRecord = {
+            IdFamilia: record.IdFamilia,
+            NombreFamilia: record.NombreFamilia,
+            NombreRecibo: '',
+            TelefonoRecibo: record.TelefonoContacto || '',
+            CorreoElectronico: record.EmailContacto || '',
+            DireccionRecibo: record.Direccion || '',
+          };
+          setFamiliaData(familiaFromRecord);
+          console.log('FAMILIA MAPEADA DESDE RECORD (FALLBACK):', familiaFromRecord);
+        }
       }
 
       console.log('DATOS FINALES CARGADOS:', {
