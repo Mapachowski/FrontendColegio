@@ -19,7 +19,7 @@ const CrearDocenteModal = ({ visible, onCancel, onSuccess }) => {
         NombreCompleto: values.NombreCompleto,
         Contrasena: values.Contrasena,
         IdRol: 4, // Rol de Docente
-        CreadoPor: String(IdColaborador),
+        IdColaborador: String(IdColaborador),
       };
 
       const responseUsuario = await apiClient.post('/usuarios', usuarioPayload);

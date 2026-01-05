@@ -245,12 +245,14 @@ const UsoPlataforma = () => {
               value={usuarioFiltro || undefined}
               onChange={(value) => setUsuarioFiltro(value)}
               allowClear
-              filterOption={(input, option) =>
-                option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }
+              optionFilterProp="label"
             >
               {usuarios.map((usuario) => (
-                <Option key={usuario.IdUsuario} value={usuario.IdUsuario}>
+                <Option
+                  key={usuario.IdUsuario}
+                  value={usuario.IdUsuario}
+                  label={`${usuario.NombreUsuario} - ${usuario.NombreCompleto}`}
+                >
                   {usuario.NombreUsuario} - {usuario.NombreCompleto}
                 </Option>
               ))}

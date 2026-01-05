@@ -67,31 +67,22 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
         return;
       }
 
-      if (!state.user?.IdColaborador) {
-        message.error('Error: No se detecta el usuario logueado. Verifica sesión.');
+      // Obtener IdColaborador del localStorage
+      const userFromStorage = JSON.parse(localStorage.getItem('user') || '{}');
+      const IdColaborador = userFromStorage.IdUsuario;
+
+      if (!IdColaborador) {
+        console.error('ERROR: IdUsuario no existe o es null');
+        message.error('No se detectó usuario. Recarga la página.');
         return;
       }
 
-      // LOGS DE DEPURACIÓN (NO LOS BORRES HASTA QUE FUNCIONE)
-        console.log('LOCALSTORAGE USER (raw):', localStorage.getItem('user'));
-        console.log('LOCALSTORAGE USER (parsed):', JSON.parse(localStorage.getItem('user') || '{}'));
-
-        const userFromStorage = JSON.parse(localStorage.getItem('user') || '{}');
-        console.log('userFromStorage.IdUsuario:', userFromStorage.IdUsuario);
-        console.log('userFromStorage.rol:', userFromStorage.rol);
-
-        if (!userFromStorage?.IdUsuario) {
-          console.error('ERROR: IdUsuario no existe o es null');
-          message.error('No se detectó usuario. Recarga la página.');
-          return;
-        }
-
-        console.log('ENVIANDO A BACKEND:', {
-          NombreFamilia: values.NombreFamilia,
-          IdColaborador: userFromStorage.IdUsuario,
-          DireccionRecibo: values.DireccionRecibo,
-          DPI_Representante: values.DPI_Representante,
-        });
+      console.log('ENVIANDO A BACKEND:', {
+        NombreFamilia: values.NombreFamilia,
+        IdColaborador: IdColaborador,
+        DireccionRecibo: values.DireccionRecibo,
+        NombreRecibo: values.NombreRecibo,
+      });
 
       // PASO 1: CREAR USUARIO DE LA FAMILIA PRIMERO
       let IdUsuarioFamilia = null;
@@ -105,7 +96,7 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
           NombreCompleto: values.NombreFamilia,
           Contrasena: nombreUsuarioFamilia, // La contraseña es igual al usuario
           IdRol: 3, // Rol de familia
-          IdColaborador: userFromStorage.IdUsuario
+          IdColaborador: IdColaborador
         };
 
         console.log('=== CREANDO USUARIO FAMILIA ===');
@@ -132,7 +123,7 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
         Direccion: values.Direccion,
         TelefonoContacto: values.TelefonoContacto,
         EmailContacto: values.EmailContacto,
-        IdColaborador: userFromStorage.IdUsuario,
+        IdColaborador: IdColaborador,
         NombreRecibo: values.NombreRecibo || null,
         DireccionRecibo: values.DireccionRecibo || null,
         IdUsuario: IdUsuarioFamilia, // Incluir el IdUsuario si se creó
@@ -158,7 +149,7 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
           IdFamilia: nuevaFamilia.IdFamilia,
           IdResponsableTipo: tipo,
           EsResponsable: esPrincipal,
-          IdColaborador: state.user.IdColaborador,
+          IdColaborador: IdColaborador,
         });
       };
 

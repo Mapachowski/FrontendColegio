@@ -208,19 +208,6 @@ const PagosHoy = () => {
             }}
             scroll={{ x: 2200 }}
             bordered
-            summary={() => (
-              <Table.Summary fixed>
-                <Table.Summary.Row>
-                  <Table.Summary.Cell index={0} colSpan={7} align="right">
-                    <strong>TOTAL DEL DÍA:</strong>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={1} align="right">
-                    <strong style={{ color: '#52c41a', fontSize: '16px' }}>Q {totalMonto.toFixed(2)}</strong>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={2} colSpan={4} />
-                </Table.Summary.Row>
-              </Table.Summary>
-            )}
           />
         </Card>
       )}

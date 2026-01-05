@@ -2,13 +2,22 @@
 import { useReducer, useEffect } from 'react';
 import apiClient from '../../../../api/apiClient'; // Ajusta la ruta
 
-const user = JSON.parse(localStorage.getItem('user')) || { IdUsuario: null };
+// Función para obtener IdColaborador del localStorage de forma segura
+const getIdColaborador = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user?.IdUsuario || null;
+  } catch (error) {
+    console.error('Error al obtener usuario del localStorage:', error);
+    return null;
+  }
+};
 
 const initialState = {
   paso: 0,
   modo: null,
   showInitialPopup: true,
-  user: { IdColaborador: user?.IdUsuario || null },
+  user: { IdColaborador: getIdColaborador() },
   alumno: {
     Carnet: '',
     Matricula: '',
@@ -89,6 +98,8 @@ function reducer(state, action) {
       return { ...state, showInitialPopup: true };
     case 'HIDE_INITIAL_POPUP':
       return { ...state, showInitialPopup: false };
+    case 'UPDATE_USER':
+      return { ...state, user: { ...state.user, ...action.payload } };
     default:
       return state;
   }
@@ -96,7 +107,15 @@ function reducer(state, action) {
 
 export const useInscripcionForm = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
-  
+
+  // Verificar y actualizar IdColaborador si cambió o no existe
+  useEffect(() => {
+    const IdColaborador = getIdColaborador();
+    if (IdColaborador && IdColaborador !== state.user.IdColaborador) {
+      dispatch({ type: 'UPDATE_USER', payload: { IdColaborador } });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let isMounted = true;

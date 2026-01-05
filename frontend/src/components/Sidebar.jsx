@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Layout, Menu } from 'antd';
 import { Link } from 'react-router-dom';
 import {
@@ -16,19 +16,12 @@ import {
   UserDeleteOutlined,
   IdcardOutlined,
   TeamOutlined,
-  DownloadOutlined,
   CalendarOutlined,
   FilePdfOutlined,
   TableOutlined,
-  UserSwitchOutlined,
-  PlusSquareOutlined,
-  AppstoreAddOutlined,
   SwapOutlined,
   WalletOutlined,
-  SettingFilled,
   ExclamationCircleOutlined,
-  CloseCircleOutlined,
-  CreditCardOutlined,
   FundViewOutlined,
   HistoryOutlined,
   FileSearchOutlined,
@@ -56,11 +49,11 @@ const Sidebar = ({ user }) => {
       children: [
         { key: '1-1', label: 'Preferencias', path: '/dashboard/preferencias', icon: <ToolOutlined /> },
         { key: '1-2', label: 'Uso de Plataforma', path: '/dashboard/uso-plataforma', icon: <DesktopOutlined /> },
-        { key: '1-3', label: 'Migración de Usuarios', path: '/dashboard/migracion-usuarios', icon: <UserAddOutlined /> },
+        // { key: '1-3', label: 'Migración de Usuarios', path: '/dashboard/migracion-usuarios', icon: <UserAddOutlined /> }, // Ocultado temporalmente
         { key: '1-4', label: 'Credenciales de acceso Docente', path: '/dashboard/establecimiento/credenciales-docente', icon: <IdcardOutlined /> },
         { key: '1-5', label: 'Docentes', path: '/dashboard/establecimiento/docentes', icon: <TeamOutlined /> },
         { key: '1-6', label: 'Cursos', path: '/dashboard/establecimiento/cursos', icon: <BookOutlined /> },
-      ],
+      ].filter(Boolean),
     },
     {
       key: '2',
@@ -73,8 +66,8 @@ const Sidebar = ({ user }) => {
         { key: '2-4', label: 'Estudiantes Retirados', path: '/dashboard/alumnos/estudiantes-retirados', icon: <UserDeleteOutlined /> },
         { key: '2-5', label: 'Credenciales de Acceso', path: '/dashboard/estudiantes/credenciales-acceso', icon: <IdcardOutlined /> },
         { key: '2-6', label: 'Listado Padres de Familia', path: '/dashboard/alumnos/listado-responsables', icon: <TeamOutlined /> },
-        { key: '2-7', label: 'Exportar Información', path: '/exportar-informacion', icon: <DownloadOutlined /> },
-      ],
+        // { key: '2-7', label: 'Exportar Información', path: '/exportar-informacion', icon: <DownloadOutlined /> }, // Ocultado temporalmente
+      ].filter(Boolean),
     },
     {
       key: '3',
@@ -93,19 +86,19 @@ const Sidebar = ({ user }) => {
         { key: '4-1', label: 'Boletas de Calificaciones', path: '/boletas-calificaciones', icon: <FilePdfOutlined /> },
         { key: '4-3', label: 'Detalle Calificaciones', path: '/detalle-calificaciones', icon: <TableOutlined /> },
         { key: '4-5', label: 'Promedios', path: '/promedios', icon: <BarChartOutlined /> },
-        { key: '4-7', label: 'Maestros Asignados', path: '/maestros-asignados', icon: <UserSwitchOutlined /> },
-      ],
+        // { key: '4-7', label: 'Maestros Asignados', path: '/maestros-asignados', icon: <UserSwitchOutlined /> }, // Eliminado - no se utiliza
+      ].filter(Boolean),
     },
     {
       key: '5',
       icon: <SettingOutlined />,
       label: 'Configurar Académico',
       children: [
-        { key: '5-1', label: 'Tipos de Actividades', path: '/tipos-actividades', icon: <PlusSquareOutlined /> },
-        { key: '5-2', label: 'Administrar Cursos', path: '/administrar-cursos', icon: <AppstoreAddOutlined /> },
+        // { key: '5-1', label: 'Tipos de Actividades', path: '/tipos-actividades', icon: <PlusSquareOutlined /> }, // Eliminado - no se utiliza
+        // { key: '5-2', label: 'Administrar Cursos', path: '/administrar-cursos', icon: <AppstoreAddOutlined /> }, // Eliminado - no se utiliza
         { key: '5-3', label: 'Asignación de Cursos', path: '/dashboard/configurar-academico/asignacion-cursos', icon: <SwapOutlined /> },
         { key: '5-4', label: 'Configurar Unidades', path: '/configurar-unidades', icon: <UnorderedListOutlined /> },
-      ],
+      ].filter(Boolean),
     },
     {
       key: '6',
@@ -114,11 +107,11 @@ const Sidebar = ({ user }) => {
       children: [
         { key: '6-1', label: 'Ingreso de Pagos', path: '/dashboard/pagos/crear', icon: <WalletOutlined /> },
         { key: '6-2', label: 'Buscar Recibo', path: '/dashboard/pagos/buscar-recibo', icon: <FileSearchOutlined /> },
-        { key: '6-5', label: 'Configuración de Rubros', path: '/configurar-rubros', icon: <SettingFilled /> },
+        // { key: '6-5', label: 'Configuración de Rubros', path: '/configurar-rubros', icon: <SettingFilled /> }, // Eliminado - no se utiliza
         { key: '6-6', label: 'Insolventes', path: '/dashboard/pagos/insolventes', icon: <ExclamationCircleOutlined /> },
-        { key: '6-7', label: 'Exoneración Mora', path: '/exoneracion-mora', icon: <CloseCircleOutlined /> },
-        { key: '6-8', label: 'Métodos de Pago', path: '/metodos-pago', icon: <CreditCardOutlined /> },
-      ],
+        // { key: '6-7', label: 'Exoneración Mora', path: '/exoneracion-mora', icon: <CloseCircleOutlined /> }, // Eliminado - no se utiliza
+        // { key: '6-8', label: 'Métodos de Pago', path: '/metodos-pago', icon: <CreditCardOutlined /> }, // Eliminado - no se utiliza
+      ].filter(Boolean),
     },
     {
       key: '7',
