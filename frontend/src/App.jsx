@@ -7,6 +7,10 @@ const App = () => {
   const [user, setUser] = useState(null);
   const handleLoginSuccess = (userData) => {
     setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+    if (userData.token) {
+      localStorage.setItem('token', userData.token);
+    }
   };
   const handleLogout = () => {
     setUser(null);

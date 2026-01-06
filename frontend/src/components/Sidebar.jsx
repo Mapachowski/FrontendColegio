@@ -124,10 +124,10 @@ const Sidebar = ({ user }) => {
     },
   ].map((item) => {
     // Administrador (rol 1): ve todo
-    if (user.rol === 1) return item;
+    if (user.IdRol === 1) return item;
 
     // Operador (rol 2): Estudiantes, Pagos, Académico, Informes Académicos, Configurar Académico
-    if (user.rol === 2) {
+    if (user.IdRol === 2) {
       if (['2', '3', '4', '5', '6'].includes(item.key)) {
         return item;
       }
@@ -135,7 +135,7 @@ const Sidebar = ({ user }) => {
     }
 
     // Familia (rol 3): solo ciertas opciones en Académico e Informes Académicos
-    if (user.rol === 3) {
+    if (user.IdRol === 3) {
       if (item.key === '3') {
         return {
           ...item,
@@ -156,7 +156,7 @@ const Sidebar = ({ user }) => {
     }
 
     // Docente (rol 4): acceso completo a Académico e Informes Académicos
-    if (user.rol === 4) {
+    if (user.IdRol === 4) {
       if (['3', '4'].includes(item.key)) {
         return item;
       }
@@ -164,7 +164,7 @@ const Sidebar = ({ user }) => {
     }
 
     // Alumno (rol 5): solo Académico e Informes Académicos (completos)
-    if (user.rol === 5) {
+    if (user.IdRol === 5) {
       if (['3', '4'].includes(item.key)) {
         return item;
       }
