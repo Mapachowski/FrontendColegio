@@ -108,11 +108,10 @@ const CierreUnidades = ({ user }) => {
 
     setLoading(true);
     try {
-      const response = await apiClient.post(`/cierre-unidades/actualizar-todos-por-numero/${unidadSeleccionada}`);
-      if (response.data.success) {
-        message.success(`Estado actualizado: ${response.data.procesados} cursos procesados`);
-        await cargarDatosUnidad(unidadSeleccionada);
-      }
+      // Simplemente recargar los datos desde la caché (instantáneo)
+      // El estado ya se actualiza automáticamente al crear/editar actividades o calificar
+      await cargarDatosUnidad(unidadSeleccionada);
+      message.success('Vista actualizada correctamente');
     } catch (error) {
       console.error('Error al actualizar estado:', error);
       message.error('Error al actualizar el estado');
@@ -335,7 +334,7 @@ const CierreUnidades = ({ user }) => {
                 onClick={actualizarEstado}
                 loading={loading}
               >
-                Actualizar Estado
+                Refrescar
               </Button>
             </Col>
           </Row>

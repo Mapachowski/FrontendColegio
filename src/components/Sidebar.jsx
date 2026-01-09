@@ -22,6 +22,7 @@ import {
   FilePdfOutlined,
   TableOutlined,
   UnlockOutlined,
+  LockOutlined,
   UserSwitchOutlined,
   PlusSquareOutlined,
   AppstoreAddOutlined,
@@ -87,6 +88,7 @@ const Sidebar = ({ user }) => {
         { key: '1-4', label: 'Docentes', path: '/dashboard/establecimiento/docentes', icon: <TeamOutlined /> },
         { key: '1-5', label: 'Cursos', path: '/dashboard/establecimiento/cursos', icon: <BookOutlined /> },
         { key: '1-6', label: 'Solicitudes de Reapertura', path: '/dashboard/administrador/gestionar-solicitudes-reapertura', icon: <UnlockOutlined />, badge: pendientesSolicitudes },
+        { key: '1-7', label: 'Cierre de Unidades', path: '/dashboard/administrador/cierre-unidades', icon: <LockOutlined /> },
       ],
     },
     {
@@ -120,7 +122,7 @@ const Sidebar = ({ user }) => {
       icon: <FileTextOutlined />,
       label: 'Informes Académicos',
       children: [
-        { key: '4-1', label: 'Boletas de Calificaciones', path: '/administrador/boleta-calificaciones', icon: <FilePdfOutlined /> },
+        { key: '4-1', label: 'Boletas de Calificaciones', path: '/dashboard/administrador/boleta-calificaciones', icon: <FilePdfOutlined /> },
         { key: '4-3', label: 'Detalle Calificaciones', path: '/detalle-calificaciones', icon: <TableOutlined /> },
         { key: '4-5', label: 'Promedios', path: '/promedios', icon: <BarChartOutlined /> },
         { key: '4-7', label: 'Maestros Asignados', path: '/maestros-asignados', icon: <UserSwitchOutlined /> },

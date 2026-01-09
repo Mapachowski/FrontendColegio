@@ -3,12 +3,14 @@ import { Card, Row, Col, Select, Button, Table, Space, message, Empty, Spin, Mod
 import { FileTextOutlined, PrinterOutlined, EyeOutlined, FilePdfOutlined, ReloadOutlined } from '@ant-design/icons';
 import apiClient from '../../../api/apiClient';
 import { getCicloActual } from '../../../utils/cicloEscolar';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const { Option } = Select;
 
 const BoletaCalificaciones = () => {
+  console.log('🎯 BoletaCalificaciones component mounted');
+
   // Estados para filtros
   const [filtros, setFiltros] = useState({
     cicloEscolar: getCicloActual(),
@@ -109,99 +111,162 @@ const BoletaCalificaciones = () => {
   };
 
   const generarPDFBoleta = async (dataBoleta) => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    const margin = 15;
+    try {
+      console.log('🔧 Iniciando generación de PDF');
+      console.log('📦 Data recibida:', dataBoleta);
 
-    // Encabezado del colegio
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('BOLETA DE CALIFICACIONES', pageWidth / 2, 20, { align: 'center' });
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const margin = 15;
 
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Ciclo Escolar ${dataBoleta.estudiante.CicloEscolar}`, pageWidth / 2, 27, { align: 'center' });
+      console.log('📄 Documento creado');
 
-    // Información del estudiante
-    let yPosition = 40;
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text('INFORMACIÓN DEL ESTUDIANTE', margin, yPosition);
+      // Encabezado del colegio
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('BOLETA DE CALIFICACIONES', pageWidth / 2, 20, { align: 'center' });
 
-    yPosition += 7;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Código: ${dataBoleta.estudiante.Codigo}`, margin, yPosition);
-    doc.text(`Grado: ${dataBoleta.estudiante.NombreGrado}`, pageWidth / 2, yPosition);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Ciclo Escolar ${dataBoleta.estudiante.CicloEscolar}`, pageWidth / 2, 27, { align: 'center' });
 
-    yPosition += 6;
-    doc.text(`Nombre: ${dataBoleta.estudiante.Nombres} ${dataBoleta.estudiante.Apellidos}`, margin, yPosition);
+      console.log('✅ Encabezado agregado');
 
-    yPosition += 6;
-    doc.text(`Sección: ${dataBoleta.estudiante.NombreSeccion}`, margin, yPosition);
-    doc.text(`Jornada: ${dataBoleta.estudiante.NombreJornada}`, pageWidth / 2, yPosition);
+      // Información del estudiante (centrada y organizada)
+      let yPosition = 40;
 
-    // Tabla de calificaciones
-    yPosition += 12;
+      // Nombre completo del estudiante (centrado)
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      const nombreCompleto = `${dataBoleta.estudiante.Nombres} ${dataBoleta.estudiante.Apellidos}`;
+      doc.text(nombreCompleto, pageWidth / 2, yPosition, { align: 'center' });
 
-    const tableData = dataBoleta.cursos.map(curso => {
-      const unidades = [1, 2, 3, 4].map(numUnidad => {
-        const unidad = curso.unidades.find(u => u.NumeroUnidad === numUnidad);
-        return unidad ? unidad.NotaFinal : '-';
+      yPosition += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+
+      // Código y Grado (en la misma línea, centrados)
+      const codigoGrado = `Código: ${dataBoleta.estudiante.Codigo}`;
+      const gradoTexto = `Grado: ${dataBoleta.estudiante.NombreGrado} ${dataBoleta.estudiante.NombreSeccion}`;
+      doc.text(codigoGrado, margin, yPosition);
+      doc.text(gradoTexto, pageWidth - margin, yPosition, { align: 'right' });
+
+      yPosition += 6;
+      // Jornada (centrada)
+      doc.text(`Jornada: ${dataBoleta.estudiante.NombreJornada}`, pageWidth / 2, yPosition, { align: 'center' });
+
+      console.log('✅ Información del estudiante agregada');
+
+      // Tabla de calificaciones
+      yPosition += 12;
+
+      console.log('🔄 Procesando cursos...');
+      console.log('📚 Total cursos:', dataBoleta.cursos.length);
+
+      const tableData = dataBoleta.cursos.map((curso, index) => {
+        console.log(`  📖 Curso ${index + 1}:`, curso);
+
+        const unidades = [1, 2, 3, 4].map(numUnidad => {
+          const unidad = curso.unidades.find(u => u.NumeroUnidad === numUnidad);
+
+          // Si no existe la unidad o la nota es null/undefined, mostrar guión
+          if (!unidad || unidad.NotaFinal === null || unidad.NotaFinal === undefined) {
+            return '-';
+          }
+
+          // Si la nota es 0 o mayor, mostrarla (0 es válido)
+          return unidad.NotaFinal.toString();
+        });
+
+        // Promedio: mostrar guión si es null, 0, o vacío
+        const promedioMostrar = (curso.promedio === null || curso.promedio === undefined || curso.promedio === '')
+          ? '-'
+          : curso.promedio.toString();
+
+        return [
+          curso.NombreCurso,
+          ...unidades,
+          promedioMostrar
+        ];
       });
 
-      return [
-        curso.NombreCurso,
-        ...unidades,
-        curso.promedio.toString()
-      ];
-    });
+      console.log('✅ Datos de tabla preparados:', tableData);
 
-    doc.autoTable({
-      startY: yPosition,
-      head: [['Curso', 'Unidad 1', 'Unidad 2', 'Unidad 3', 'Unidad 4', 'Promedio']],
-      body: tableData,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: 255,
-        fontStyle: 'bold',
-        halign: 'center'
-      },
-      columnStyles: {
-        0: { halign: 'left', cellWidth: 70 },
-        1: { halign: 'center', cellWidth: 20 },
-        2: { halign: 'center', cellWidth: 20 },
-        3: { halign: 'center', cellWidth: 20 },
-        4: { halign: 'center', cellWidth: 20 },
-        5: { halign: 'center', cellWidth: 25, fontStyle: 'bold' }
-      },
-      styles: {
-        fontSize: 9,
-        cellPadding: 3
-      }
-    });
+      console.log('📊 Creando tabla...');
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Curso', 'U1', 'U2', 'U3', 'U4', 'Prom']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: 255,
+          fontStyle: 'bold',
+          halign: 'center',
+          fontSize: 10
+        },
+        columnStyles: {
+          0: { halign: 'left', cellWidth: 80 },
+          1: { halign: 'center', cellWidth: 18 },
+          2: { halign: 'center', cellWidth: 18 },
+          3: { halign: 'center', cellWidth: 18 },
+          4: { halign: 'center', cellWidth: 18 },
+          5: { halign: 'center', cellWidth: 22, fontStyle: 'bold', fillColor: [240, 240, 240] }
+        },
+        styles: {
+          fontSize: 10,
+          cellPadding: 4,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1
+        },
+        margin: { left: margin, right: margin }
+      });
 
-    // Promedio General
-    const finalY = doc.lastAutoTable.finalY + 10;
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`PROMEDIO GENERAL: ${dataBoleta.promedioGeneral} puntos`, pageWidth / 2, finalY, { align: 'center' });
+      console.log('✅ Tabla creada');
 
-    // Footer
-    const footerY = pageHeight - 20;
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'italic');
-    doc.text('Sistema de Gestión Académica', pageWidth / 2, footerY, { align: 'center' });
-    doc.text(`Generado el ${new Date().toLocaleDateString('es-GT')}`, pageWidth / 2, footerY + 4, { align: 'center' });
+      // Promedio General
+      const finalY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
 
-    return doc;
+      // Mostrar guión si el promedio general es null o vacío
+      const promedioGeneralTexto = (dataBoleta.promedioGeneral === null || dataBoleta.promedioGeneral === undefined || dataBoleta.promedioGeneral === '')
+        ? 'PROMEDIO GENERAL: - puntos'
+        : `PROMEDIO GENERAL: ${dataBoleta.promedioGeneral} puntos`;
+
+      doc.text(promedioGeneralTexto, pageWidth / 2, finalY, { align: 'center' });
+
+      console.log('✅ Promedio general agregado');
+
+      // Footer
+      const footerY = pageHeight - 20;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Sistema de Gestión Académica', pageWidth / 2, footerY, { align: 'center' });
+      doc.text(`Generado el ${new Date().toLocaleDateString('es-GT')}`, pageWidth / 2, footerY + 4, { align: 'center' });
+
+      console.log('✅ Footer agregado');
+      console.log('✅ PDF completado exitosamente');
+
+      return doc;
+
+    } catch (error) {
+      console.error('❌ Error en generarPDFBoleta:', error);
+      console.error('Stack:', error.stack);
+      throw error;
+    }
   };
 
   const imprimirBoleta = async (idAlumno) => {
     try {
       message.loading({ content: 'Generando PDF...', key: 'pdf' });
+
+      // 🔍 DEBUG: Ver qué estamos enviando al endpoint individual
+      console.log('📤 Solicitando boleta individual:', {
+        idAlumno,
+        params: filtros
+      });
 
       const response = await apiClient.get(
         `/boleta-calificaciones/calificaciones/${idAlumno}`,
@@ -209,13 +274,24 @@ const BoletaCalificaciones = () => {
       );
 
       if (response.data.success) {
+        console.log('✅ Response exitosa del backend');
         const dataBoleta = response.data.data;
+        console.log('📊 Datos de la boleta:', dataBoleta);
+        console.log('👤 Estudiante:', dataBoleta.estudiante);
+        console.log('📚 Cursos:', dataBoleta.cursos);
+
+        console.log('🔨 Generando PDF...');
         const doc = await generarPDFBoleta(dataBoleta);
+        console.log('✅ PDF generado:', doc);
 
         const fileName = `Boleta_${dataBoleta.estudiante.Codigo}_${dataBoleta.estudiante.Nombres}_${dataBoleta.estudiante.Apellidos}.pdf`;
+        console.log('💾 Guardando como:', fileName);
         doc.save(fileName);
 
         message.success({ content: 'PDF generado exitosamente', key: 'pdf' });
+        console.log('✅ Proceso completado');
+      } else {
+        console.log('❌ Response no exitosa:', response.data);
       }
     } catch (error) {
       console.error('Error al generar PDF:', error);
@@ -234,13 +310,34 @@ const BoletaCalificaciones = () => {
 
       // Obtener todas las boletas en lote
       const idsAlumnos = estudiantes.map(est => est.IdAlumno);
-      const response = await apiClient.post('/boleta-calificaciones/lote', {
-        idsAlumnos,
-        ...filtros
-      });
+
+      const payload = {
+        cicloEscolar: filtros.cicloEscolar,
+        idGrado: filtros.idGrado,
+        idSeccion: filtros.idSeccion,
+        idJornada: filtros.idJornada,
+        estudiantes: idsAlumnos
+      };
+
+      // 🔍 DEBUG: Ver qué estamos enviando
+      console.log('📤 Enviando al backend (lote):', payload);
+      console.log('📋 Primer estudiante de ejemplo:', estudiantes[0]);
+
+      const response = await apiClient.post('/boleta-calificaciones/lote', payload);
 
       if (response.data.success) {
         const boletas = response.data.data;
+
+        // 🔍 DEBUG: Ver estructura de datos del backend
+        console.log('📦 Respuesta completa del backend:', response.data);
+        console.log('📊 Total de boletas recibidas:', boletas.length);
+        console.log('🎯 Primera boleta (estructura):', boletas[0]);
+
+        if (!boletas || boletas.length === 0) {
+          message.warning('No se recibieron boletas del backend');
+          return;
+        }
+
         const doc = new jsPDF();
 
         // Generar 2 boletas por página
@@ -287,17 +384,29 @@ const BoletaCalificaciones = () => {
           const tableData = dataBoleta.cursos.map(curso => {
             const unidades = [1, 2, 3, 4].map(numUnidad => {
               const unidad = curso.unidades.find(u => u.NumeroUnidad === numUnidad);
-              return unidad ? unidad.NotaFinal : '-';
+
+              // Si no existe la unidad o la nota es null/undefined, mostrar guión
+              if (!unidad || unidad.NotaFinal === null || unidad.NotaFinal === undefined) {
+                return '-';
+              }
+
+              // Si la nota es 0 o mayor, mostrarla (0 es válido)
+              return unidad.NotaFinal.toString();
             });
+
+            // Promedio: mostrar guión si es null, 0, o vacío
+            const promedioMostrar = (curso.promedio === null || curso.promedio === undefined || curso.promedio === '')
+              ? '-'
+              : curso.promedio.toString();
 
             return [
               curso.NombreCurso,
               ...unidades,
-              curso.promedio.toString()
+              promedioMostrar
             ];
           });
 
-          doc.autoTable({
+          autoTable(doc, {
             startY: yPos,
             head: [['Curso', 'U1', 'U2', 'U3', 'U4', 'Prom']],
             body: tableData,
@@ -329,7 +438,13 @@ const BoletaCalificaciones = () => {
           const finalY = doc.lastAutoTable.finalY + 4;
           doc.setFontSize(9);
           doc.setFont('helvetica', 'bold');
-          doc.text(`PROMEDIO GENERAL: ${dataBoleta.promedioGeneral} puntos`, pageWidth / 2, finalY, { align: 'center' });
+
+          // Mostrar guión si el promedio general es null o vacío
+          const promedioGeneralTexto = (dataBoleta.promedioGeneral === null || dataBoleta.promedioGeneral === undefined || dataBoleta.promedioGeneral === '')
+            ? 'PROMEDIO GENERAL: - puntos'
+            : `PROMEDIO GENERAL: ${dataBoleta.promedioGeneral} puntos`;
+
+          doc.text(promedioGeneralTexto, pageWidth / 2, finalY, { align: 'center' });
 
           // Línea separadora si es la primera boleta
           if (isPrimera && i < boletas.length - 1) {

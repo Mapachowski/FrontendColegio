@@ -835,7 +835,8 @@ const Actividades = () => {
                         Nueva Actividad
                       </Button>
                     </Tooltip>
-                    {esDocente && unidadSeleccionada?.Activa === 1 && (
+                    {/* Botón Cerrar Unidad oculto - Ahora se usa el sistema de Cierre de Unidades del admin */}
+                    {/* {esDocente && unidadSeleccionada?.Activa === 1 && (
                       <Button
                         type="default"
                         danger
@@ -844,7 +845,7 @@ const Actividades = () => {
                       >
                         Cerrar Unidad
                       </Button>
-                    )}
+                    )} */}
                   </>
                 )}
               </Space>
