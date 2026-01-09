@@ -94,10 +94,9 @@ const Docentes = () => {
     },
     {
       title: 'Usuario',
-      dataIndex: 'NombreUsuario',
       key: 'NombreUsuario',
       width: 130,
-      render: (text) => text || 'Sin usuario',
+      render: (_, record) => record.Usuario?.NombreUsuario || 'Sin usuario',
     },
     {
       title: 'Estado',

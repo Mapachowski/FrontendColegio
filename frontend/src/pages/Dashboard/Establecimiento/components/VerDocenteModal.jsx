@@ -27,7 +27,7 @@ const VerDocenteModal = ({ visible, docente, onCancel }) => {
         </Descriptions.Item>
 
         <Descriptions.Item label={<span><UserOutlined /> Nombre de Usuario</span>}>
-          {docente.NombreUsuario || 'Sin usuario asociado'}
+          {docente.Usuario?.NombreUsuario || 'Sin usuario asociado'}
         </Descriptions.Item>
 
         <Descriptions.Item label={<span><MailOutlined /> Email</span>}>
@@ -48,8 +48,8 @@ const VerDocenteModal = ({ visible, docente, onCancel }) => {
           </Tag>
         </Descriptions.Item>
 
-        <Descriptions.Item label={<span><IdcardOutlined /> ID Usuario</span>}>
-          {docente.idUsuario || 'No asignado'}
+        <Descriptions.Item label={<span><IdcardOutlined /> Nombre Completo (Usuario)</span>}>
+          {docente.Usuario?.NombreCompleto || 'No asignado'}
         </Descriptions.Item>
       </Descriptions>
     </Modal>
