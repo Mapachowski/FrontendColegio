@@ -1,0 +1,8 @@
+# Carpetas de trabajo interno (no versionar)
+Asignaciones/
+Docentes/
+Unidades/
+
+# Archivos de documentación interna (no versionar)
+*.md
+!frontend/README.md
