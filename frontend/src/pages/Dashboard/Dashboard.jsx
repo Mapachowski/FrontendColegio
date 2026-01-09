@@ -23,8 +23,13 @@ import ListadoResponsables from './Alumnos/ListadoResponsables';
 import CredencialesAcceso from './Estudiantes/CredencialesAcceso';
 import AsignacionCursos from './ConfigurarAcademico/AsignacionCursos/AsignacionCursos';
 import AsignacionMasiva from './ConfigurarAcademico/AsignacionCursos/AsignacionMasiva';
-import AulaCandelaria from './Academico/AulaCandelaria/AulaCandelaria';
-import CalendarioTareas from './Academico/CalendarioTareas/CalendarioTareas';
+import Unidades from './ConfigurarAcademico/Unidades/Unidades';
+import Actividades from './ConfigurarAcademico/Actividades/Actividades';
+import CalificarActividad from './ConfigurarAcademico/Calificaciones/CalificarActividad';
+import MisSolicitudesReapertura from './ConfigurarAcademico/MisSolicitudesReapertura';
+import GestionarSolicitudesReapertura from './Administrador/GestionarSolicitudesReapertura';
+import CierreUnidades from './Administrador/CierreUnidades';
+import BoletaCalificaciones from './Administrador/BoletaCalificaciones';
 import './Dashboard.css';
 
 const { Content } = Layout;
@@ -64,8 +69,13 @@ const Dashboard = ({ user }) => {
             <Route path="/estudiantes/credenciales-acceso" element={<CredencialesAcceso />} />
             <Route path="/configurar-academico/asignacion-cursos" element={<AsignacionCursos />} />
             <Route path="/configurar-academico/asignacion-masiva" element={<AsignacionMasiva />} />
-            <Route path="/academico/aula-candelaria" element={<AulaCandelaria />} />
-            <Route path="/academico/calendario-tareas" element={<CalendarioTareas />} />
+            <Route path="/configurar-academico/configurar-unidades" element={<Unidades />} />
+            <Route path="/configurar-academico/configurar-actividades" element={<Actividades />} />
+            <Route path="/configurar-academico/calificar-actividad" element={<CalificarActividad />} />
+            <Route path="/configurar-academico/mis-solicitudes-reapertura" element={<MisSolicitudesReapertura />} />
+            <Route path="/administrador/gestionar-solicitudes-reapertura" element={<GestionarSolicitudesReapertura />} />
+            <Route path="/administrador/cierre-unidades" element={<CierreUnidades user={user} />} />
+            <Route path="/administrador/boleta-calificaciones" element={<BoletaCalificaciones />} />
             {/* Agrega más rutas */}
           </Routes>
         </Content>

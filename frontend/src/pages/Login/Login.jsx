@@ -52,6 +52,11 @@ const Login = ({ onLoginSuccess }) => {
           rol: usuario.IdRol
         };
 
+        // Si es docente, agregar IdDocente
+        if (usuario.IdDocente) {
+          userData.IdDocente = usuario.IdDocente;
+        }
+
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
 

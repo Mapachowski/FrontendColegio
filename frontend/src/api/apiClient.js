@@ -33,10 +33,12 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => {
     // Si la respuesta es exitosa, simplemente la retornamos
+    console.log('🟢 Response interceptor - Success:', response.config.url, response.status);
     return response;
   },
   (error) => {
     // Extraer información del error
+    console.log('🔴 Response interceptor - Error:', error.config?.url, error.response?.status);
     const status = error.response?.status;
 
     // 401 Unauthorized - Token inválido o expirado
@@ -55,10 +57,20 @@ apiClient.interceptors.response.use(
       return Promise.reject(new Error('Sesión expirada. Por favor, inicia sesión nuevamente.'));
     }
 
+    // 400 Bad Request - Solicitud incorrecta (datos inválidos, validaciones fallidas, etc.)
+    if (status === 400) {
+      console.warn('⚠️ Solicitud incorrecta - Datos inválidos');
+      console.warn('   Error del servidor:', error.response?.data);
+      // Mantener el error completo para que el componente pueda acceder a error.response.data
+      return Promise.reject(error);
+    }
+
     // 403 Forbidden - Usuario no tiene permisos
     if (status === 403) {
       console.warn('⛔ Acceso prohibido - Permisos insuficientes');
-      return Promise.reject(new Error('No tienes permisos para realizar esta acción.'));
+      console.warn('   Error del servidor:', error.response?.data);
+      const mensajeError = error.response?.data?.error || error.response?.data?.message || 'No tienes permisos para realizar esta acción.';
+      return Promise.reject(new Error(mensajeError));
     }
 
     // 404 Not Found

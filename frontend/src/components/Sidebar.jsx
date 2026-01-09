@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Layout, Menu } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Layout, Menu, Badge } from 'antd';
 import { Link } from 'react-router-dom';
+import apiClient from '../api/apiClient';
 import {
   SettingOutlined,
   UserOutlined,
@@ -19,6 +20,8 @@ import {
   CalendarOutlined,
   FilePdfOutlined,
   TableOutlined,
+  UnlockOutlined,
+  LockOutlined,
   SwapOutlined,
   WalletOutlined,
   ExclamationCircleOutlined,
@@ -31,6 +34,31 @@ const { Sider } = Layout;
 
 const Sidebar = ({ user }) => {
   const [openKeys, setOpenKeys] = useState(['1']);
+  const [pendientesSolicitudes, setPendientesSolicitudes] = useState(0);
+
+  useEffect(() => {
+    // Solo cargar solicitudes pendientes para administradores y operadores
+    if (user.rol === 1 || user.rol === 2) {
+      cargarSolicitudesPendientes();
+      // Actualizar cada 2 minutos
+      const interval = setInterval(cargarSolicitudesPendientes, 120000);
+      return () => clearInterval(interval);
+    }
+  }, [user.rol]);
+
+  const cargarSolicitudesPendientes = async () => {
+    try {
+      const response = await apiClient.get('/solicitudes-reapertura/pendientes');
+      if (response.data.success) {
+        const pendientes = response.data.data.filter(s => s.Estado === 'pendiente').length;
+        setPendientesSolicitudes(pendientes);
+      }
+    } catch (error) {
+      console.error('Error al cargar solicitudes pendientes:', error);
+      // Si falla, establecer en 0 para evitar problemas de renderizado
+      setPendientesSolicitudes(0);
+    }
+  };
 
   const onOpenChange = (keys) => {
     const latestOpenKey = keys.find((key) => !openKeys.includes(key));
@@ -49,11 +77,12 @@ const Sidebar = ({ user }) => {
       children: [
         { key: '1-1', label: 'Preferencias', path: '/dashboard/preferencias', icon: <ToolOutlined /> },
         { key: '1-2', label: 'Uso de Plataforma', path: '/dashboard/uso-plataforma', icon: <DesktopOutlined /> },
-        // { key: '1-3', label: 'Migración de Usuarios', path: '/dashboard/migracion-usuarios', icon: <UserAddOutlined /> }, // Ocultado temporalmente
-        { key: '1-4', label: 'Credenciales de acceso Docente', path: '/dashboard/establecimiento/credenciales-docente', icon: <IdcardOutlined /> },
-        { key: '1-5', label: 'Docentes', path: '/dashboard/establecimiento/docentes', icon: <TeamOutlined /> },
-        { key: '1-6', label: 'Cursos', path: '/dashboard/establecimiento/cursos', icon: <BookOutlined /> },
-      ].filter(Boolean),
+        { key: '1-3', label: 'Credenciales de acceso Docente', path: '/dashboard/establecimiento/credenciales-docente', icon: <IdcardOutlined /> },
+        { key: '1-4', label: 'Docentes', path: '/dashboard/establecimiento/docentes', icon: <TeamOutlined /> },
+        { key: '1-5', label: 'Cursos', path: '/dashboard/establecimiento/cursos', icon: <BookOutlined /> },
+        { key: '1-6', label: 'Solicitudes de Reapertura', path: '/dashboard/administrador/gestionar-solicitudes-reapertura', icon: <UnlockOutlined />, badge: pendientesSolicitudes },
+        { key: '1-7', label: 'Cierre de Unidades', path: '/dashboard/administrador/cierre-unidades', icon: <LockOutlined /> },
+      ],
     },
     {
       key: '2',
@@ -74,8 +103,11 @@ const Sidebar = ({ user }) => {
       icon: <BookOutlined />,
       label: 'Académico',
       children: [
-        { key: '3-1', label: 'Aula Candelaria', path: '/dashboard/academico/aula-candelaria', icon: <BookOutlined /> },
-        { key: '3-2', label: 'Calendario de Tareas', path: '/dashboard/academico/calendario-tareas', icon: <CalendarOutlined /> },
+        { key: '3-1', label: 'Aula Candelaria', path: '/aula-candelaria', icon: <BookOutlined /> },
+        { key: '3-2', label: 'Calendario Tareas', path: '/calendario-tareas', icon: <CalendarOutlined /> },
+        { key: '3-3', label: 'Configurar Unidades', path: '/dashboard/configurar-academico/configurar-unidades', icon: <UnorderedListOutlined /> },
+        { key: '3-4', label: 'Configurar Actividades', path: '/dashboard/configurar-academico/configurar-actividades', icon: <CalendarOutlined /> },
+        { key: '3-5', label: 'Mis Solicitudes Reapertura', path: '/dashboard/configurar-academico/mis-solicitudes-reapertura', icon: <UnlockOutlined /> },
       ],
     },
     {
@@ -83,10 +115,9 @@ const Sidebar = ({ user }) => {
       icon: <FileTextOutlined />,
       label: 'Informes Académicos',
       children: [
-        { key: '4-1', label: 'Boletas de Calificaciones', path: '/boletas-calificaciones', icon: <FilePdfOutlined /> },
+        { key: '4-1', label: 'Boletas de Calificaciones', path: '/dashboard/administrador/boleta-calificaciones', icon: <FilePdfOutlined /> },
         { key: '4-3', label: 'Detalle Calificaciones', path: '/detalle-calificaciones', icon: <TableOutlined /> },
         { key: '4-5', label: 'Promedios', path: '/promedios', icon: <BarChartOutlined /> },
-        // { key: '4-7', label: 'Maestros Asignados', path: '/maestros-asignados', icon: <UserSwitchOutlined /> }, // Eliminado - no se utiliza
       ].filter(Boolean),
     },
     {
@@ -94,10 +125,9 @@ const Sidebar = ({ user }) => {
       icon: <SettingOutlined />,
       label: 'Configurar Académico',
       children: [
-        // { key: '5-1', label: 'Tipos de Actividades', path: '/tipos-actividades', icon: <PlusSquareOutlined /> }, // Eliminado - no se utiliza
-        // { key: '5-2', label: 'Administrar Cursos', path: '/administrar-cursos', icon: <AppstoreAddOutlined /> }, // Eliminado - no se utiliza
         { key: '5-3', label: 'Asignación de Cursos', path: '/dashboard/configurar-academico/asignacion-cursos', icon: <SwapOutlined /> },
-        { key: '5-4', label: 'Configurar Unidades', path: '/configurar-unidades', icon: <UnorderedListOutlined /> },
+        { key: '5-4', label: 'Configurar Unidades', path: '/dashboard/configurar-academico/configurar-unidades', icon: <UnorderedListOutlined /> },
+        { key: '5-5', label: 'Configurar Actividades', path: '/dashboard/configurar-academico/configurar-actividades', icon: <CalendarOutlined /> },
       ].filter(Boolean),
     },
     {
@@ -107,10 +137,7 @@ const Sidebar = ({ user }) => {
       children: [
         { key: '6-1', label: 'Ingreso de Pagos', path: '/dashboard/pagos/crear', icon: <WalletOutlined /> },
         { key: '6-2', label: 'Buscar Recibo', path: '/dashboard/pagos/buscar-recibo', icon: <FileSearchOutlined /> },
-        // { key: '6-5', label: 'Configuración de Rubros', path: '/configurar-rubros', icon: <SettingFilled /> }, // Eliminado - no se utiliza
         { key: '6-6', label: 'Insolventes', path: '/dashboard/pagos/insolventes', icon: <ExclamationCircleOutlined /> },
-        // { key: '6-7', label: 'Exoneración Mora', path: '/exoneracion-mora', icon: <CloseCircleOutlined /> }, // Eliminado - no se utiliza
-        // { key: '6-8', label: 'Métodos de Pago', path: '/metodos-pago', icon: <CreditCardOutlined /> }, // Eliminado - no se utiliza
       ].filter(Boolean),
     },
     {
@@ -184,6 +211,13 @@ const customizedMenuItems = menuItems.map((item) => ({
     label: (
       <Link to={child.path}>
         {child.icon} {child.label}
+        {child.badge > 0 && (
+          <Badge
+            count={child.badge}
+            style={{ marginLeft: 8 }}
+            overflowCount={99}
+          />
+        )}
       </Link>
     ),
     icon: null,
