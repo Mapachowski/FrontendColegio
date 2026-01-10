@@ -30,6 +30,8 @@ import MisSolicitudesReapertura from './ConfigurarAcademico/MisSolicitudesReaper
 import GestionarSolicitudesReapertura from './Administrador/GestionarSolicitudesReapertura';
 import CierreUnidades from './Administrador/CierreUnidades';
 import BoletaCalificaciones from './Administrador/BoletaCalificaciones';
+import AulaCandelaria from './Academico/AulaCandelaria/AulaCandelaria';
+import CalendarioTareas from './Academico/CalendarioTareas/CalendarioTareas';
 import './Dashboard.css';
 
 const { Content } = Layout;
@@ -67,6 +69,8 @@ const Dashboard = ({ user }) => {
             <Route path="/alumnos/estudiantes-retirados" element={<EstudiantesRetirados />} />
             <Route path="/alumnos/listado-responsables" element={<ListadoResponsables />} />
             <Route path="/estudiantes/credenciales-acceso" element={<CredencialesAcceso />} />
+            <Route path="/academico/aula-candelaria" element={<AulaCandelaria />} />
+            <Route path="/academico/calendario-tareas" element={<CalendarioTareas />} />
             <Route path="/configurar-academico/asignacion-cursos" element={<AsignacionCursos />} />
             <Route path="/configurar-academico/asignacion-masiva" element={<AsignacionMasiva />} />
             <Route path="/configurar-academico/configurar-unidades" element={<Unidades />} />

@@ -103,8 +103,8 @@ const Sidebar = ({ user }) => {
       icon: <BookOutlined />,
       label: 'Académico',
       children: [
-        { key: '3-1', label: 'Aula Candelaria', path: '/aula-candelaria', icon: <BookOutlined /> },
-        { key: '3-2', label: 'Calendario Tareas', path: '/calendario-tareas', icon: <CalendarOutlined /> },
+        { key: '3-1', label: 'Aula Candelaria', path: '/dashboard/academico/aula-candelaria', icon: <BookOutlined /> },
+        { key: '3-2', label: 'Calendario Tareas', path: '/dashboard/academico/calendario-tareas', icon: <CalendarOutlined /> },
         { key: '3-3', label: 'Configurar Unidades', path: '/dashboard/configurar-academico/configurar-unidades', icon: <UnorderedListOutlined /> },
         { key: '3-4', label: 'Configurar Actividades', path: '/dashboard/configurar-academico/configurar-actividades', icon: <CalendarOutlined /> },
         { key: '3-5', label: 'Mis Solicitudes Reapertura', path: '/dashboard/configurar-academico/mis-solicitudes-reapertura', icon: <UnlockOutlined /> },

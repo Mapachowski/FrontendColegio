@@ -40,8 +40,8 @@ const FiltrosInscripciones = () => {
         ]);
 
         const grados = gradosRes.data.data || [];
-        const secciones = seccionesRes.data || [];
-        const jornadas = jornadasRes.data || [];
+        const secciones = seccionesRes.data.data || [];
+        const jornadas = jornadasRes.data.data || [];
 
         setCatalogos({ grados, secciones, jornadas });
         message.success('Catálogos cargados');
