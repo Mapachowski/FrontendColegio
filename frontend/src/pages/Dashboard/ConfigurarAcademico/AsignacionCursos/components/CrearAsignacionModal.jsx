@@ -40,13 +40,22 @@ const CrearAsignacionModal = ({ visible, onCancel, onSuccess }) => {
         apiClient.get('/jornadas')
       ]);
 
-      // Docentes y Grados vienen con {success, data}
+      // Todos los endpoints vienen con {success, data}
       if (docentesRes.data.success) setDocentes(docentesRes.data.data);
       if (gradosRes.data.success) setGrados(gradosRes.data.data);
 
-      // Secciones y Jornadas vienen como Array directo
-      if (Array.isArray(seccionesRes.data)) setSecciones(seccionesRes.data);
-      if (Array.isArray(jornadasRes.data)) setJornadas(jornadasRes.data);
+      // Secciones y Jornadas también vienen con {success, data}
+      if (seccionesRes.data.success || seccionesRes.data.data) {
+        setSecciones(seccionesRes.data.data || []);
+      }
+      if (jornadasRes.data.success || jornadasRes.data.data) {
+        setJornadas(jornadasRes.data.data || []);
+      }
+
+      console.log('=== CATÁLOGOS MODAL CREAR ===');
+      console.log('Secciones:', seccionesRes.data);
+      console.log('Jornadas:', jornadasRes.data);
+      console.log('===========================');
     } catch (error) {
       console.error('Error al cargar catálogos:', error);
       message.error('Error al cargar catálogos');

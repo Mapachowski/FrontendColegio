@@ -57,7 +57,7 @@ const AsignacionMasiva = () => {
       console.log('Secciones response:', seccionesRes.data);
       console.log('Jornadas response:', jornadasRes.data);
 
-      // Manejar respuestas con estructura {success, data}
+      // Todos los endpoints vienen con {success, data}
       if (docentesRes.data.success) {
         setDocentes(docentesRes.data.data);
       }
@@ -65,12 +65,12 @@ const AsignacionMasiva = () => {
         setGrados(gradosRes.data.data);
       }
 
-      // Manejar respuestas que son arrays directos
-      if (Array.isArray(seccionesRes.data)) {
-        setSecciones(seccionesRes.data);
+      // Secciones y Jornadas también vienen con {success, data}
+      if (seccionesRes.data.success || seccionesRes.data.data) {
+        setSecciones(seccionesRes.data.data || []);
       }
-      if (Array.isArray(jornadasRes.data)) {
-        setJornadas(jornadasRes.data);
+      if (jornadasRes.data.success || jornadasRes.data.data) {
+        setJornadas(jornadasRes.data.data || []);
       }
 
       console.log('=========================');

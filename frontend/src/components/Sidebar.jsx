@@ -149,6 +149,15 @@ const Sidebar = ({ user }) => {
         { key: '7-2', label: 'Historial Pagos', path: '/dashboard/pagos/reporte-fechas', icon: <HistoryOutlined /> },
       ],
     },
+    {
+      key: '8',
+      icon: <FileTextOutlined />,
+      label: 'Mis Hijos',
+      children: [
+        { key: '8-1', label: 'Calificaciones', path: '/dashboard/estudiantes/mis-calificaciones', icon: <FilePdfOutlined /> },
+        { key: '8-2', label: 'Actividades por Curso', path: '/dashboard/estudiantes/mis-actividades', icon: <BookOutlined /> },
+      ],
+    },
   ].map((item) => {
     // Administrador (rol 1): ve todo
     if (user.rol === 1) return item;
@@ -161,23 +170,10 @@ const Sidebar = ({ user }) => {
       return null;
     }
 
-    // Familia (rol 3): solo ciertas opciones en Académico e Informes Académicos
+    // Familia (rol 3): solo ve el menú "Mis Hijos"
     if (user.rol === 3) {
-      if (item.key === '3') {
-        return {
-          ...item,
-          children: item.children.filter((child) =>
-            ['3-1', '3-2'].includes(child.key) // Aula Candelaria y Calendario Tareas
-          ),
-        };
-      }
-      if (item.key === '4') {
-        return {
-          ...item,
-          children: item.children.filter((child) =>
-            ['4-1', '4-5'].includes(child.key) // Boletas y Promedios
-          ),
-        };
+      if (item.key === '8') {
+        return item; // Menú "Mis Hijos" con calificaciones
       }
       return null;
     }

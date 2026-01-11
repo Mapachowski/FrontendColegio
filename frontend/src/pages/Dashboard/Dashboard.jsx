@@ -32,6 +32,8 @@ import CierreUnidades from './Administrador/CierreUnidades';
 import BoletaCalificaciones from './Administrador/BoletaCalificaciones';
 import AulaCandelaria from './Academico/AulaCandelaria/AulaCandelaria';
 import CalendarioTareas from './Academico/CalendarioTareas/CalendarioTareas';
+import BoletaCalificacionesFamilia from './Estudiantes/BoletaCalificacionesFamilia';
+import ActividadesFamilia from './Estudiantes/ActividadesFamilia';
 import './Dashboard.css';
 
 const { Content } = Layout;
@@ -80,6 +82,8 @@ const Dashboard = ({ user }) => {
             <Route path="/administrador/gestionar-solicitudes-reapertura" element={<GestionarSolicitudesReapertura />} />
             <Route path="/administrador/cierre-unidades" element={<CierreUnidades user={user} />} />
             <Route path="/administrador/boleta-calificaciones" element={<BoletaCalificaciones />} />
+            <Route path="/estudiantes/mis-calificaciones" element={<BoletaCalificacionesFamilia />} />
+            <Route path="/estudiantes/mis-actividades" element={<ActividadesFamilia />} />
             {/* Agrega más rutas */}
           </Routes>
         </Content>
