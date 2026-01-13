@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Card, Tabs, Input, Select, Switch, Button, Space, Tag, Typography, Row, Col, message, Spin, Modal
+  Card, Tabs, Input, Select, Switch, Button, Space, Tag, Typography, Row, Col, message, Spin
 } from 'antd';
 import BuscarAlumnoEditarModal from './components/BuscarAlumnoEditarModal';
 import EditarFamiliaModal from './components/EditarFamiliaModal';
@@ -22,6 +22,7 @@ const EditarAlumno = () => {
   const [alumnoData, setAlumnoData] = useState(null);
   const [familiaData, setFamiliaData] = useState(null);
   const [inscripcionData, setInscripcionData] = useState(null);
+  const [cicloEscolar, setCicloEscolar] = useState(null); // Estado separado para CicloEscolar
 
   // Estados editables
   const [numeroEmergencia, setNumeroEmergencia] = useState('');
@@ -57,10 +58,19 @@ const EditarAlumno = () => {
     setLoading(true);
     try {
       console.log('RECORD RECIBIDO COMPLETO:', record);
+      console.log('🔍 CicloEscolar en record:', record.CicloEscolar);
 
       // Guardar datos del alumno
       setAlumnoData(record);
       setInscripcionData(record);
+
+      // Guardar el ciclo escolar de manera independiente para usarlo en recargas
+      if (record.CicloEscolar) {
+        setCicloEscolar(record.CicloEscolar);
+        console.log('✅ CicloEscolar guardado:', record.CicloEscolar);
+      } else {
+        console.warn('⚠️ ADVERTENCIA: No se encontró CicloEscolar en el record');
+      }
 
       // Mapear campos de emergencia (vienen del SP)
       setNumeroEmergencia(record.NumeroEmergencia || '');
@@ -132,6 +142,101 @@ const EditarAlumno = () => {
     }
   };
 
+  const recargarDatosAlumno = async () => {
+    console.log('🔄 Iniciando recarga de datos del alumno...');
+    console.log('📋 Datos actuales:', {
+      IdAlumno: alumnoData.IdAlumno,
+      CicloEscolar_state: cicloEscolar,
+      CicloEscolar_inscripcion: inscripcionData?.CicloEscolar,
+      CicloEscolar_alumno: alumnoData?.CicloEscolar,
+      inscripcionData: inscripcionData
+    });
+
+    try {
+      // Usar el ciclo escolar del estado guardado (más confiable)
+      const cicloEscolarActual = cicloEscolar || inscripcionData?.CicloEscolar || alumnoData?.CicloEscolar;
+
+      if (!cicloEscolarActual) {
+        console.error('❌ No se encontró el ciclo escolar en ningún lugar');
+        message.error('No se pudo determinar el ciclo escolar para recargar los datos');
+        return;
+      }
+
+      console.log('✅ Usando CicloEscolar:', cicloEscolarActual);
+
+      // Buscar el alumno actualizado en inscripciones
+      const response = await apiClient.get('/inscripciones/buscar-alumno', {
+        params: {
+          IdAlumno: alumnoData.IdAlumno,
+          CicloEscolar: cicloEscolarActual
+        }
+      });
+
+      console.log('📥 Respuesta del servidor:', response.data);
+
+      if (response.data.success && response.data.data && response.data.data.length > 0) {
+        // La respuesta viene en formato: data[0]["0"] = alumno
+        const primerElemento = response.data.data[0];
+        const alumnoActualizado = primerElemento["0"] || primerElemento;
+
+        console.log('📝 Datos actualizados recibidos:', {
+          IdSeccion: alumnoActualizado.IdSeccion,
+          NombreSeccion: alumnoActualizado.NombreSeccion,
+          IdJornada: alumnoActualizado.IdJornada,
+          NombreJornada: alumnoActualizado.NombreJornada
+        });
+
+        // Actualizar todos los estados con los datos frescos
+        setAlumnoData(alumnoActualizado);
+        setInscripcionData(alumnoActualizado);
+
+        // Actualizar CicloEscolar también si viene en la respuesta
+        if (alumnoActualizado.CicloEscolar) {
+          setCicloEscolar(alumnoActualizado.CicloEscolar);
+        }
+
+        setNumeroEmergencia(alumnoActualizado.NumeroEmergencia || '');
+        setNombreEmergencia(alumnoActualizado.ContactoEmergencia || '');
+        setVisible(alumnoActualizado.Visible !== false);
+        setIdSeccion(alumnoActualizado.IdSeccion || null);
+        setIdJornada(alumnoActualizado.IdJornada || null);
+
+        const esActivo = alumnoActualizado.Estado === undefined || alumnoActualizado.Estado === null ||
+                        alumnoActualizado.Estado === 1 || alumnoActualizado.Estado === 'Activo' ||
+                        alumnoActualizado.Estado === true;
+        setInscripcionActiva(esActivo);
+        setObservacion(alumnoActualizado.ComentarioEstado || '');
+
+        // Recargar datos de familia si existe IdFamilia
+        if (alumnoActualizado.IdFamilia) {
+          try {
+            const familiaResponse = await apiClient.get(`/familias/${alumnoActualizado.IdFamilia}`);
+            const familiaCompleta = familiaResponse.data.data || familiaResponse.data;
+
+            const familiaActualizada = {
+              IdFamilia: alumnoActualizado.IdFamilia,
+              NombreFamilia: alumnoActualizado.NombreFamilia,
+              NombreRecibo: familiaCompleta.NombreRecibo || '',
+              TelefonoRecibo: familiaCompleta.TelefonoContacto || alumnoActualizado.TelefonoContacto || '',
+              CorreoElectronico: familiaCompleta.EmailContacto || alumnoActualizado.EmailContacto || '',
+              DireccionRecibo: familiaCompleta.DireccionRecibo || alumnoActualizado.Direccion || '',
+            };
+            setFamiliaData(familiaActualizada);
+          } catch (error) {
+            console.error('Error al recargar familia:', error);
+          }
+        }
+
+        console.log('✅ Datos del alumno recargados correctamente');
+      } else {
+        console.warn('⚠️ No se encontraron datos actualizados del alumno');
+      }
+    } catch (error) {
+      console.error('❌ Error al recargar datos del alumno:', error);
+      // No mostrar error al usuario, los datos antiguos siguen válidos
+    }
+  };
+
   const handleGuardarCambios = async () => {
     // Validar que si está inactiva, tenga observación
     if (!inscripcionActiva && !observacion.trim()) {
@@ -181,14 +286,20 @@ const EditarAlumno = () => {
         console.log('Respuesta actualización inscripción:', inscripcionResponse.data);
       }
 
-      // Mostrar modal de éxito y redirigir
-      Modal.success({
-        title: 'Estudiante actualizado con éxito',
-        content: 'Los cambios se han guardado correctamente.',
-        onOk: () => {
-          navigate('/dashboard');
-        },
+      console.log('✅ Guardado exitoso');
+
+      // Mostrar mensaje de éxito
+      message.success({
+        content: 'Estudiante actualizado con éxito. Los cambios se han guardado correctamente.',
+        duration: 5,
       });
+
+      console.log('💬 Mensaje de éxito mostrado');
+
+      // Recargar los datos actualizados del alumno
+      console.log('🔄 Llamando a recargarDatosAlumno...');
+      await recargarDatosAlumno();
+      console.log('✅ Recarga completada');
     } catch (error) {
       console.error('ERROR AL GUARDAR:', error);
       console.error('Detalles del error:', error.response?.data || error.message);
