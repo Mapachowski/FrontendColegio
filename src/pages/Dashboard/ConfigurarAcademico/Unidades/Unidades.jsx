@@ -57,7 +57,11 @@ const Unidades = () => {
   }, []);
 
   useEffect(() => {
-    cargarAsignaciones();
+    // Si es docente, NO cargar aquí (se carga en obtenerIdDocente)
+    // Si no es docente, cargar normalmente
+    if (!esDocente) {
+      cargarAsignaciones();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtros.anio, filtros.idGrado, filtros.idSeccion, filtros.idJornada, filtros.idDocente]);
 
@@ -75,13 +79,15 @@ const Unidades = () => {
           setIdDocenteLogueado(idDocente);
 
           // Establecer el filtro de docente automáticamente
-          setFiltros(prev => ({
-            ...prev,
+          const nuevosFiltros = {
+            ...filtros,
             idDocente: idDocente
-          }));
+          };
+          setFiltros(nuevosFiltros);
 
-          // Ahora cargar catálogos y asignaciones
+          // Cargar catálogos y asignaciones con el idDocente correcto
           cargarCatalogos();
+          cargarAsignacionesConFiltros(nuevosFiltros);
         } else {
           message.error('No se encontró el perfil de docente asociado a tu usuario');
         }
@@ -119,15 +125,16 @@ const Unidades = () => {
     }
   };
 
-  const cargarAsignaciones = async () => {
+  const cargarAsignacionesConFiltros = async (filtrosCustom) => {
+    const filtrosAUsar = filtrosCustom || filtros;
     setLoading(true);
     try {
       const params = {};
-      if (filtros.anio) params.anio = filtros.anio;
-      if (filtros.idGrado) params.idGrado = filtros.idGrado;
-      if (filtros.idSeccion) params.idSeccion = filtros.idSeccion;
-      if (filtros.idJornada) params.idJornada = filtros.idJornada;
-      if (filtros.idDocente) params.idDocente = filtros.idDocente;
+      if (filtrosAUsar.anio) params.anio = filtrosAUsar.anio;
+      if (filtrosAUsar.idGrado) params.idGrado = filtrosAUsar.idGrado;
+      if (filtrosAUsar.idSeccion) params.idSeccion = filtrosAUsar.idSeccion;
+      if (filtrosAUsar.idJornada) params.idJornada = filtrosAUsar.idJornada;
+      if (filtrosAUsar.idDocente) params.idDocente = filtrosAUsar.idDocente;
 
       const response = await apiClient.get('/asignaciones', { params });
 
@@ -161,6 +168,11 @@ const Unidades = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Wrapper para mantener compatibilidad con useEffect
+  const cargarAsignaciones = async () => {
+    await cargarAsignacionesConFiltros(null);
   };
 
   const cargarUnidadesAsignacion = async (idAsignacion) => {

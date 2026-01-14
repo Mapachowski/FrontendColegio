@@ -77,7 +77,9 @@ const Actividades = () => {
   }, []);
 
   useEffect(() => {
-    if (!esAlumno) {
+    // Si es docente, NO cargar aquí (se carga en obtenerIdDocente)
+    // Si no es docente ni alumno, cargar normalmente
+    if (!esAlumno && !esDocente) {
       cargarAsignaciones();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
