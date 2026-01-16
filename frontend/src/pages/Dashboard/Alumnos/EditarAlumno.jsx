@@ -2,14 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Card, Tabs, Input, Select, Switch, Button, Space, Tag, Typography, Row, Col, message, Spin
+  Card, Tabs, Input, Select, Switch, Button, Space, Tag, Typography, Row, Col, message, Spin, DatePicker
 } from 'antd';
 import BuscarAlumnoEditarModal from './components/BuscarAlumnoEditarModal';
 import EditarFamiliaModal from './components/EditarFamiliaModal';
 import apiClient from '../../../api/apiClient';
+import moment from 'moment';
+import { registrarBitacora } from '../../../utils/bitacora';
 
 const { Title } = Typography;
 const { TextArea } = Input;
+const { Option } = Select;
 
 const EditarAlumno = () => {
   const navigate = useNavigate();
@@ -24,10 +27,18 @@ const EditarAlumno = () => {
   const [inscripcionData, setInscripcionData] = useState(null);
   const [cicloEscolar, setCicloEscolar] = useState(null); // Estado separado para CicloEscolar
 
-  // Estados editables
+  // Estados editables del alumno
+  const [matricula, setMatricula] = useState('');
+  const [nombres, setNombres] = useState('');
+  const [apellidos, setApellidos] = useState('');
+  const [fechaNacimiento, setFechaNacimiento] = useState(null);
+  const [genero, setGenero] = useState('');
+  const [comunidadLinguistica, setComunidadLinguistica] = useState('');
   const [numeroEmergencia, setNumeroEmergencia] = useState('');
   const [nombreEmergencia, setNombreEmergencia] = useState('');
   const [visible, setVisible] = useState(true);
+
+  // Estados editables de inscripción
   const [idSeccion, setIdSeccion] = useState(null);
   const [idJornada, setIdJornada] = useState(null);
   const [inscripcionActiva, setInscripcionActiva] = useState(true);
@@ -72,7 +83,13 @@ const EditarAlumno = () => {
         console.warn('⚠️ ADVERTENCIA: No se encontró CicloEscolar en el record');
       }
 
-      // Mapear campos de emergencia (vienen del SP)
+      // Mapear campos editables del alumno
+      setMatricula(record.Matricula || '');
+      setNombres(record.Nombres || '');
+      setApellidos(record.Apellidos || '');
+      setFechaNacimiento(record.FechaNacimiento ? moment(record.FechaNacimiento) : null);
+      setGenero(record.Genero || '');
+      setComunidadLinguistica(record.ComunidadLinguistica || '');
       setNumeroEmergencia(record.NumeroEmergencia || '');
       setNombreEmergencia(record.ContactoEmergencia || '');
       setVisible(record.Visible !== false);
@@ -195,9 +212,18 @@ const EditarAlumno = () => {
           setCicloEscolar(alumnoActualizado.CicloEscolar);
         }
 
+        // Actualizar campos del alumno
+        setMatricula(alumnoActualizado.Matricula || '');
+        setNombres(alumnoActualizado.Nombres || '');
+        setApellidos(alumnoActualizado.Apellidos || '');
+        setFechaNacimiento(alumnoActualizado.FechaNacimiento ? moment(alumnoActualizado.FechaNacimiento) : null);
+        setGenero(alumnoActualizado.Genero || '');
+        setComunidadLinguistica(alumnoActualizado.ComunidadLinguistica || '');
         setNumeroEmergencia(alumnoActualizado.NumeroEmergencia || '');
         setNombreEmergencia(alumnoActualizado.ContactoEmergencia || '');
         setVisible(alumnoActualizado.Visible !== false);
+
+        // Actualizar campos de inscripción
         setIdSeccion(alumnoActualizado.IdSeccion || null);
         setIdJornada(alumnoActualizado.IdJornada || null);
 
@@ -237,6 +263,59 @@ const EditarAlumno = () => {
     }
   };
 
+  const handleGuardarDatosAlumno = async () => {
+    // Obtener IdColaborador del localStorage
+    const userFromStorage = JSON.parse(localStorage.getItem('user') || '{}');
+    const IdColaborador = userFromStorage.IdUsuario;
+
+    if (!IdColaborador) {
+      message.error('No se encontró el usuario en sesión. Por favor, recarga la página.');
+      return;
+    }
+
+    console.log('IdColaborador obtenido para guardar datos del alumno:', IdColaborador);
+
+    setLoading(true);
+    try {
+      // Actualizar solo datos del alumno
+      const alumnoResponse = await apiClient.put(`/alumnos/${alumnoData.IdAlumno}`, {
+        Matricula: matricula,
+        Nombres: nombres,
+        Apellidos: apellidos,
+        FechaNacimiento: fechaNacimiento ? fechaNacimiento.format('YYYY-MM-DD') : null,
+        Genero: genero,
+        ComunidadLinguistica: comunidadLinguistica,
+        ContactoEmergencia: nombreEmergencia,
+        NumeroEmergencia: numeroEmergencia,
+        Visible: visible,
+        Estado: visible ? 1 : 0,
+        IdColaborador,
+      });
+      console.log('Respuesta actualización alumno:', alumnoResponse.data);
+
+      // Registrar en bitácora
+      await registrarBitacora(
+        'Edición de Alumno',
+        `Alumno ID: ${alumnoData.IdAlumno} - ${nombres} ${apellidos}`
+      );
+
+      // Mostrar mensaje de éxito
+      message.success({
+        content: 'Datos del alumno actualizados con éxito.',
+        duration: 5,
+      });
+
+      // Recargar los datos actualizados del alumno
+      await recargarDatosAlumno();
+    } catch (error) {
+      console.error('ERROR AL GUARDAR DATOS DEL ALUMNO:', error);
+      console.error('Detalles del error:', error.response?.data || error.message);
+      message.error('Error al guardar los cambios del alumno. Intenta nuevamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGuardarCambios = async () => {
     // Validar que si está inactiva, tenga observación
     if (!inscripcionActiva && !observacion.trim()) {
@@ -266,10 +345,16 @@ const EditarAlumno = () => {
     try {
       // 1. Actualizar datos del alumno
       const alumnoResponse = await apiClient.put(`/alumnos/${alumnoData.IdAlumno}`, {
-        NumeroEmergencia: numeroEmergencia,
+        Matricula: matricula,
+        Nombres: nombres,
+        Apellidos: apellidos,
+        FechaNacimiento: fechaNacimiento ? fechaNacimiento.format('YYYY-MM-DD') : null,
+        Genero: genero,
+        ComunidadLinguistica: comunidadLinguistica,
         ContactoEmergencia: nombreEmergencia,
+        NumeroEmergencia: numeroEmergencia,
         Visible: visible,
-        Estado: visible ? 1 : 0, // Si no es visible, Estado = 0 (inactivo)
+        Estado: visible ? 1 : 0,
         IdColaborador,
       });
       console.log('Respuesta actualización alumno:', alumnoResponse.data);
@@ -287,6 +372,21 @@ const EditarAlumno = () => {
       }
 
       console.log('✅ Guardado exitoso');
+
+      // Registrar en bitácora
+      if (!inscripcionActiva) {
+        // Si la inscripción está inactiva, es una suspensión
+        await registrarBitacora(
+          'Suspensión de Alumno',
+          `Alumno ID: ${alumnoData.IdAlumno} - ${nombres} ${apellidos}. Motivo: ${observacion}`
+        );
+      } else {
+        // Si no, es solo una edición
+        await registrarBitacora(
+          'Edición de Alumno',
+          `Alumno ID: ${alumnoData.IdAlumno} - ${nombres} ${apellidos}`
+        );
+      }
 
       // Mostrar mensaje de éxito
       message.success({
@@ -344,6 +444,99 @@ const EditarAlumno = () => {
       <Tabs activeKey={activeTab} onChange={setActiveTab} style={{ marginTop: 24 }}>
         {/* PESTAÑA 1 - DATOS PERSONALES Y FAMILIA */}
         <Tabs.TabPane tab="1. Datos Personales y Familia" key="1">
+          <Card title="Datos del Alumno" style={{ marginBottom: 16 }}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
+                    Código MINEDUC
+                  </label>
+                  <Input
+                    placeholder="Código MINEDUC del alumno"
+                    value={matricula}
+                    onChange={(e) => setMatricula(e.target.value)}
+                  />
+                </div>
+              </Col>
+              <Col span={12}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
+                    Fecha de Nacimiento
+                  </label>
+                  <DatePicker
+                    style={{ width: '100%' }}
+                    placeholder="DD/MM/AAAA"
+                    format="DD/MM/YYYY"
+                    value={fechaNacimiento}
+                    onChange={(date) => setFechaNacimiento(date)}
+                  />
+                </div>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
+                    Nombres
+                  </label>
+                  <Input
+                    placeholder="Nombres del alumno"
+                    value={nombres}
+                    onChange={(e) => setNombres(e.target.value)}
+                  />
+                </div>
+              </Col>
+              <Col span={12}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
+                    Apellidos
+                  </label>
+                  <Input
+                    placeholder="Apellidos del alumno"
+                    value={apellidos}
+                    onChange={(e) => setApellidos(e.target.value)}
+                  />
+                </div>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
+                    Género
+                  </label>
+                  <Select
+                    style={{ width: '100%' }}
+                    placeholder="Seleccione el género"
+                    value={genero}
+                    onChange={(value) => setGenero(value)}
+                  >
+                    <Option value="M">Masculino</Option>
+                    <Option value="F">Femenino</Option>
+                  </Select>
+                </div>
+              </Col>
+              <Col span={12}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
+                    Comunidad Lingüística
+                  </label>
+                  <Select
+                    style={{ width: '100%' }}
+                    placeholder="Seleccione la comunidad"
+                    value={comunidadLinguistica}
+                    onChange={(value) => setComunidadLinguistica(value)}
+                  >
+                    <Option value="Mam">Mam</Option>
+                    <Option value="Ladino">Ladino</Option>
+                  </Select>
+                </div>
+              </Col>
+            </Row>
+          </Card>
+
           <Card title="Contacto de Emergencia" style={{ marginBottom: 16 }}>
             <Input
               addonBefore="Nombre"
@@ -384,12 +577,25 @@ const EditarAlumno = () => {
             )}
           </Card>
 
-          {/* BOTÓN SIGUIENTE */}
-          <div style={{ marginTop: 40, textAlign: 'right' }}>
-            <Button type="primary" size="large" onClick={() => setActiveTab('2')}>
-              Siguiente →
-            </Button>
-          </div>
+          {/* BOTONES GUARDAR Y SIGUIENTE */}
+          <Row justify="space-between" style={{ marginTop: 40 }}>
+            <Col>
+              <Button
+                type="primary"
+                size="large"
+                style={{ minWidth: 240, backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                onClick={handleGuardarDatosAlumno}
+                loading={loading}
+              >
+                Guardar Datos del Alumno
+              </Button>
+            </Col>
+            <Col>
+              <Button type="primary" size="large" onClick={() => setActiveTab('2')}>
+                Siguiente →
+              </Button>
+            </Col>
+          </Row>
         </Tabs.TabPane>
 
         {/* PESTAÑA 2 - INSCRIPCIÓN */}

@@ -12,6 +12,7 @@ import UsoPlataforma from './Establecimiento/UsoPlataforma';
 import MigracionUsuarios from './Establecimiento/MigracionUsuarios';
 import Inscripciones from './Inscripciones/Inscripciones';
 import CrearPago from './Pagos/CrearPagos';
+import CrearPagoInscripcion from './Pagos/CrearPagoInscripcion';
 import BuscarRecibo from './Pagos/BuscarRecibo';
 import ReportePagosFechas from './Pagos/ReportePagosFechas';
 import PagosHoy from './Pagos/PagosHoy';
@@ -62,6 +63,7 @@ const Dashboard = ({ user }) => {
             <Route path="/migracion-usuarios" element={<MigracionUsuarios />} />
             <Route path="/inscripciones/inscripciones" element={<Inscripciones />} />
             <Route path="/pagos/crear" element={<CrearPago />} />
+            <Route path="/pagos/inscripcion" element={<CrearPagoInscripcion />} />
             <Route path="/pagos/buscar-recibo" element={<BuscarRecibo />} />
             <Route path="/pagos/reporte-fechas" element={<ReportePagosFechas />} />
             <Route path="/pagos/pagos-hoy" element={<PagosHoy />} />

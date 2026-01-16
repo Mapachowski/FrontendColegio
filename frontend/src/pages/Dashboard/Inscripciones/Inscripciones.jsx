@@ -13,6 +13,7 @@ import apiClient from '../../../api/apiClient';
 import { useNavigate } from 'react-router-dom';
 import { escapeHTML } from '../../../utils/sanitize';
 import { getCicloActual } from '../../../utils/cicloEscolar';
+import { registrarBitacora } from '../../../utils/bitacora';
 
 const { Step } = Steps;
 
@@ -201,119 +202,133 @@ const Inscripciones = () => {
       const inscRes = await apiClient.post('/inscripciones', inscPayload);
       console.log('INSCRIPCIÓN CREADA:', inscRes.data);
 
-      // 3. CREAR PAGOS SI SELECCIONADOS
+      // 3. CREAR PAGOS SI SELECCIONADOS (solo si NO es inscripción sin pagos)
       const fechaHoy = moment().format('YYYY-MM-DD');
       const esPrimeroBasico = state.inscripcion.IdGrado === 7;
       const pagosCreados = [];
 
-      // Pago Inscripción
-      if (state.pago.pagarInscripcion) {
-        const pagoInsc = await apiClient.post('/pagos', {
-          IdColaborador: state.user.IdColaborador,
-          IdUsuario: state.user.IdColaborador,
-          Fecha: fechaHoy,
-          IdAlumno,
-          IdTipoPago: 3, // Asumiendo IdTipoPago para Inscripción
-          Concepto: 'Inscripción',
-          IdMetodoPago: 1, // Default o del form si se agrega
-          Monto: state.inscripcion.ValorInscripcion,
-          NumeroRecibo: state.pago.NumeroRecibo,
-          NombreRecibo: state.pago.NombreRecibo,
-          DireccionRecibo: state.pago.DireccionRecibo,
-          Anio: getCicloActual(),
-        });
-        pagosCreados.push({ Monto: extraerMonto(pagoInsc) });
-      }
-
-      // Pago Enero
-      if (state.pago.pagarEnero) {
-        const pagoEnero = await apiClient.post('/pagos', {
-          IdColaborador: state.user.IdColaborador,
-          IdUsuario: state.user.IdColaborador,
-          Fecha: fechaHoy,
-          IdAlumno,
-          IdTipoPago: 2,
-          Concepto: 'Enero',
-          IdMetodoPago: 1,
-          Monto: state.inscripcion.Mensualidad,
-          NumeroRecibo: state.pago.NumeroRecibo,
-          NombreRecibo: state.pago.NombreRecibo,
-          DireccionRecibo: state.pago.DireccionRecibo,
-          Anio: getCicloActual(),
-        });
-        pagosCreados.push({ Monto: extraerMonto(pagoEnero) });
-      }
-
-      // PAGOS EXTRAS PARA PRIMERO BÁSICO
-      if (esPrimeroBasico) {
-        if (state.pago.pagarMecanografiaInsc) {
-          const pagoMecInsc = await apiClient.post('/pagos', {
+      // Si NO es inscripción sin pagos, crear los pagos seleccionados
+      if (!state.pago.sinPagos) {
+        // Pago Inscripción
+        if (state.pago.pagarInscripcion) {
+          const pagoInsc = await apiClient.post('/pagos', {
             IdColaborador: state.user.IdColaborador,
             IdUsuario: state.user.IdColaborador,
             Fecha: fechaHoy,
             IdAlumno,
-            IdTipoPago: 4,
-            Concepto: 'Inscripción Mecanografía',
-            IdMetodoPago: 1,
-            Monto: 40,
-            NumeroRecibo: state.pago.NumeroReciboMecanografia || state.pago.NumeroRecibo,
+            IdTipoPago: 3, // Asumiendo IdTipoPago para Inscripción
+            Concepto: 'Inscripción',
+            IdMetodoPago: 1, // Default o del form si se agrega
+            Monto: state.inscripcion.ValorInscripcion,
+            NumeroRecibo: state.pago.NumeroRecibo,
             NombreRecibo: state.pago.NombreRecibo,
             DireccionRecibo: state.pago.DireccionRecibo,
             Anio: getCicloActual(),
           });
-          pagosCreados.push({ Monto: extraerMonto(pagoMecInsc) });
+          pagosCreados.push({ Monto: extraerMonto(pagoInsc) });
         }
 
-        if (state.pago.pagarMecanografiaEnero) {
-          const pagoMecEnero = await apiClient.post('/pagos', {
+        // Pago Enero
+        if (state.pago.pagarEnero) {
+          const pagoEnero = await apiClient.post('/pagos', {
             IdColaborador: state.user.IdColaborador,
             IdUsuario: state.user.IdColaborador,
             Fecha: fechaHoy,
             IdAlumno,
-            IdTipoPago: 3,
+            IdTipoPago: 2,
             Concepto: 'Enero',
             IdMetodoPago: 1,
-            Monto: 40,
-            NumeroRecibo: state.pago.NumeroReciboMecanografia || state.pago.NumeroRecibo,
+            Monto: state.inscripcion.Mensualidad,
+            NumeroRecibo: state.pago.NumeroRecibo,
             NombreRecibo: state.pago.NombreRecibo,
             DireccionRecibo: state.pago.DireccionRecibo,
             Anio: getCicloActual(),
           });
-          pagosCreados.push({ Monto: extraerMonto(pagoMecEnero) });
+          pagosCreados.push({ Monto: extraerMonto(pagoEnero) });
+        }
+
+        // PAGOS EXTRAS PARA PRIMERO BÁSICO
+        if (esPrimeroBasico) {
+          if (state.pago.pagarMecanografiaInsc) {
+            const pagoMecInsc = await apiClient.post('/pagos', {
+              IdColaborador: state.user.IdColaborador,
+              IdUsuario: state.user.IdColaborador,
+              Fecha: fechaHoy,
+              IdAlumno,
+              IdTipoPago: 4,
+              Concepto: 'Inscripción Mecanografía',
+              IdMetodoPago: 1,
+              Monto: 40,
+              NumeroRecibo: state.pago.NumeroReciboMecanografia || state.pago.NumeroRecibo,
+              NombreRecibo: state.pago.NombreRecibo,
+              DireccionRecibo: state.pago.DireccionRecibo,
+              Anio: getCicloActual(),
+            });
+            pagosCreados.push({ Monto: extraerMonto(pagoMecInsc) });
+          }
+
+          if (state.pago.pagarMecanografiaEnero) {
+            const pagoMecEnero = await apiClient.post('/pagos', {
+              IdColaborador: state.user.IdColaborador,
+              IdUsuario: state.user.IdColaborador,
+              Fecha: fechaHoy,
+              IdAlumno,
+              IdTipoPago: 3,
+              Concepto: 'Enero',
+              IdMetodoPago: 1,
+              Monto: 40,
+              NumeroRecibo: state.pago.NumeroReciboMecanografia || state.pago.NumeroRecibo,
+              NombreRecibo: state.pago.NombreRecibo,
+              DireccionRecibo: state.pago.DireccionRecibo,
+              Anio: getCicloActual(),
+            });
+            pagosCreados.push({ Monto: extraerMonto(pagoMecEnero) });
+          }
+        }
+
+        console.log('PAGOS CREADOS:', pagosCreados);
+      } else {
+        console.log('INSCRIPCIÓN SIN PAGOS - No se crearon pagos');
+      }
+
+      // Registrar en bitácora la creación del alumno
+      await registrarBitacora(
+        'Creación de Alumno',
+        `Alumno ID: ${IdAlumno} - ${state.alumno.Nombres} ${state.alumno.Apellidos}${state.pago.sinPagos ? ' (Sin pagos - pago diferido)' : ''}`
+      );
+
+      // Mensaje de éxito según el tipo de inscripción
+      if (state.pago.sinPagos) {
+        message.success('Inscripción completada sin pagos. El alumno deberá pagar al final del ciclo escolar.');
+      } else {
+        message.success('Inscripción completada con éxito');
+      }
+
+      // Solo generar recibos si hay pagos
+      if (!state.pago.sinPagos) {
+        // === RECIBO 1: INSCRIPCIÓN + ENERO (NORMAL) ===
+        const totalNormal = (
+          (state.pago.pagarInscripcion ? parseFloat(state.inscripcion.ValorInscripcion || 0) : 0) +
+          (state.pago.pagarEnero ? parseFloat(state.inscripcion.Mensualidad || 0) : 0)
+        ).toFixed(2);
+
+        if (parseFloat(totalNormal) > 0) {
+          generarReciboPDF(IdAlumno, state.pago, totalNormal, false);
+        }
+
+        // === RECIBO 2: MECANOGRAFÍA (SOLO UNO) ===
+        const totalMecanografia = (
+          (state.pago.pagarMecanografiaInsc ? 40 : 0) +
+          (state.pago.pagarMecanografiaEnero ? 40 : 0)
+        ).toFixed(2);
+
+        if (parseFloat(totalMecanografia) > 0) {
+          setTimeout(() => {
+            generarReciboPDF(IdAlumno, state.pago, totalMecanografia, true);
+          }, 1500); // Espera para que se imprima el primero
         }
       }
 
-      console.log('PAGOS CREADOS:', pagosCreados);
-
-      message.success('Inscripción completada con éxito');
-
-      // CALCULAR TOTAL
-      const totalPagado = pagosCreados
-        .reduce((sum, p) => sum + (parseFloat(p.Monto) || 0), 0)
-        .toFixed(2);
-
-        
-    // === RECIBO 1: INSCRIPCIÓN + ENERO (NORMAL) ===
-    const totalNormal = (
-      (state.pago.pagarInscripcion ? parseFloat(state.inscripcion.ValorInscripcion || 0) : 0) +
-      (state.pago.pagarEnero ? parseFloat(state.inscripcion.Mensualidad || 0) : 0)
-    ).toFixed(2);
-
-    if (parseFloat(totalNormal) > 0) {
-      generarReciboPDF(IdAlumno, state.pago, totalNormal, false);
-    }
-
-    // === RECIBO 2: MECANOGRAFÍA (SOLO UNO) ===
-    const totalMecanografia = (
-      (state.pago.pagarMecanografiaInsc ? 40 : 0) +
-      (state.pago.pagarMecanografiaEnero ? 40 : 0)
-    ).toFixed(2);
-
-    if (parseFloat(totalMecanografia) > 0) {
-      setTimeout(() => {
-        generarReciboPDF(IdAlumno, state.pago, totalMecanografia, true);
-      }, 1500); // Espera para que se imprima el primero
-    }
       navigate('/dashboard');
 
     } catch (error) {

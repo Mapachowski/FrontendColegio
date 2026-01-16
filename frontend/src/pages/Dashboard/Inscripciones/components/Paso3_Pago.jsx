@@ -1,6 +1,6 @@
 // src/pages/dashboard/Inscripciones/components/Paso3_Pago.jsx
 import React from 'react';
-import { Form, Checkbox, Input, Button, message } from 'antd';
+import { Form, Checkbox, Input, Button, message, Divider } from 'antd';
 import moment from 'moment';
 
 const Paso3_Pago = ({ state, dispatch, onFinalizar }) => {
@@ -12,12 +12,35 @@ const Paso3_Pago = ({ state, dispatch, onFinalizar }) => {
   const costoMecanografiaInsc = 40;
   const costoMecanografiaEnero = 40;
 
-  const total = (
+  // Si sinPagos está activo, el total es 0
+  const total = pago.sinPagos ? '0.00' : (
     (pago.pagarInscripcion ? costoInscripcion : 0) +
     (pago.pagarEnero ? costoEnero : 0) +
     (esPrimeroBasico && pago.pagarMecanografiaInsc ? costoMecanografiaInsc : 0) +
     (esPrimeroBasico && pago.pagarMecanografiaEnero ? costoMecanografiaEnero : 0)
   ).toFixed(2);
+
+  // Manejar cambio de checkbox "Sin pagos"
+  const handleSinPagosChange = (checked) => {
+    dispatch({
+      type: 'UPDATE_PAGO',
+      payload: {
+        sinPagos: checked,
+        // Si se activa sinPagos, desmarcar todos los pagos
+        ...(checked && {
+          pagarInscripcion: false,
+          pagarEnero: false,
+          pagarMecanografiaInsc: false,
+          pagarMecanografiaEnero: false,
+        }),
+        // Si se desactiva sinPagos, volver a marcar inscripción y enero por defecto
+        ...(!checked && {
+          pagarInscripcion: true,
+          pagarEnero: true,
+        }),
+      }
+    });
+  };
     const generarPagos = () => {
       const { inscripcion, pago } = state;
       const esPrimeroBasico = inscripcion.IdGrado === 7;
@@ -91,6 +114,12 @@ const Paso3_Pago = ({ state, dispatch, onFinalizar }) => {
       return pagos;
     };
       const handleClick = () => {
+        // Si sinPagos está activo, permitir finalizar sin pagos
+        if (pago.sinPagos) {
+          onFinalizar([]); // Sin pagos
+          return;
+        }
+
         if (total === '0.00') {
           message.error('Seleccione al menos un pago');
           return;
@@ -101,10 +130,33 @@ const Paso3_Pago = ({ state, dispatch, onFinalizar }) => {
       };
   return (
     <Form layout="vertical">
+      {/* OPCIÓN: INSCRIBIR SIN PAGOS */}
+      <div style={{
+        padding: '16px',
+        marginBottom: '20px',
+        background: pago.sinPagos ? '#fff7e6' : '#f6ffed',
+        border: pago.sinPagos ? '2px solid #fa8c16' : '1px solid #b7eb8f',
+        borderRadius: '8px',
+      }}>
+        <Checkbox
+          checked={pago.sinPagos}
+          onChange={(e) => handleSinPagosChange(e.target.checked)}
+          style={{ fontSize: '16px' }}
+        >
+          <strong>Inscribir sin pagos</strong>
+          <span style={{ color: '#666', marginLeft: '8px' }}>
+            (El alumno pagará todo el ciclo escolar al final del año)
+          </span>
+        </Checkbox>
+      </div>
+
+      <Divider orientation="left">Pagos a realizar</Divider>
+
       {/* CHECKBOXES BÁSICOS */}
       <Form.Item>
         <Checkbox
           checked={pago.pagarInscripcion}
+          disabled={pago.sinPagos}
           onChange={(e) => dispatch({ type: 'UPDATE_PAGO', payload: { pagarInscripcion: e.target.checked } })}
         >
           Pagar inscripción <strong>Q {costoInscripcion.toFixed(2)}</strong>
@@ -114,6 +166,7 @@ const Paso3_Pago = ({ state, dispatch, onFinalizar }) => {
       <Form.Item>
         <Checkbox
           checked={pago.pagarEnero}
+          disabled={pago.sinPagos}
           onChange={(e) => dispatch({ type: 'UPDATE_PAGO', payload: { pagarEnero: e.target.checked } })}
         >
           Pagar enero <strong>Q {costoEnero.toFixed(2)}</strong>
@@ -126,6 +179,7 @@ const Paso3_Pago = ({ state, dispatch, onFinalizar }) => {
           <Form.Item>
             <Checkbox
               checked={pago.pagarMecanografiaInsc}
+              disabled={pago.sinPagos}
               onChange={(e) => dispatch({ type: 'UPDATE_PAGO', payload: { pagarMecanografiaInsc: e.target.checked } })}
             >
               Pagar inscripción Mecanografía <strong>Q {costoMecanografiaInsc.toFixed(2)}</strong>
@@ -135,6 +189,7 @@ const Paso3_Pago = ({ state, dispatch, onFinalizar }) => {
           <Form.Item>
             <Checkbox
               checked={pago.pagarMecanografiaEnero}
+              disabled={pago.sinPagos}
               onChange={(e) => dispatch({ type: 'UPDATE_PAGO', payload: { pagarMecanografiaEnero: e.target.checked } })}
             >
               Pagar enero Mecanografía <strong>Q {costoMecanografiaEnero.toFixed(2)}</strong>
@@ -186,15 +241,19 @@ const Paso3_Pago = ({ state, dispatch, onFinalizar }) => {
       {/* TOTAL */}
       <div style={{
         padding: '16px',
-        background: '#f0f8ff',
+        background: pago.sinPagos ? '#fff7e6' : '#f0f8ff',
         borderRadius: 8,
         textAlign: 'center',
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#003366',
+        color: pago.sinPagos ? '#fa8c16' : '#003366',
         margin: '16px 0'
       }}>
-        TOTAL A PAGAR: <span style={{ color: '#d4380d' }}>Q {total}</span>
+        {pago.sinPagos ? (
+          <>SIN PAGOS - Solo se creará la inscripción</>
+        ) : (
+          <>TOTAL A PAGAR: <span style={{ color: '#d4380d' }}>Q {total}</span></>
+        )}
       </div>
 
       {/* BOTONES */}
@@ -206,9 +265,13 @@ const Paso3_Pago = ({ state, dispatch, onFinalizar }) => {
           type="primary"
           size="large"
           onClick={handleClick}
-          style={{ float: 'right', background: '#003366', borderColor: '#003366' }}
+          style={{
+            float: 'right',
+            background: pago.sinPagos ? '#fa8c16' : '#003366',
+            borderColor: pago.sinPagos ? '#fa8c16' : '#003366'
+          }}
         >
-          CONFIRMAR Y GENERAR RECIBO
+          {pago.sinPagos ? 'CONFIRMAR INSCRIPCIÓN SIN PAGOS' : 'CONFIRMAR Y GENERAR RECIBO'}
         </Button>
       </Form.Item>
     </Form>

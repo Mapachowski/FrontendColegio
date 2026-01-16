@@ -63,11 +63,15 @@ const ListadoResponsables = () => {
         apiClient.get('/jornadas'),
       ]);
 
-      const grados = gradosRes.data.data || [];
-      const secciones = seccionesRes.data || [];
-      const jornadas = jornadasRes.data || [];
+      const grados = gradosRes.data.data || gradosRes.data || [];
+      const secciones = seccionesRes.data.data || seccionesRes.data || [];
+      const jornadas = jornadasRes.data.data || jornadasRes.data || [];
 
-      setCatalogos({ grados, secciones, jornadas });
+      setCatalogos({
+        grados: Array.isArray(grados) ? grados : [],
+        secciones: Array.isArray(secciones) ? secciones : [],
+        jornadas: Array.isArray(jornadas) ? jornadas : []
+      });
     } catch (err) {
       console.error('Error al cargar catálogos:', err);
       message.error('Error al cargar catálogos');

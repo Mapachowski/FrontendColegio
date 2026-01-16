@@ -39,8 +39,9 @@ const initialState = {
     pagarInscripcion: true,
     pagarEnero: true,
     NumeroRecibo: '',
-    NombreRecibo: '',      
-  DireccionRecibo: '',   
+    NombreRecibo: '',
+    DireccionRecibo: '',
+    sinPagos: false, // Para alumnos que pagarán todo el ciclo al final del año
   },
   pagos: [
     { IdTipoPago: 1, Concepto: 'Inscripción', Monto: 0, Pagado: false },

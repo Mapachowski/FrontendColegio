@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, InputNumber, Select, message } from 'antd';
 import { BookOutlined, NumberOutlined, CodeOutlined } from '@ant-design/icons';
 import apiClient from '../../../../api/apiClient';
+import { registrarBitacora } from '../../../../utils/bitacora';
 
 const { Option } = Select;
 
@@ -33,6 +34,12 @@ const EditarCursoModal = ({ visible, curso, grados, onCancel, onSuccess }) => {
       const response = await apiClient.put(`/cursos/${curso.idCurso}`, payload);
 
       if (response.data.success) {
+        // Registrar en bitácora
+        await registrarBitacora(
+          'Edición de Curso',
+          `Curso ID: ${curso.idCurso} - ${values.Curso}`
+        );
+
         message.success('Curso actualizado exitosamente');
         form.resetFields();
         onSuccess();

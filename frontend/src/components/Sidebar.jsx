@@ -136,6 +136,7 @@ const Sidebar = ({ user }) => {
       label: 'Pagos',
       children: [
         { key: '6-1', label: 'Ingreso de Pagos', path: '/dashboard/pagos/crear', icon: <WalletOutlined /> },
+        { key: '6-3', label: 'Pago de Inscripción', path: '/dashboard/pagos/inscripcion', icon: <DollarOutlined /> },
         { key: '6-2', label: 'Buscar Recibo', path: '/dashboard/pagos/buscar-recibo', icon: <FileSearchOutlined /> },
         { key: '6-6', label: 'Insolventes', path: '/dashboard/pagos/insolventes', icon: <ExclamationCircleOutlined /> },
       ].filter(Boolean),
@@ -152,44 +153,57 @@ const Sidebar = ({ user }) => {
     {
       key: '8',
       icon: <FileTextOutlined />,
-      label: 'Mis Hijos',
+      label: 'Hijos',
       children: [
         { key: '8-1', label: 'Calificaciones', path: '/dashboard/estudiantes/mis-calificaciones', icon: <FilePdfOutlined /> },
         { key: '8-2', label: 'Actividades por Curso', path: '/dashboard/estudiantes/mis-actividades', icon: <BookOutlined /> },
       ],
     },
   ].map((item) => {
-    // Administrador (rol 1): ve todo
-    if (user.rol === 1) return item;
+    // Administrador (rol 1): ve todo EXCEPTO "Mis Hijos"
+    if (user.rol === 1) {
+      if (item.key === '8') return null; // No ve "Mis Hijos"
+      return item;
+    }
 
-    // Operador (rol 2): Estudiantes, Pagos, Académico, Informes Académicos, Configurar Académico
+    // Operador (rol 2): Por ahora no existe, sin permisos
     if (user.rol === 2) {
-      if (['2', '3', '4', '5', '6'].includes(item.key)) {
-        return item;
-      }
       return null;
     }
 
-    // Familia (rol 3): solo ve el menú "Mis Hijos"
+    // Familia (rol 3): solo ve el menú "Hijos"
     if (user.rol === 3) {
       if (item.key === '8') {
-        return item; // Menú "Mis Hijos" con calificaciones
+        return item; // Menú "Hijos" con calificaciones
       }
       return null;
     }
 
-    // Docente (rol 4): acceso completo a Académico e Informes Académicos
+    // Docente (rol 4): Ve Académico (solo configuración) pero NO Informes Académicos, NO Aula Candelaria, NO Calendario Tareas, NO Configurar Académico
     if (user.rol === 4) {
-      if (['3', '4'].includes(item.key)) {
-        return item;
+      if (item.key === '3') {
+        // Filtrar para que solo vea Configurar Unidades, Configurar Actividades y Mis Solicitudes Reapertura
+        return {
+          ...item,
+          children: item.children.filter(child =>
+            ['3-3', '3-4', '3-5'].includes(child.key) // Solo configuración académica
+          )
+        };
       }
+      // NO ve "Configurar Académico" (item.key === '5')
       return null;
     }
 
-    // Alumno (rol 5): solo Académico e Informes Académicos (completos)
+    // Alumno (rol 5): Solo ve Aula Candelaria y Calendario Tareas en Académico
     if (user.rol === 5) {
-      if (['3', '4'].includes(item.key)) {
-        return item;
+      if (item.key === '3') {
+        // Filtrar para que solo vea Aula Candelaria y Calendario Tareas
+        return {
+          ...item,
+          children: item.children.filter(child =>
+            ['3-1', '3-2'].includes(child.key) // Solo Aula Candelaria y Calendario Tareas
+          )
+        };
       }
       return null;
     }

@@ -12,15 +12,17 @@ import apiClient from '../../../../../api/apiClient';
 
 const { Text, Paragraph } = Typography;
 
-const ActividadesModal = ({ visible, curso, esEstudiante, esDocente, onClose, idAlumno }) => {
+const ActividadesModal = ({ visible, curso, esEstudiante, esDocente, esAdmin, onClose, idAlumno }) => {
   const [loading, setLoading] = useState(false);
   const [actividades, setActividades] = useState([]);
+  const [infoAsignacion, setInfoAsignacion] = useState(null);
 
   useEffect(() => {
     if (visible && curso) {
       cargarActividades();
     } else {
       setActividades([]);
+      setInfoAsignacion(null);
     }
   }, [visible, curso]);
 
@@ -31,54 +33,90 @@ const ActividadesModal = ({ visible, curso, esEstudiante, esDocente, onClose, id
       console.log('=== CARGANDO ACTIVIDADES ===');
       console.log('IdAsignacion:', idAsignacion);
       console.log('IdAlumno (para estudiantes):', idAlumno);
+      console.log('Es Admin:', esAdmin);
 
       let url = '';
 
-      // Para estudiantes: necesita el idAlumno en query params
-      if (esEstudiante && idAlumno) {
-        url = `/asignaciones/${idAsignacion}/actividades-alumno?idAlumno=${idAlumno}`;
+      // Para ADMIN: usa el nuevo endpoint que no requiere idAlumno
+      if (esAdmin) {
+        url = `/asignaciones/${idAsignacion}/actividades`;
+        console.log('🔗 URL ACTIVIDADES (ADMIN):', `http://localhost:4000/api${url}`);
+
+        const response = await apiClient.get(url);
+        console.log('📦 Response status:', response.status);
+        console.log('📦 Response actividades (ADMIN):', response.data);
+
+        if (response.data.success && response.data.data) {
+          const data = response.data.data;
+          setInfoAsignacion(data.asignacion || null);
+
+          // Extraer actividades de todas las unidades
+          let todasActividades = [];
+          if (data.unidades && Array.isArray(data.unidades)) {
+            data.unidades.forEach(unidad => {
+              if (unidad.actividades && Array.isArray(unidad.actividades)) {
+                // Agregar info de la unidad a cada actividad
+                const actividadesConUnidad = unidad.actividades.map(act => ({
+                  ...act,
+                  NumeroUnidad: unidad.NumeroUnidad,
+                  NombreUnidad: unidad.NombreUnidad
+                }));
+                todasActividades = [...todasActividades, ...actividadesConUnidad];
+              }
+            });
+          }
+
+          console.log('📚 Total actividades (ADMIN):', todasActividades.length);
+          setActividades(todasActividades);
+        } else {
+          setActividades([]);
+        }
       }
-      // Para docentes/admin: endpoint diferente (si existe)
+      // Para ESTUDIANTES: usa endpoint con idAlumno
+      else if (esEstudiante && idAlumno) {
+        url = `/asignaciones/${idAsignacion}/actividades-alumno?idAlumno=${idAlumno}`;
+        console.log('🔗 URL ACTIVIDADES (ESTUDIANTE):', `http://localhost:4000/api${url}`);
+
+        const response = await apiClient.get(url);
+        console.log('📦 Response status:', response.status);
+        console.log('📦 Response actividades:', response.data);
+
+        let actividadesData = [];
+        if (response.data.success && response.data.data) {
+          actividadesData = Array.isArray(response.data.data)
+            ? response.data.data
+            : [response.data.data];
+        } else if (Array.isArray(response.data)) {
+          actividadesData = response.data;
+        }
+
+        console.log('📚 Total actividades cargadas:', actividadesData.length);
+        setActividades(actividadesData);
+      }
+      // Para DOCENTES: mismo endpoint que estudiante pero sin idAlumno
       else {
         url = `/asignaciones/${idAsignacion}/actividades-alumno${idAlumno ? `?idAlumno=${idAlumno}` : ''}`;
+        console.log('🔗 URL ACTIVIDADES (DOCENTE):', `http://localhost:4000/api${url}`);
+
+        const response = await apiClient.get(url);
+        console.log('📦 Response status:', response.status);
+        console.log('📦 Response actividades:', response.data);
+
+        let actividadesData = [];
+        if (response.data.success && response.data.data) {
+          actividadesData = Array.isArray(response.data.data)
+            ? response.data.data
+            : [response.data.data];
+        } else if (Array.isArray(response.data)) {
+          actividadesData = response.data;
+        }
+
+        console.log('📚 Total actividades cargadas:', actividadesData.length);
+        setActividades(actividadesData);
       }
-
-      console.log('🔗 URL ACTIVIDADES:', `http://localhost:4000/api${url}`);
-
-      const response = await apiClient.get(url);
-      console.log('📦 Response status:', response.status);
-      console.log('📦 Response actividades:', response.data);
-
-      let actividadesData = [];
-      if (response.data.success && response.data.data) {
-        actividadesData = Array.isArray(response.data.data)
-          ? response.data.data
-          : [response.data.data];
-      } else if (Array.isArray(response.data)) {
-        actividadesData = response.data;
-      }
-
-      console.log('📚 Total actividades cargadas:', actividadesData.length);
-      console.log('📄 ESTRUCTURA DE ACTIVIDADES:');
-      if (actividadesData.length > 0) {
-        console.log('Primera actividad (ejemplo):', actividadesData[0]);
-        console.log('Campos disponibles:', Object.keys(actividadesData[0]));
-        console.log('--- Campos que estamos usando ---');
-        console.log('Titulo:', actividadesData[0].Titulo);
-        console.log('Descripcion:', actividadesData[0].Descripcion);
-        console.log('FechaPublicacion:', actividadesData[0].FechaPublicacion);
-        console.log('FechaVencimiento:', actividadesData[0].FechaVencimiento);
-        console.log('Estado:', actividadesData[0].Estado);
-        console.log('--- Posibles campos alternativos ---');
-        console.log('FechaCreado:', actividadesData[0].FechaCreado);
-        console.log('FechaActividad:', actividadesData[0].FechaActividad);
-        console.log('EstadoActividad:', actividadesData[0].EstadoActividad);
-        console.log('=====================================');
-      }
-
-      setActividades(actividadesData);
     } catch (error) {
       console.error('❌ Error al cargar actividades:', error);
+      console.error('❌ Response:', error.response?.data);
       message.error('Error al cargar actividades');
       setActividades([]);
     } finally {
@@ -86,12 +124,25 @@ const ActividadesModal = ({ visible, curso, esEstudiante, esDocente, onClose, id
     }
   };
 
-  const columns = [
+  // Columnas base
+  const columnsBase = [
+    // Columna de Unidad (solo para admin)
+    ...(esAdmin ? [{
+      title: 'Unidad',
+      dataIndex: 'NumeroUnidad',
+      key: 'NumeroUnidad',
+      width: '10%',
+      align: 'center',
+      render: (num, record) => (
+        <Tag color="blue">U{num}</Tag>
+      ),
+      sorter: (a, b) => a.NumeroUnidad - b.NumeroUnidad
+    }] : []),
     {
       title: 'Actividad',
       dataIndex: 'NombreActividad',
       key: 'NombreActividad',
-      width: '30%',
+      width: esAdmin ? '25%' : '30%',
       render: (text, record) => (
         <Space direction="vertical" size={0}>
           <Text strong style={{ fontSize: '14px' }}>
@@ -207,7 +258,20 @@ const ActividadesModal = ({ visible, curso, esEstudiante, esDocente, onClose, id
 
         return <Tag color="default">Inactiva</Tag>;
       }
-    }
+    },
+    // Columna de Tipo (solo para admin)
+    ...(esAdmin ? [{
+      title: 'Tipo',
+      dataIndex: 'TipoActividad',
+      key: 'TipoActividad',
+      width: '10%',
+      align: 'center',
+      render: (tipo) => (
+        <Tag color={tipo === 'final' ? 'red' : 'cyan'}>
+          {tipo === 'final' ? 'Final' : 'Zona'}
+        </Tag>
+      )
+    }] : [])
   ];
 
   const nombreCurso = curso?.NombreCurso || curso?.Curso || curso?.nombreCurso || 'Curso';
@@ -264,7 +328,7 @@ const ActividadesModal = ({ visible, curso, esEstudiante, esDocente, onClose, id
           </div>
 
           <Table
-            columns={columns}
+            columns={columnsBase}
             dataSource={actividades}
             rowKey={(record) => record.IdActividad || record.idActividad}
             pagination={{

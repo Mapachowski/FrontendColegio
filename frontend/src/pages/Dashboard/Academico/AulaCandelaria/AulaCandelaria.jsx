@@ -310,6 +310,7 @@ const AulaCandelaria = () => {
         curso={cursoSeleccionado}
         esEstudiante={esEstudiante}
         esDocente={esDocente}
+        esAdmin={esAdmin}
         idAlumno={perfil?.IdAlumno || null}
         onClose={handleCloseModal}
       />

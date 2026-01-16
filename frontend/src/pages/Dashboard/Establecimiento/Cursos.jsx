@@ -5,6 +5,7 @@ import apiClient from '../../../api/apiClient';
 import CrearCursoModal from './components/CrearCursoModal';
 import EditarCursoModal from './components/EditarCursoModal';
 import VerCursoModal from './components/VerCursoModal';
+import { registrarBitacora } from '../../../utils/bitacora';
 
 const { Option } = Select;
 
@@ -51,10 +52,16 @@ const Cursos = () => {
     }
   };
 
-  const handleEliminar = async (idCurso) => {
+  const handleEliminar = async (idCurso, nombreCurso = '') => {
     try {
       const response = await apiClient.delete(`/cursos/${idCurso}`);
       if (response.data.success) {
+        // Registrar en bitácora
+        await registrarBitacora(
+          'Eliminación de Curso',
+          `Curso ID: ${idCurso}${nombreCurso ? ` - ${nombreCurso}` : ''}`
+        );
+
         message.success('Curso eliminado exitosamente');
         cargarCursos(filtroGrado);
       }
@@ -159,7 +166,7 @@ const Cursos = () => {
           <Popconfirm
             title="¿Está seguro de eliminar este curso?"
             description="Esta acción desactivará el curso en el sistema."
-            onConfirm={() => handleEliminar(record.idCurso)}
+            onConfirm={() => handleEliminar(record.idCurso, record.Curso)}
             okText="Sí, eliminar"
             cancelText="Cancelar"
             okButtonProps={{ danger: true }}

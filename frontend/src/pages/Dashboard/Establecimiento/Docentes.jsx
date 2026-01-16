@@ -5,6 +5,7 @@ import apiClient from '../../../api/apiClient';
 import CrearDocenteModal from './components/CrearDocenteModal';
 import EditarDocenteModal from './components/EditarDocenteModal';
 import VerDocenteModal from './components/VerDocenteModal';
+import { registrarBitacora } from '../../../utils/bitacora';
 
 const Docentes = () => {
   const [docentes, setDocentes] = useState([]);
@@ -33,7 +34,7 @@ const Docentes = () => {
     }
   };
 
-  const handleEliminar = async (idDocente) => {
+  const handleEliminar = async (idDocente, nombreDocente = '') => {
     try {
       const user = JSON.parse(localStorage.getItem('user')) || { IdUsuario: null };
       const IdUsuario = user.IdUsuario;
@@ -41,6 +42,12 @@ const Docentes = () => {
         data: { ModificadoPor: String(IdUsuario) } // Convertir a string para evitar error .trim()
       });
       if (response.data.success) {
+        // Registrar en bitácora
+        await registrarBitacora(
+          'Eliminación de Docente',
+          `Docente ID: ${idDocente}${nombreDocente ? ` - ${nombreDocente}` : ''}`
+        );
+
         message.success('Docente eliminado exitosamente');
         cargarDocentes();
       }
@@ -133,7 +140,7 @@ const Docentes = () => {
           <Popconfirm
             title="¿Está seguro de eliminar este docente?"
             description="Esta acción desactivará al docente en el sistema."
-            onConfirm={() => handleEliminar(record.idDocente)}
+            onConfirm={() => handleEliminar(record.idDocente, `${record.Nombres} ${record.Apellidos}`)}
             okText="Sí, eliminar"
             cancelText="Cancelar"
             okButtonProps={{ danger: true }}

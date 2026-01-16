@@ -27,7 +27,17 @@ const UsoPlataforma = () => {
   const acciones = [
     'Inicio de sesión',
     'Descarga de reporte Excel',
-    'Reset de contraseña'
+    'Reset de contraseña',
+    'Creación de Alumno',
+    'Edición de Alumno',
+    'Suspensión de Alumno',
+    'Creación de Curso',
+    'Edición de Curso',
+    'Eliminación de Curso',
+    'Creación de Docente',
+    'Edición de Docente',
+    'Eliminación de Docente',
+    'Creación de Pago'
   ];
 
   useEffect(() => {
@@ -147,6 +157,10 @@ const UsoPlataforma = () => {
         if (accion.includes('Inicio de sesión')) color = 'blue';
         else if (accion.includes('Descarga')) color = 'green';
         else if (accion.includes('Reset')) color = 'orange';
+        else if (accion.includes('Creación')) color = 'cyan';
+        else if (accion.includes('Edición')) color = 'geekblue';
+        else if (accion.includes('Eliminación')) color = 'red';
+        else if (accion.includes('Suspensión')) color = 'volcano';
 
         return <Tag color={color}>{accion}</Tag>;
       },

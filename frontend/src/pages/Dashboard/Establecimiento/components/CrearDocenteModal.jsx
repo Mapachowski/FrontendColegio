@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, Form, Input, message, Divider } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, BookOutlined, IdcardOutlined } from '@ant-design/icons';
 import apiClient from '../../../../api/apiClient';
+import { registrarBitacora } from '../../../../utils/bitacora';
 
 const CrearDocenteModal = ({ visible, onCancel, onSuccess }) => {
   const [form] = Form.useForm();
@@ -45,6 +46,12 @@ const CrearDocenteModal = ({ visible, onCancel, onSuccess }) => {
       const responseDocente = await apiClient.post('/docentes', docentePayload);
 
       if (responseDocente.data.success) {
+        // Registrar en bitácora
+        await registrarBitacora(
+          'Creación de Docente',
+          `Docente: ${values.NombreCompleto} - Usuario: ${values.NombreUsuario}`
+        );
+
         message.success('Docente y usuario creados exitosamente');
         form.resetFields();
         onSuccess();

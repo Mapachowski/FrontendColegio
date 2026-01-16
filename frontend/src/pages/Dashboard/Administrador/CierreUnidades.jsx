@@ -84,6 +84,9 @@ const CierreUnidades = ({ user }) => {
         // Filtrar solo cursos NO listos (PENDIENTE o INCOMPLETO)
         const cursosNoListos = data.cursos?.filter(c => c.EstadoGeneral !== 'LISTO') || [];
 
+        console.log('📊 Datos de unidad recibidos:', data);
+        console.log('🔑 IdUnidad:', data.IdUnidad);
+
         setCursosData({
           ...data,
           cursosNoListos,
@@ -91,7 +94,8 @@ const CierreUnidades = ({ user }) => {
           cursosListos: data.resumen.cursosListos,
           cursosPendientes: data.resumen.cursosPendientes,
           cursosIncompletos: data.resumen.cursosIncompletos,
-          numeroUnidad
+          numeroUnidad,
+          idUnidad: data.IdUnidad // Guardar el IdUnidad de la base de datos
         });
       }
     } catch (error) {
@@ -179,12 +183,21 @@ const CierreUnidades = ({ user }) => {
 
   const handleConfirmarNotificacion = async () => {
     console.log('✅ Usuario confirmó notificación');
+
+    if (!cursosData?.idUnidad) {
+      message.error('No se pudo obtener el ID de la unidad');
+      console.error('❌ IdUnidad no disponible en cursosData:', cursosData);
+      return;
+    }
+
     setProcesando(true);
     setModalNotificarVisible(false);
 
     try {
-      const url = `/notificaciones-docentes/generar-por-numero/${unidadSeleccionada}`;
+      // Usar el IdUnidad de la base de datos, NO el número de unidad
+      const url = `/notificaciones-docentes/generar/${cursosData.idUnidad}`;
       console.log('📤 Enviando POST a:', url);
+      console.log('🔑 Usando IdUnidad:', cursosData.idUnidad);
       const response = await apiClient.post(url);
       console.log('📥 Respuesta recibida:', response.data);
       if (response.data.success) {

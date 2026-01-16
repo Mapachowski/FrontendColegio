@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { sanitizeHTML } from '../../../utils/sanitize';
 import { getCicloActual } from '../../../utils/cicloEscolar';
+import { registrarBitacora } from '../../../utils/bitacora';
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -201,6 +202,13 @@ const CrearPago = () => {
 
 
       message.success(`Se registraron ${responses.length} pagos exitosamente.`);
+
+      // Registrar en bitácora
+      await registrarBitacora(
+        'Creación de Pago',
+        `${responses.length} pago(s) registrado(s) para Alumno ID: ${idAlumno}. Monto total: Q${montoTotal.toFixed(2)}`
+      );
+
       setIsSuccessModalOpen(true);
 
       // RECARGAR MESES PARA VER ACTUALIZACIÓN

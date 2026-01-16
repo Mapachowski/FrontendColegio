@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, message } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, BookOutlined } from '@ant-design/icons';
 import apiClient from '../../../../api/apiClient';
+import { registrarBitacora } from '../../../../utils/bitacora';
 
 const EditarDocenteModal = ({ visible, docente, onCancel, onSuccess }) => {
   const [form] = Form.useForm();
@@ -35,6 +36,12 @@ const EditarDocenteModal = ({ visible, docente, onCancel, onSuccess }) => {
       const response = await apiClient.put(`/docentes/${docente.idDocente}`, payload);
 
       if (response.data.success) {
+        // Registrar en bitácora
+        await registrarBitacora(
+          'Edición de Docente',
+          `Docente ID: ${docente.idDocente} - ${values.NombreDocente}`
+        );
+
         message.success('Docente actualizado exitosamente');
         form.resetFields();
         onSuccess();
