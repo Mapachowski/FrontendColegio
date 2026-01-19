@@ -178,6 +178,17 @@ const Sidebar = ({ user, onLogout }) => {
     // Administrador (rol 1): ve todo EXCEPTO "Mis Hijos"
     if (user.rol === 1) {
       if (item.key === '8') return null; // No ve "Mis Hijos"
+
+      // Filtrar el menú "Académico" para que NO vea Calendario Tareas, Configurar Unidades y Configurar Actividades
+      if (item.key === '3') {
+        return {
+          ...item,
+          children: item.children.filter(child =>
+            ['3-1', '3-5'].includes(child.key) // Solo Aula Candelaria y Mis Solicitudes Reapertura
+          )
+        };
+      }
+
       return item;
     }
 
