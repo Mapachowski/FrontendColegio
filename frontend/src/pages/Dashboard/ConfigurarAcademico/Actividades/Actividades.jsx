@@ -1005,6 +1005,16 @@ const Actividades = () => {
           }
         }}
       />
+
+      {/* Botón Regresar al Dashboard */}
+      <div style={{ marginTop: 24, textAlign: 'left' }}>
+        <Button
+          size="large"
+          onClick={() => navigate('/dashboard')}
+        >
+          Regresar al Dashboard
+        </Button>
+      </div>
     </div>
   );
 };

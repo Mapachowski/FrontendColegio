@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Table, Tag, Space, Button, message, Empty, Spin } from 'antd';
 import { UnlockOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import apiClient from '../../../api/apiClient';
 import dayjs from 'dayjs';
 
 const MisSolicitudesReapertura = () => {
+  const navigate = useNavigate();
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -30,15 +32,18 @@ const MisSolicitudesReapertura = () => {
 
   const columnas = [
     {
-      title: 'Unidad',
-      dataIndex: 'NombreUnidad',
-      key: 'NombreUnidad',
-      width: 250,
+      title: 'Curso / Unidad',
+      dataIndex: 'NombreCurso',
+      key: 'NombreCurso',
+      width: 300,
       render: (texto, record) => (
         <div>
-          <div style={{ fontWeight: 'bold' }}>{texto}</div>
-          <div style={{ fontSize: '12px', color: '#666' }}>
-            {record.NombreCurso}
+          <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{texto}</div>
+          <div style={{ fontSize: '12px', color: '#1890ff', marginTop: 2 }}>
+            {record.NombreGrado} - {record.NombreSeccion} - {record.NombreJornada}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666', marginTop: 2 }}>
+            {record.NombreUnidad}
           </div>
         </div>
       )
@@ -155,6 +160,16 @@ const MisSolicitudesReapertura = () => {
           />
         )}
       </Card>
+
+      {/* Botón Regresar al Dashboard */}
+      <div style={{ marginTop: 24, textAlign: 'left' }}>
+        <Button
+          size="large"
+          onClick={() => navigate('/dashboard')}
+        >
+          Regresar al Dashboard
+        </Button>
+      </div>
     </div>
   );
 };

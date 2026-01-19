@@ -202,6 +202,44 @@ const Inscripciones = () => {
       const inscRes = await apiClient.post('/inscripciones', inscPayload);
       console.log('INSCRIPCIÓN CREADA:', inscRes.data);
 
+      // Obtener IdInscripcion de la respuesta
+      const IdInscripcion = inscRes.data.IdInscripcion || inscRes.data.data?.IdInscripcion;
+      console.log('IdInscripcion obtenido:', IdInscripcion);
+
+      // 2.1. ASIGNAR ACTIVIDADES AL ALUMNO (proceso invisible)
+      // Este proceso crea las calificaciones para el alumno si ya existen actividades creadas
+      if (IdInscripcion) {
+        try {
+          console.log('=== ASIGNANDO ACTIVIDADES AL ALUMNO (PROCESO AUTOMÁTICO) ===');
+          console.log('Payload asignar-actividades:', {
+            IdInscripcion: IdInscripcion,
+            IdColaborador: state.user.IdColaborador
+          });
+
+          const asignarActividadesRes = await apiClient.post('/inscripciones/asignar-actividades', {
+            IdInscripcion: IdInscripcion,
+            IdColaborador: state.user.IdColaborador
+          });
+
+          console.log('📚 Respuesta asignar-actividades:', asignarActividadesRes.data);
+
+          if (asignarActividadesRes.data.success) {
+            const { actividadesEncontradas, calificacionesCreadas } = asignarActividadesRes.data.data || {};
+            console.log(`✅ Actividades encontradas: ${actividadesEncontradas}`);
+            console.log(`✅ Calificaciones creadas: ${calificacionesCreadas}`);
+            console.log(`✅ Mensaje: ${asignarActividadesRes.data.message}`);
+          }
+          console.log('=== FIN ASIGNAR ACTIVIDADES ===');
+        } catch (errorActividades) {
+          // No bloqueamos la inscripción si falla la asignación de actividades
+          console.error('❌ Error al asignar actividades (no crítico):', errorActividades);
+          console.error('Response:', errorActividades.response?.data);
+          // No mostramos mensaje al usuario, es un proceso interno
+        }
+      } else {
+        console.warn('⚠️ No se pudo obtener IdInscripcion, no se asignarán actividades');
+      }
+
       // 3. CREAR PAGOS SI SELECCIONADOS (solo si NO es inscripción sin pagos)
       const fechaHoy = moment().format('YYYY-MM-DD');
       const esPrimeroBasico = state.inscripcion.IdGrado === 7;

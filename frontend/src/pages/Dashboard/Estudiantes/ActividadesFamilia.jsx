@@ -79,14 +79,33 @@ const ActividadesFamilia = () => {
         }
       });
 
+      console.log('=== RESPUESTA CURSOS ===');
+      console.log('Response completa:', response.data);
+
       if (response.data.success) {
-        setCursos(response.data.data.cursos || []);
-        if (response.data.data.cursos.length === 0) {
+        const cursosData = response.data.data.cursos || [];
+        console.log('📚 Cursos recibidos:', cursosData);
+        console.log('📚 Cantidad de cursos:', cursosData.length);
+
+        // Log detallado de cada curso
+        cursosData.forEach((curso, index) => {
+          console.log(`Curso ${index + 1}:`, {
+            IdCurso: curso.IdCurso,
+            NombreCurso: curso.NombreCurso,
+            Nombre: curso.Nombre,
+            nombreCurso: curso.nombreCurso,
+            keys: Object.keys(curso)
+          });
+        });
+
+        setCursos(cursosData);
+        if (cursosData.length === 0) {
           message.info('No se encontraron cursos para este estudiante');
         }
       } else {
         message.error('Error al cargar los cursos');
       }
+      console.log('=== FIN RESPUESTA CURSOS ===');
     } catch (error) {
       console.error('Error al cargar cursos:', error);
       message.error('Error al cargar los cursos del estudiante');
@@ -296,14 +315,11 @@ const ActividadesFamilia = () => {
                     justifyContent: 'center'
                   }}
                 >
-                  <BookOutlined style={{ fontSize: 32, marginBottom: 12 }} />
-                  <Title level={4} style={{ color: 'white', margin: 0 }}>
-                    {curso.NombreCurso}
+                  <BookOutlined style={{ fontSize: 32, marginBottom: 8 }} />
+                  <Title level={4} style={{ color: 'white', margin: '8px 0' }}>
+                    {curso.Curso || curso.NombreCurso}
                   </Title>
-                  <Text style={{ color: 'white', marginTop: 8 }}>
-                    {curso.unidades.length} unidad{curso.unidades.length !== 1 ? 'es' : ''}
-                  </Text>
-                  <Text strong style={{ color: 'white', marginTop: 8, fontSize: 12 }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.85)', marginTop: 8, fontSize: 13 }}>
                     Clic para ver actividades →
                   </Text>
                 </Card>
@@ -321,7 +337,7 @@ const ActividadesFamilia = () => {
           <Space>
             <BookOutlined style={{ fontSize: 24, color: '#1890ff' }} />
             <Text strong style={{ fontSize: 20 }}>
-              {cursoSeleccionado?.NombreCurso}
+              {cursoSeleccionado?.Curso || cursoSeleccionado?.NombreCurso}
             </Text>
           </Space>
         }

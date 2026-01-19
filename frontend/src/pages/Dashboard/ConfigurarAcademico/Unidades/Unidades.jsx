@@ -107,11 +107,17 @@ const Unidades = () => {
       if (gradosRes.data.success) {
         setGrados(gradosRes.data.data);
       }
-      if (Array.isArray(seccionesRes.data)) {
-        setSecciones(seccionesRes.data);
+
+      // Secciones - manejar diferentes formatos de respuesta
+      const seccionesData = seccionesRes.data.data || seccionesRes.data;
+      if (Array.isArray(seccionesData)) {
+        setSecciones(seccionesData);
       }
-      if (Array.isArray(jornadasRes.data)) {
-        setJornadas(jornadasRes.data);
+
+      // Jornadas - manejar diferentes formatos de respuesta
+      const jornadasData = jornadasRes.data.data || jornadasRes.data;
+      if (Array.isArray(jornadasData)) {
+        setJornadas(jornadasData);
       }
     } catch (error) {
       console.error('Error al cargar catálogos:', error);
@@ -654,6 +660,16 @@ const Unidades = () => {
           setUnidadSeleccionada(null);
         }}
       />
+
+      {/* Botón Regresar al Dashboard */}
+      <div style={{ marginTop: 24, textAlign: 'left' }}>
+        <Button
+          size="large"
+          onClick={() => window.location.href = '/dashboard'}
+        >
+          Regresar al Dashboard
+        </Button>
+      </div>
     </div>
   );
 };

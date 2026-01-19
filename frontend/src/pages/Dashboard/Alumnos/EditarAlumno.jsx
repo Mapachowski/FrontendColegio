@@ -2,15 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Card, Tabs, Input, Select, Switch, Button, Space, Tag, Typography, Row, Col, message, Spin, DatePicker
+  Card, Tabs, Input, Select, Switch, Button, Space, Tag, Typography, Row, Col, message, Spin, DatePicker, Alert, Divider
 } from 'antd';
+import { SwapOutlined, StopOutlined, WarningOutlined } from '@ant-design/icons';
 import BuscarAlumnoEditarModal from './components/BuscarAlumnoEditarModal';
 import EditarFamiliaModal from './components/EditarFamiliaModal';
 import apiClient from '../../../api/apiClient';
 import moment from 'moment';
 import { registrarBitacora } from '../../../utils/bitacora';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
@@ -19,13 +20,14 @@ const EditarAlumno = () => {
   const [openBuscar, setOpenBuscar] = useState(true);
   const [openFamilia, setOpenFamilia] = useState(false);
   const [activeTab, setActiveTab] = useState('1');
+  const [activeSubTab, setActiveSubTab] = useState('antes'); // Sub-pestaña de inscripción
   const [loading, setLoading] = useState(false);
 
   // Datos del alumno e inscripción
   const [alumnoData, setAlumnoData] = useState(null);
   const [familiaData, setFamiliaData] = useState(null);
   const [inscripcionData, setInscripcionData] = useState(null);
-  const [cicloEscolar, setCicloEscolar] = useState(null); // Estado separado para CicloEscolar
+  const [cicloEscolar, setCicloEscolar] = useState(null);
 
   // Estados editables del alumno
   const [matricula, setMatricula] = useState('');
@@ -38,24 +40,45 @@ const EditarAlumno = () => {
   const [nombreEmergencia, setNombreEmergencia] = useState('');
   const [visible, setVisible] = useState(true);
 
-  // Estados editables de inscripción
+  // Estados editables de inscripción - Cambio ANTES de inicio
+  const [idGrado, setIdGrado] = useState(null);
   const [idSeccion, setIdSeccion] = useState(null);
   const [idJornada, setIdJornada] = useState(null);
+
+  // Estados para Cambio DESPUÉS de inicio (usa endpoint cambiar-grupo)
+  const [idSeccionNueva, setIdSeccionNueva] = useState(null);
+  const [idJornadaNueva, setIdJornadaNueva] = useState(null);
+  const [unidadActual, setUnidadActual] = useState(null);
+  const [motivoCambio, setMotivoCambio] = useState('');
+  const [loadingCambioGrupo, setLoadingCambioGrupo] = useState(false);
+
+  // Estados para Suspensión
   const [inscripcionActiva, setInscripcionActiva] = useState(true);
   const [observacion, setObservacion] = useState('');
 
   // Catálogos
+  const [grados, setGrados] = useState([]);
   const [secciones, setSecciones] = useState([]);
   const [jornadas, setJornadas] = useState([]);
+
+  // Lista de unidades
+  const unidades = [
+    { value: 1, label: 'Primera Unidad' },
+    { value: 2, label: 'Segunda Unidad' },
+    { value: 3, label: 'Tercera Unidad' },
+    { value: 4, label: 'Cuarta Unidad' },
+  ];
 
   // Cargar catálogos
   useEffect(() => {
     const cargarCatalogos = async () => {
       try {
-        const [seccionesRes, jornadasRes] = await Promise.all([
+        const [gradosRes, seccionesRes, jornadasRes] = await Promise.all([
+          apiClient.get('/grados'),
           apiClient.get('/secciones'),
           apiClient.get('/jornadas'),
         ]);
+        setGrados(Array.isArray(gradosRes.data) ? gradosRes.data : gradosRes.data.data || []);
         setSecciones(Array.isArray(seccionesRes.data) ? seccionesRes.data : seccionesRes.data.data || []);
         setJornadas(Array.isArray(jornadasRes.data) ? jornadasRes.data : jornadasRes.data.data || []);
       } catch (error) {
@@ -75,12 +98,10 @@ const EditarAlumno = () => {
       setAlumnoData(record);
       setInscripcionData(record);
 
-      // Guardar el ciclo escolar de manera independiente para usarlo en recargas
+      // Guardar el ciclo escolar
       if (record.CicloEscolar) {
         setCicloEscolar(record.CicloEscolar);
         console.log('✅ CicloEscolar guardado:', record.CicloEscolar);
-      } else {
-        console.warn('⚠️ ADVERTENCIA: No se encontró CicloEscolar en el record');
       }
 
       // Mapear campos editables del alumno
@@ -94,17 +115,23 @@ const EditarAlumno = () => {
       setNombreEmergencia(record.ContactoEmergencia || '');
       setVisible(record.Visible !== false);
 
-      // Establecer valores de sección y jornada
-      // Si vienen los IDs directamente del SP, usarlos. Si no, intentar mapear por nombre
+      // Establecer valores de grado, sección y jornada
+      setIdGrado(record.IdGrado || null);
       setIdSeccion(record.IdSeccion || null);
       setIdJornada(record.IdJornada || null);
 
-      // Estado activo por defecto (1 = Activo, 0 = Inactivo)
+      // Inicializar valores para cambio después de inicio (sin selección)
+      setIdSeccionNueva(null);
+      setIdJornadaNueva(null);
+      setUnidadActual(null);
+      setMotivoCambio('');
+
+      // Estado activo
       const esActivo = record.Estado === undefined || record.Estado === null || record.Estado === 1 || record.Estado === 'Activo' || record.Estado === true;
       setInscripcionActiva(esActivo);
       setObservacion(record.ComentarioEstado || '');
 
-      // Cargar datos completos de familia desde el endpoint
+      // Cargar datos completos de familia
       if (record.IdFamilia) {
         try {
           const familiaResponse = await apiClient.get(`/familias/${record.IdFamilia}`);
@@ -113,16 +140,14 @@ const EditarAlumno = () => {
           const familiaFromAPI = {
             IdFamilia: record.IdFamilia,
             NombreFamilia: record.NombreFamilia,
-            NombreRecibo: familiaCompleta.NombreRecibo || '', // Campo real de facturación (DPI/NIT)
+            NombreRecibo: familiaCompleta.NombreRecibo || '',
             TelefonoRecibo: familiaCompleta.TelefonoContacto || record.TelefonoContacto || '',
             CorreoElectronico: familiaCompleta.EmailContacto || record.EmailContacto || '',
             DireccionRecibo: familiaCompleta.DireccionRecibo || record.Direccion || '',
           };
           setFamiliaData(familiaFromAPI);
-          console.log('FAMILIA CARGADA DESDE API:', familiaFromAPI);
         } catch (error) {
           console.error('Error al cargar datos de familia:', error);
-          // Fallback a datos del SP si falla la llamada
           const familiaFromRecord = {
             IdFamilia: record.IdFamilia,
             NombreFamilia: record.NombreFamilia,
@@ -132,23 +157,8 @@ const EditarAlumno = () => {
             DireccionRecibo: record.Direccion || '',
           };
           setFamiliaData(familiaFromRecord);
-          console.log('FAMILIA MAPEADA DESDE RECORD (FALLBACK):', familiaFromRecord);
         }
       }
-
-      console.log('DATOS FINALES CARGADOS:', {
-        alumno: {
-          IdAlumno: record.IdAlumno,
-          ContactoEmergencia: record.ContactoEmergencia,
-          NumeroEmergencia: record.NumeroEmergencia,
-        },
-        inscripcion: {
-          IdInscripcion: record.IdInscripcion,
-          IdSeccion: record.IdSeccion,
-          IdJornada: record.IdJornada,
-          Estado: record.Estado,
-        },
-      });
 
       setOpenBuscar(false);
     } catch (error) {
@@ -161,27 +171,14 @@ const EditarAlumno = () => {
 
   const recargarDatosAlumno = async () => {
     console.log('🔄 Iniciando recarga de datos del alumno...');
-    console.log('📋 Datos actuales:', {
-      IdAlumno: alumnoData.IdAlumno,
-      CicloEscolar_state: cicloEscolar,
-      CicloEscolar_inscripcion: inscripcionData?.CicloEscolar,
-      CicloEscolar_alumno: alumnoData?.CicloEscolar,
-      inscripcionData: inscripcionData
-    });
-
     try {
-      // Usar el ciclo escolar del estado guardado (más confiable)
       const cicloEscolarActual = cicloEscolar || inscripcionData?.CicloEscolar || alumnoData?.CicloEscolar;
 
       if (!cicloEscolarActual) {
-        console.error('❌ No se encontró el ciclo escolar en ningún lugar');
-        message.error('No se pudo determinar el ciclo escolar para recargar los datos');
+        console.error('❌ No se encontró el ciclo escolar');
         return;
       }
 
-      console.log('✅ Usando CicloEscolar:', cicloEscolarActual);
-
-      // Buscar el alumno actualizado en inscripciones
       const response = await apiClient.get('/inscripciones/buscar-alumno', {
         params: {
           IdAlumno: alumnoData.IdAlumno,
@@ -189,30 +186,18 @@ const EditarAlumno = () => {
         }
       });
 
-      console.log('📥 Respuesta del servidor:', response.data);
-
       if (response.data.success && response.data.data && response.data.data.length > 0) {
-        // La respuesta viene en formato: data[0]["0"] = alumno
         const primerElemento = response.data.data[0];
         const alumnoActualizado = primerElemento["0"] || primerElemento;
 
-        console.log('📝 Datos actualizados recibidos:', {
-          IdSeccion: alumnoActualizado.IdSeccion,
-          NombreSeccion: alumnoActualizado.NombreSeccion,
-          IdJornada: alumnoActualizado.IdJornada,
-          NombreJornada: alumnoActualizado.NombreJornada
-        });
-
-        // Actualizar todos los estados con los datos frescos
+        // Actualizar estados
         setAlumnoData(alumnoActualizado);
         setInscripcionData(alumnoActualizado);
 
-        // Actualizar CicloEscolar también si viene en la respuesta
         if (alumnoActualizado.CicloEscolar) {
           setCicloEscolar(alumnoActualizado.CicloEscolar);
         }
 
-        // Actualizar campos del alumno
         setMatricula(alumnoActualizado.Matricula || '');
         setNombres(alumnoActualizado.Nombres || '');
         setApellidos(alumnoActualizado.Apellidos || '');
@@ -223,9 +208,15 @@ const EditarAlumno = () => {
         setNombreEmergencia(alumnoActualizado.ContactoEmergencia || '');
         setVisible(alumnoActualizado.Visible !== false);
 
-        // Actualizar campos de inscripción
+        setIdGrado(alumnoActualizado.IdGrado || null);
         setIdSeccion(alumnoActualizado.IdSeccion || null);
         setIdJornada(alumnoActualizado.IdJornada || null);
+
+        // Limpiar campos de cambio después de inicio
+        setIdSeccionNueva(null);
+        setIdJornadaNueva(null);
+        setUnidadActual(null);
+        setMotivoCambio('');
 
         const esActivo = alumnoActualizado.Estado === undefined || alumnoActualizado.Estado === null ||
                         alumnoActualizado.Estado === 1 || alumnoActualizado.Estado === 'Activo' ||
@@ -233,7 +224,7 @@ const EditarAlumno = () => {
         setInscripcionActiva(esActivo);
         setObservacion(alumnoActualizado.ComentarioEstado || '');
 
-        // Recargar datos de familia si existe IdFamilia
+        // Recargar familia
         if (alumnoActualizado.IdFamilia) {
           try {
             const familiaResponse = await apiClient.get(`/familias/${alumnoActualizado.IdFamilia}`);
@@ -254,17 +245,13 @@ const EditarAlumno = () => {
         }
 
         console.log('✅ Datos del alumno recargados correctamente');
-      } else {
-        console.warn('⚠️ No se encontraron datos actualizados del alumno');
       }
     } catch (error) {
       console.error('❌ Error al recargar datos del alumno:', error);
-      // No mostrar error al usuario, los datos antiguos siguen válidos
     }
   };
 
   const handleGuardarDatosAlumno = async () => {
-    // Obtener IdColaborador del localStorage
     const userFromStorage = JSON.parse(localStorage.getItem('user') || '{}');
     const IdColaborador = userFromStorage.IdUsuario;
 
@@ -273,12 +260,9 @@ const EditarAlumno = () => {
       return;
     }
 
-    console.log('IdColaborador obtenido para guardar datos del alumno:', IdColaborador);
-
     setLoading(true);
     try {
-      // Actualizar solo datos del alumno
-      const alumnoResponse = await apiClient.put(`/alumnos/${alumnoData.IdAlumno}`, {
+      await apiClient.put(`/alumnos/${alumnoData.IdAlumno}`, {
         Matricula: matricula,
         Nombres: nombres,
         Apellidos: apellidos,
@@ -291,119 +275,177 @@ const EditarAlumno = () => {
         Estado: visible ? 1 : 0,
         IdColaborador,
       });
-      console.log('Respuesta actualización alumno:', alumnoResponse.data);
 
-      // Registrar en bitácora
       await registrarBitacora(
         'Edición de Alumno',
         `Alumno ID: ${alumnoData.IdAlumno} - ${nombres} ${apellidos}`
       );
 
-      // Mostrar mensaje de éxito
       message.success({
         content: 'Datos del alumno actualizados con éxito.',
         duration: 5,
       });
 
-      // Recargar los datos actualizados del alumno
       await recargarDatosAlumno();
     } catch (error) {
       console.error('ERROR AL GUARDAR DATOS DEL ALUMNO:', error);
-      console.error('Detalles del error:', error.response?.data || error.message);
       message.error('Error al guardar los cambios del alumno. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGuardarCambios = async () => {
-    // Validar que si está inactiva, tenga observación
-    if (!inscripcionActiva && !observacion.trim()) {
-      message.error('Debes ingresar el motivo de la inscripción inactiva');
-      return;
-    }
-
-    // Obtener IdColaborador del localStorage
+  // Guardar cambios ANTES de inicio de actividades (cambio directo de inscripción)
+  const handleGuardarCambioAntesInicio = async () => {
     const userFromStorage = JSON.parse(localStorage.getItem('user') || '{}');
     const IdColaborador = userFromStorage.IdUsuario;
 
     if (!IdColaborador) {
-      message.error('No se encontró el usuario en sesión. Por favor, recarga la página.');
+      message.error('No se encontró el usuario en sesión.');
       return;
     }
 
-    console.log('IdColaborador obtenido para guardar cambios:', IdColaborador);
-    console.log('Datos de inscripción a actualizar:', {
-      IdInscripcion: inscripcionData.IdInscripcion,
-      IdSeccion: idSeccion,
-      IdJornada: idJornada,
-      Estado: inscripcionActiva ? 1 : 0,
-      ComentarioEstado: inscripcionActiva ? '' : observacion,
-    });
+    setLoading(true);
+    try {
+      // Actualizar inscripción directamente
+      if (inscripcionData.IdInscripcion) {
+        await apiClient.put(`/inscripciones/${inscripcionData.IdInscripcion}`, {
+          IdGrado: idGrado,
+          IdSeccion: idSeccion,
+          IdJornada: idJornada,
+          IdColaborador,
+        });
+      }
+
+      await registrarBitacora(
+        'Cambio de Grado/Sección/Jornada (Antes de Inicio)',
+        `Alumno ID: ${alumnoData.IdAlumno} - ${nombres} ${apellidos}`
+      );
+
+      message.success('Cambio de grado, sección y/o jornada guardado correctamente.');
+      await recargarDatosAlumno();
+    } catch (error) {
+      console.error('ERROR AL GUARDAR CAMBIO:', error);
+      message.error('Error al guardar los cambios. Intenta nuevamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Guardar cambios DESPUÉS de inicio de actividades (usa endpoint cambiar-grupo)
+  const handleGuardarCambioDespuesInicio = async () => {
+    // Validaciones
+    if (!idSeccionNueva && !idJornadaNueva) {
+      message.warning('Debes seleccionar al menos una nueva sección o jornada.');
+      return;
+    }
+
+    if (!unidadActual) {
+      message.warning('Debes seleccionar la unidad que se está cursando actualmente.');
+      return;
+    }
+
+    const userFromStorage = JSON.parse(localStorage.getItem('user') || '{}');
+    const IdColaborador = userFromStorage.IdUsuario;
+
+    if (!IdColaborador) {
+      message.error('No se encontró el usuario en sesión.');
+      return;
+    }
+
+    setLoadingCambioGrupo(true);
+    try {
+      const payload = {
+        IdInscripcion: inscripcionData.IdInscripcion,
+        IdColaborador,
+        NumeroUnidadActual: unidadActual,
+        Motivo: motivoCambio || 'Cambio de sección/jornada',
+      };
+
+      if (idSeccionNueva) {
+        payload.IdSeccionNueva = idSeccionNueva;
+      }
+      if (idJornadaNueva) {
+        payload.IdJornadaNueva = idJornadaNueva;
+      }
+
+      console.log('📤 Enviando cambio de grupo:', payload);
+
+      const response = await apiClient.post('/inscripciones/cambiar-grupo', payload);
+
+      console.log('📥 Respuesta cambio de grupo:', response.data);
+
+      if (response.data.success) {
+        await registrarBitacora(
+          'Cambio de Sección/Jornada (Después de Inicio)',
+          `Alumno ID: ${alumnoData.IdAlumno} - ${nombres} ${apellidos}. ${response.data.message}`
+        );
+
+        message.success({
+          content: (
+            <div>
+              <strong>Cambio realizado exitosamente</strong>
+              <br />
+              <small>{response.data.message}</small>
+            </div>
+          ),
+          duration: 8,
+        });
+
+        await recargarDatosAlumno();
+      }
+    } catch (error) {
+      console.error('ERROR AL CAMBIAR GRUPO:', error);
+      const errorMsg = error.response?.data?.error || 'Error al realizar el cambio de grupo.';
+      message.error(errorMsg);
+    } finally {
+      setLoadingCambioGrupo(false);
+    }
+  };
+
+  // Guardar suspensión de alumno
+  const handleGuardarSuspension = async () => {
+    if (!inscripcionActiva && !observacion.trim()) {
+      message.error('Debes ingresar el motivo de la suspensión.');
+      return;
+    }
+
+    const userFromStorage = JSON.parse(localStorage.getItem('user') || '{}');
+    const IdColaborador = userFromStorage.IdUsuario;
+
+    if (!IdColaborador) {
+      message.error('No se encontró el usuario en sesión.');
+      return;
+    }
 
     setLoading(true);
     try {
-      // 1. Actualizar datos del alumno
-      const alumnoResponse = await apiClient.put(`/alumnos/${alumnoData.IdAlumno}`, {
-        Matricula: matricula,
-        Nombres: nombres,
-        Apellidos: apellidos,
-        FechaNacimiento: fechaNacimiento ? fechaNacimiento.format('YYYY-MM-DD') : null,
-        Genero: genero,
-        ComunidadLinguistica: comunidadLinguistica,
-        ContactoEmergencia: nombreEmergencia,
-        NumeroEmergencia: numeroEmergencia,
-        Visible: visible,
-        Estado: visible ? 1 : 0,
-        IdColaborador,
-      });
-      console.log('Respuesta actualización alumno:', alumnoResponse.data);
-
-      // 2. Actualizar inscripción
       if (inscripcionData.IdInscripcion) {
-        const inscripcionResponse = await apiClient.put(`/inscripciones/${inscripcionData.IdInscripcion}`, {
-          IdSeccion: idSeccion,
-          IdJornada: idJornada,
+        await apiClient.put(`/inscripciones/${inscripcionData.IdInscripcion}`, {
           Estado: inscripcionActiva ? 1 : 0,
           ComentarioEstado: inscripcionActiva ? '' : observacion,
           IdColaborador,
         });
-        console.log('Respuesta actualización inscripción:', inscripcionResponse.data);
       }
 
-      console.log('✅ Guardado exitoso');
-
-      // Registrar en bitácora
       if (!inscripcionActiva) {
-        // Si la inscripción está inactiva, es una suspensión
         await registrarBitacora(
           'Suspensión de Alumno',
           `Alumno ID: ${alumnoData.IdAlumno} - ${nombres} ${apellidos}. Motivo: ${observacion}`
         );
+        message.success('Alumno suspendido correctamente.');
       } else {
-        // Si no, es solo una edición
         await registrarBitacora(
-          'Edición de Alumno',
+          'Reactivación de Alumno',
           `Alumno ID: ${alumnoData.IdAlumno} - ${nombres} ${apellidos}`
         );
+        message.success('Alumno reactivado correctamente.');
       }
 
-      // Mostrar mensaje de éxito
-      message.success({
-        content: 'Estudiante actualizado con éxito. Los cambios se han guardado correctamente.',
-        duration: 5,
-      });
-
-      console.log('💬 Mensaje de éxito mostrado');
-
-      // Recargar los datos actualizados del alumno
-      console.log('🔄 Llamando a recargarDatosAlumno...');
       await recargarDatosAlumno();
-      console.log('✅ Recarga completada');
     } catch (error) {
-      console.error('ERROR AL GUARDAR:', error);
-      console.error('Detalles del error:', error.response?.data || error.message);
-      message.error('Error al guardar los cambios. Intenta nuevamente.');
+      console.error('ERROR AL GUARDAR SUSPENSIÓN:', error);
+      message.error('Error al guardar los cambios.');
     } finally {
       setLoading(false);
     }
@@ -431,6 +473,11 @@ const EditarAlumno = () => {
       </div>
     );
   }
+
+  // Obtener nombres de catálogos para mostrar
+  const getNombreGrado = (id) => grados.find(g => g.IdGrado === id)?.NombreGrado || 'No asignado';
+  const getNombreSeccion = (id) => secciones.find(s => s.IdSeccion === id)?.NombreSeccion || 'No asignada';
+  const getNombreJornada = (id) => jornadas.find(j => j.IdJornada === id)?.NombreJornada || 'No asignada';
 
   return (
     <div style={{ padding: 24 }}>
@@ -577,7 +624,6 @@ const EditarAlumno = () => {
             )}
           </Card>
 
-          {/* BOTONES GUARDAR Y SIGUIENTE */}
           <Row justify="space-between" style={{ marginTop: 40 }}>
             <Col>
               <Button
@@ -599,98 +645,335 @@ const EditarAlumno = () => {
         </Tabs.TabPane>
 
         {/* PESTAÑA 2 - INSCRIPCIÓN */}
-        <Tabs.TabPane tab={`2. Inscripción ${inscripcionData?.CicloEscolar}`} key="2">
-          <Card>
-            <p><strong>Grado:</strong> {inscripcionData?.NombreGrado}</p>
-
-            {/* Información actual */}
-            <div style={{ marginTop: 16, marginBottom: 16, padding: 12, background: '#f0f5ff', borderRadius: 8, border: '1px solid #d6e4ff' }}>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <strong>Sección actual:</strong> <span style={{ color: '#1890ff', fontSize: 16 }}>{inscripcionData?.NombreSeccion || 'No asignada'}</span>
-                </Col>
-                <Col span={12}>
-                  <strong>Jornada actual:</strong> <span style={{ color: '#1890ff', fontSize: 16 }}>{inscripcionData?.NombreJornada || 'No asignada'}</span>
-                </Col>
-              </Row>
-            </div>
-
-            <p style={{ marginBottom: 8, color: '#666', fontSize: 14 }}>Selecciona nuevos valores si deseas cambiarlos:</p>
-            <Space style={{ marginTop: 8 }}>
-              <Select
-                style={{ width: 300 }}
-                placeholder="Seleccionar sección"
-                value={idSeccion}
-                onChange={setIdSeccion}
-              >
-                {secciones.map((s) => (
-                  <Select.Option key={s.IdSeccion} value={s.IdSeccion}>
-                    {s.NombreSeccion}
-                  </Select.Option>
-                ))}
-              </Select>
-
-              <Select
-                style={{ width: 300 }}
-                placeholder="Seleccionar jornada"
-                value={idJornada}
-                onChange={setIdJornada}
-              >
-                {jornadas.map((j) => (
-                  <Select.Option key={j.IdJornada} value={j.IdJornada}>
-                    {j.NombreJornada}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Space>
-
-            <div style={{ marginTop: 24 }}>
-              <Space>
-                <Switch
-                  checked={inscripcionActiva}
-                  onChange={setInscripcionActiva}
-                  checkedChildren="Activa"
-                  unCheckedChildren="Inactiva"
+        <Tabs.TabPane tab="2. Inscripción" key="2">
+          <Tabs
+            activeKey={activeSubTab}
+            onChange={setActiveSubTab}
+            type="card"
+            style={{ marginBottom: 16 }}
+          >
+            {/* SUB-PESTAÑA: CAMBIO ANTES DE INICIO */}
+            <Tabs.TabPane
+              tab={
+                <span>
+                  <SwapOutlined /> Cambio antes de inicio de actividades
+                </span>
+              }
+              key="antes"
+            >
+              <Card>
+                <Alert
+                  message="Cambio de Grado, Sección o Jornada"
+                  description="Este cambio es para realizar ajustes ANTES de que inicien las actividades del ciclo escolar. No afecta calificaciones existentes."
+                  type="info"
+                  showIcon
+                  style={{ marginBottom: 24 }}
                 />
-                <span style={{ fontWeight: 500 }}>Inscripción Activa</span>
-              </Space>
-            </div>
 
-            {/* OBSERVACIÓN - Aparece solo si está inactiva */}
-            {!inscripcionActiva && (
-              <div style={{ marginTop: 20 }}>
-                <TextArea
-                  rows={5}
-                  placeholder="Escribe el motivo del retiro, traslado, suspensión, etc. (obligatorio)"
-                  value={observacion}
-                  onChange={(e) => setObservacion(e.target.value)}
-                  style={{
-                    borderColor: '#d9363e',
-                    boxShadow: '0 0 8px rgba(217, 54, 62, 0.15)'
-                  }}
+                {/* Información actual */}
+                <div style={{ marginBottom: 24, padding: 16, background: '#f0f5ff', borderRadius: 8, border: '1px solid #d6e4ff' }}>
+                  <Title level={5} style={{ marginBottom: 16 }}>Información Actual</Title>
+                  <Row gutter={16}>
+                    <Col span={8}>
+                      <Text strong>Grado: </Text>
+                      <Tag color="blue" style={{ fontSize: 14 }}>{inscripcionData?.NombreGrado || getNombreGrado(inscripcionData?.IdGrado)}</Tag>
+                    </Col>
+                    <Col span={8}>
+                      <Text strong>Sección: </Text>
+                      <Tag color="green" style={{ fontSize: 14 }}>{inscripcionData?.NombreSeccion || getNombreSeccion(inscripcionData?.IdSeccion)}</Tag>
+                    </Col>
+                    <Col span={8}>
+                      <Text strong>Jornada: </Text>
+                      <Tag color="orange" style={{ fontSize: 14 }}>{inscripcionData?.NombreJornada || getNombreJornada(inscripcionData?.IdJornada)}</Tag>
+                    </Col>
+                  </Row>
+                </div>
+
+                <Divider>Seleccionar nuevos valores</Divider>
+
+                <Row gutter={16}>
+                  <Col span={8}>
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Grado</label>
+                      <Select
+                        style={{ width: '100%' }}
+                        placeholder="Seleccionar grado"
+                        value={idGrado}
+                        onChange={setIdGrado}
+                      >
+                        {grados.map((g) => (
+                          <Option key={g.IdGrado} value={g.IdGrado}>
+                            {g.NombreGrado}
+                          </Option>
+                        ))}
+                      </Select>
+                    </div>
+                  </Col>
+                  <Col span={8}>
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Sección</label>
+                      <Select
+                        style={{ width: '100%' }}
+                        placeholder="Seleccionar sección"
+                        value={idSeccion}
+                        onChange={setIdSeccion}
+                      >
+                        {secciones.map((s) => (
+                          <Option key={s.IdSeccion} value={s.IdSeccion}>
+                            {s.NombreSeccion}
+                          </Option>
+                        ))}
+                      </Select>
+                    </div>
+                  </Col>
+                  <Col span={8}>
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Jornada</label>
+                      <Select
+                        style={{ width: '100%' }}
+                        placeholder="Seleccionar jornada"
+                        value={idJornada}
+                        onChange={setIdJornada}
+                      >
+                        {jornadas.map((j) => (
+                          <Option key={j.IdJornada} value={j.IdJornada}>
+                            {j.NombreJornada}
+                          </Option>
+                        ))}
+                      </Select>
+                    </div>
+                  </Col>
+                </Row>
+
+                <Row justify="end" style={{ marginTop: 24 }}>
+                  <Button
+                    type="primary"
+                    size="large"
+                    onClick={handleGuardarCambioAntesInicio}
+                    loading={loading}
+                  >
+                    Guardar Cambios
+                  </Button>
+                </Row>
+              </Card>
+            </Tabs.TabPane>
+
+            {/* SUB-PESTAÑA: CAMBIO DESPUÉS DE INICIO */}
+            <Tabs.TabPane
+              tab={
+                <span>
+                  <SwapOutlined /> Cambio después de inicio de actividades
+                </span>
+              }
+              key="despues"
+            >
+              <Card>
+                <Alert
+                  message="Cambio de Sección o Jornada con Traspaso de Calificaciones"
+                  description="Este cambio realiza un traspaso de actividades y calificaciones. Solo permite cambiar Sección y/o Jornada (el Grado NO se puede cambiar después de iniciadas las actividades)."
+                  type="warning"
+                  showIcon
+                  style={{ marginBottom: 24 }}
                 />
-              </div>
-            )}
-          </Card>
 
-          {/* BOTONES ATRÁS Y GUARDAR */}
-          <Row justify="space-between" style={{ marginTop: 40 }}>
-            <Col>
-              <Button size="large" onClick={() => setActiveTab('1')}>
-                ← Atrás
-              </Button>
-            </Col>
-            <Col>
-              <Button
-                type="primary"
-                size="large"
-                style={{ minWidth: 240 }}
-                onClick={handleGuardarCambios}
-                loading={loading}
-              >
-                Guardar todos los cambios
-              </Button>
-            </Col>
+                {/* Información actual */}
+                <div style={{ marginBottom: 24, padding: 16, background: '#fff7e6', borderRadius: 8, border: '1px solid #ffd591' }}>
+                  <Title level={5} style={{ marginBottom: 16 }}>Información Actual</Title>
+                  <Row gutter={16}>
+                    <Col span={8}>
+                      <Text strong>Grado: </Text>
+                      <Tag color="blue" style={{ fontSize: 14 }}>{inscripcionData?.NombreGrado || getNombreGrado(inscripcionData?.IdGrado)}</Tag>
+                      <Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>(No modificable)</Text>
+                    </Col>
+                    <Col span={8}>
+                      <Text strong>Sección: </Text>
+                      <Tag color="green" style={{ fontSize: 14 }}>{inscripcionData?.NombreSeccion || getNombreSeccion(inscripcionData?.IdSeccion)}</Tag>
+                    </Col>
+                    <Col span={8}>
+                      <Text strong>Jornada: </Text>
+                      <Tag color="orange" style={{ fontSize: 14 }}>{inscripcionData?.NombreJornada || getNombreJornada(inscripcionData?.IdJornada)}</Tag>
+                    </Col>
+                  </Row>
+                </div>
+
+                <Divider>Seleccionar nuevos valores</Divider>
+
+                <Row gutter={16}>
+                  <Col span={8}>
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                        Nueva Sección <Text type="secondary">(opcional)</Text>
+                      </label>
+                      <Select
+                        style={{ width: '100%' }}
+                        placeholder="Seleccionar nueva sección"
+                        value={idSeccionNueva}
+                        onChange={setIdSeccionNueva}
+                        allowClear
+                      >
+                        {secciones.map((s) => (
+                          <Option key={s.IdSeccion} value={s.IdSeccion}>
+                            {s.NombreSeccion}
+                          </Option>
+                        ))}
+                      </Select>
+                    </div>
+                  </Col>
+                  <Col span={8}>
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                        Nueva Jornada <Text type="secondary">(opcional)</Text>
+                      </label>
+                      <Select
+                        style={{ width: '100%' }}
+                        placeholder="Seleccionar nueva jornada"
+                        value={idJornadaNueva}
+                        onChange={setIdJornadaNueva}
+                        allowClear
+                      >
+                        {jornadas.map((j) => (
+                          <Option key={j.IdJornada} value={j.IdJornada}>
+                            {j.NombreJornada}
+                          </Option>
+                        ))}
+                      </Select>
+                    </div>
+                  </Col>
+                  <Col span={8}>
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                        Unidad Actual <Text type="danger">*</Text>
+                      </label>
+                      <Select
+                        style={{ width: '100%' }}
+                        placeholder="Seleccionar unidad que se cursa"
+                        value={unidadActual}
+                        onChange={setUnidadActual}
+                      >
+                        {unidades.map((u) => (
+                          <Option key={u.value} value={u.value}>
+                            {u.label}
+                          </Option>
+                        ))}
+                      </Select>
+                    </div>
+                  </Col>
+                </Row>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                    Motivo del cambio <Text type="secondary">(opcional)</Text>
+                  </label>
+                  <TextArea
+                    rows={3}
+                    placeholder="Ej: Balanceo de grupos, cambio de horario de padres, etc."
+                    value={motivoCambio}
+                    onChange={(e) => setMotivoCambio(e.target.value)}
+                  />
+                </div>
+
+                {/* Advertencia */}
+                {unidadActual && (
+                  <Alert
+                    message={<Text strong><WarningOutlined /> Importante</Text>}
+                    description={
+                      <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
+                        <li>Se eliminarán las calificaciones de la <strong>{unidades.find(u => u.value === unidadActual)?.label}</strong> del grupo anterior.</li>
+                        <li>Se crearán calificaciones para <strong>todas las unidades</strong> del nuevo grupo.</li>
+                        <li>Las calificaciones de unidades anteriores ya cerradas permanecerán en el grupo anterior.</li>
+                      </ul>
+                    }
+                    type="warning"
+                    showIcon
+                    style={{ marginBottom: 24 }}
+                  />
+                )}
+
+                <Row justify="end" style={{ marginTop: 24 }}>
+                  <Button
+                    type="primary"
+                    size="large"
+                    onClick={handleGuardarCambioDespuesInicio}
+                    loading={loadingCambioGrupo}
+                    disabled={!idSeccionNueva && !idJornadaNueva}
+                  >
+                    Realizar Cambio de Grupo
+                  </Button>
+                </Row>
+              </Card>
+            </Tabs.TabPane>
+
+            {/* SUB-PESTAÑA: SUSPENSIÓN */}
+            <Tabs.TabPane
+              tab={
+                <span>
+                  <StopOutlined /> Suspensión de alumno
+                </span>
+              }
+              key="suspension"
+            >
+              <Card>
+                <Alert
+                  message="Suspensión o Reactivación de Inscripción"
+                  description="Utiliza esta opción para suspender temporalmente o reactivar la inscripción del alumno. Esto no elimina datos, solo marca la inscripción como inactiva."
+                  type="info"
+                  showIcon
+                  style={{ marginBottom: 24 }}
+                />
+
+                <div style={{ marginBottom: 24 }}>
+                  <Space size="large">
+                    <Switch
+                      checked={inscripcionActiva}
+                      onChange={setInscripcionActiva}
+                      checkedChildren="Activa"
+                      unCheckedChildren="Inactiva"
+                      style={{ transform: 'scale(1.3)' }}
+                    />
+                    <Text strong style={{ fontSize: 16 }}>
+                      {inscripcionActiva ? 'Inscripción Activa' : 'Inscripción Suspendida'}
+                    </Text>
+                  </Space>
+                </div>
+
+                {!inscripcionActiva && (
+                  <div style={{ marginTop: 20 }}>
+                    <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                      Motivo de la suspensión <Text type="danger">*</Text>
+                    </label>
+                    <TextArea
+                      rows={5}
+                      placeholder="Escribe el motivo del retiro, traslado, suspensión, etc. (obligatorio)"
+                      value={observacion}
+                      onChange={(e) => setObservacion(e.target.value)}
+                      style={{
+                        borderColor: '#d9363e',
+                        boxShadow: '0 0 8px rgba(217, 54, 62, 0.15)'
+                      }}
+                    />
+                  </div>
+                )}
+
+                <Row justify="end" style={{ marginTop: 24 }}>
+                  <Button
+                    type="primary"
+                    size="large"
+                    danger={!inscripcionActiva}
+                    onClick={handleGuardarSuspension}
+                    loading={loading}
+                  >
+                    {inscripcionActiva ? 'Guardar (Reactivar)' : 'Suspender Alumno'}
+                  </Button>
+                </Row>
+              </Card>
+            </Tabs.TabPane>
+          </Tabs>
+
+          {/* Botones de navegación */}
+          <Row justify="start" style={{ marginTop: 40 }}>
+            <Button size="large" onClick={() => setActiveTab('1')}>
+              ← Atrás
+            </Button>
           </Row>
         </Tabs.TabPane>
       </Tabs>

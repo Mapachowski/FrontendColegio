@@ -66,22 +66,22 @@ const GestionarSolicitudesReapertura = () => {
       title: 'Docente',
       dataIndex: 'NombreDocente',
       key: 'NombreDocente',
-      width: 200,
+      width: 180,
       fixed: 'left'
     },
     {
-      title: 'Unidad',
-      dataIndex: 'NombreUnidad',
-      key: 'NombreUnidad',
-      width: 250,
+      title: 'Curso / Unidad',
+      dataIndex: 'NombreCurso',
+      key: 'NombreCurso',
+      width: 280,
       render: (texto, record) => (
         <div>
-          <div style={{ fontWeight: 'bold' }}>{texto}</div>
-          <div style={{ fontSize: '12px', color: '#666' }}>
-            {record.NombreCurso}
+          <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{texto}</div>
+          <div style={{ fontSize: '12px', color: '#1890ff', marginTop: 2 }}>
+            {record.NombreGrado} - {record.NombreSeccion} - {record.NombreJornada}
           </div>
-          <div style={{ fontSize: '11px', color: '#999' }}>
-            {record.NombreGrado} {record.NombreSeccion}
+          <div style={{ fontSize: '12px', color: '#666', marginTop: 2 }}>
+            {record.NombreUnidad}
           </div>
         </div>
       )
@@ -269,10 +269,16 @@ const GestionarSolicitudesReapertura = () => {
               <strong>Docente:</strong> {solicitudActual.NombreDocente}
             </div>
             <div style={{ marginBottom: 12 }}>
-              <strong>Unidad:</strong> {solicitudActual.NombreUnidad}
+              <strong>Curso:</strong> {solicitudActual.NombreCurso}
             </div>
             <div style={{ marginBottom: 12 }}>
-              <strong>Curso:</strong> {solicitudActual.NombreCurso} - {solicitudActual.NombreGrado} {solicitudActual.NombreSeccion}
+              <strong>Grado / Sección / Jornada:</strong>{' '}
+              <span style={{ color: '#1890ff' }}>
+                {solicitudActual.NombreGrado} - {solicitudActual.NombreSeccion} - {solicitudActual.NombreJornada}
+              </span>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <strong>Unidad a reabrir:</strong> {solicitudActual.NombreUnidad}
             </div>
             <div style={{ marginBottom: 12 }}>
               <strong>Motivo de la solicitud:</strong>

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, message, Typography, Space, Tag } from 'antd';
-import { DownloadOutlined, FileTextOutlined } from '@ant-design/icons';
+import { DownloadOutlined, FileTextOutlined, FilePdfOutlined } from '@ant-design/icons';
 import apiClient from '../../../api/apiClient';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import { getCicloActual } from '../../../utils/cicloEscolar';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const { Title, Text } = Typography;
 
@@ -69,19 +71,14 @@ const BoletaCalificacionesFamilia = () => {
         }
       });
 
-      console.log('=== RESPUESTA CALIFICACIONES ===');
-      console.log('Response completa:', response.data);
-      console.log('Response.data.data:', response.data.data);
-      console.log('==============================');
-
       if (response.data.success) {
         const calificacionesData = response.data.data;
 
-        // Validar que tenga la estructura esperada
-        if (!calificacionesData.alumno) {
-          console.error('⚠️ ADVERTENCIA: No se encontró el objeto alumno en la respuesta');
+        // Validar que tenga la estructura esperada (backend devuelve 'estudiante', no 'alumno')
+        if (!calificacionesData.estudiante) {
+          console.error('⚠️ ADVERTENCIA: No se encontró el objeto estudiante en la respuesta');
           console.error('Estructura recibida:', calificacionesData);
-          message.warning('Las calificaciones se cargaron pero falta información del alumno');
+          message.warning('Las calificaciones se cargaron pero falta información del estudiante');
         }
 
         setCalificaciones(calificacionesData);
@@ -97,17 +94,173 @@ const BoletaCalificacionesFamilia = () => {
     }
   };
 
+  const generarPDFBoleta = async (dataBoleta) => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const margin = 15;
+
+      // Encabezado del colegio
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('BOLETA DE CALIFICACIONES', pageWidth / 2, 20, { align: 'center' });
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Ciclo Escolar ${dataBoleta.estudiante.CicloEscolar}`, pageWidth / 2, 27, { align: 'center' });
+
+      // Información del estudiante (centrada y organizada)
+      let yPosition = 40;
+
+      // Nombre completo del estudiante (centrado)
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      const nombreCompleto = `${dataBoleta.estudiante.Nombres} ${dataBoleta.estudiante.Apellidos}`;
+      doc.text(nombreCompleto, pageWidth / 2, yPosition, { align: 'center' });
+
+      yPosition += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+
+      // Código y Grado (en la misma línea, centrados)
+      const codigoGrado = `Código: ${dataBoleta.estudiante.Codigo}`;
+      const gradoTexto = `Grado: ${dataBoleta.estudiante.NombreGrado} ${dataBoleta.estudiante.NombreSeccion}`;
+      doc.text(codigoGrado, margin, yPosition);
+      doc.text(gradoTexto, pageWidth - margin, yPosition, { align: 'right' });
+
+      yPosition += 6;
+      // Jornada (centrada)
+      doc.text(`Jornada: ${dataBoleta.estudiante.NombreJornada}`, pageWidth / 2, yPosition, { align: 'center' });
+
+      // Tabla de calificaciones
+      yPosition += 12;
+
+      const tableData = dataBoleta.cursos.map((curso) => {
+        const unidades = [1, 2, 3, 4].map(numUnidad => {
+          const unidad = curso.unidades.find(u => u.NumeroUnidad === numUnidad);
+
+          // Si no existe la unidad o la nota es null/undefined, mostrar guión
+          if (!unidad || unidad.NotaFinal === null || unidad.NotaFinal === undefined) {
+            return '-';
+          }
+
+          // Si la nota es 0 o mayor, mostrarla (0 es válido)
+          return unidad.NotaFinal.toString();
+        });
+
+        // Promedio: mostrar guión si es null, 0, o vacío
+        const promedioMostrar = (curso.promedio === null || curso.promedio === undefined || curso.promedio === '')
+          ? '-'
+          : curso.promedio.toString();
+
+        return [
+          curso.NombreCurso,
+          ...unidades,
+          promedioMostrar
+        ];
+      });
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Curso', 'U1', 'U2', 'U3', 'U4', 'Prom']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: 255,
+          fontStyle: 'bold',
+          halign: 'center',
+          fontSize: 10
+        },
+        columnStyles: {
+          0: { halign: 'left', cellWidth: 80 },
+          1: { halign: 'center', cellWidth: 18 },
+          2: { halign: 'center', cellWidth: 18 },
+          3: { halign: 'center', cellWidth: 18 },
+          4: { halign: 'center', cellWidth: 18 },
+          5: { halign: 'center', cellWidth: 22, fontStyle: 'bold', fillColor: [240, 240, 240] }
+        },
+        styles: {
+          fontSize: 10,
+          cellPadding: 4,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1
+        },
+        margin: { left: margin, right: margin }
+      });
+
+      // Promedio General
+      const finalY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+
+      // Mostrar guión si el promedio general es null o vacío
+      const promedioGeneralTexto = (dataBoleta.promedioGeneral === null || dataBoleta.promedioGeneral === undefined || dataBoleta.promedioGeneral === '')
+        ? 'PROMEDIO GENERAL: - puntos'
+        : `PROMEDIO GENERAL: ${dataBoleta.promedioGeneral} puntos`;
+
+      doc.text(promedioGeneralTexto, pageWidth / 2, finalY, { align: 'center' });
+
+      // Footer
+      const footerY = pageHeight - 20;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Sistema de Gestión Académica', pageWidth / 2, footerY, { align: 'center' });
+      doc.text(`Generado el ${new Date().toLocaleDateString('es-GT')}`, pageWidth / 2, footerY + 4, { align: 'center' });
+
+      return doc;
+
+    } catch (error) {
+      console.error('Error en generarPDFBoleta:', error);
+      throw error;
+    }
+  };
+
+  const imprimirBoleta = async (hijo) => {
+    try {
+      message.loading({ content: 'Generando PDF...', key: 'pdf' });
+
+      const { IdAlumno, CicloEscolar, IdGrado, IdSeccion, IdJornada } = hijo;
+
+      const response = await apiClient.get(
+        `/boleta-calificaciones/calificaciones/${IdAlumno}`,
+        {
+          params: {
+            cicloEscolar: CicloEscolar,
+            idGrado: IdGrado,
+            idSeccion: IdSeccion,
+            idJornada: IdJornada
+          }
+        }
+      );
+
+      if (response.data.success) {
+        const dataBoleta = response.data.data;
+        const doc = await generarPDFBoleta(dataBoleta);
+
+        const fileName = `Boleta_${dataBoleta.estudiante.Codigo}_${dataBoleta.estudiante.Nombres}_${dataBoleta.estudiante.Apellidos}.pdf`;
+        doc.save(fileName);
+
+        message.success({ content: 'PDF generado exitosamente', key: 'pdf' });
+      }
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      message.error({ content: 'Error al generar el PDF', key: 'pdf' });
+    }
+  };
+
   const exportarExcel = () => {
     if (!calificaciones) {
       message.warning('No hay calificaciones para exportar');
       return;
     }
 
-    const { alumno, cursos, promedioGeneral } = calificaciones;
+    const { estudiante, cursos, promedioGeneral } = calificaciones;
 
-    // Validar que alumno exista
-    if (!alumno) {
-      message.error('No se encontró información del alumno');
+    // Validar que estudiante exista
+    if (!estudiante) {
+      message.error('No se encontró información del estudiante');
       console.error('Estructura de calificaciones:', calificaciones);
       return;
     }
@@ -118,12 +271,12 @@ const BoletaCalificacionesFamilia = () => {
     // Encabezado
     datosExcel.push(['BOLETA DE CALIFICACIONES']);
     datosExcel.push([]);
-    datosExcel.push(['Estudiante:', `${alumno.Nombres} ${alumno.Apellidos}`]);
-    datosExcel.push(['Carnet:', alumno.IdAlumno]);
-    datosExcel.push(['Grado:', alumno.NombreGrado]);
-    datosExcel.push(['Sección:', alumno.NombreSeccion]);
-    datosExcel.push(['Jornada:', alumno.NombreJornada]);
-    datosExcel.push(['Ciclo Escolar:', alumno.CicloEscolar]);
+    datosExcel.push(['Estudiante:', `${estudiante.Nombres} ${estudiante.Apellidos}`]);
+    datosExcel.push(['Código:', estudiante.Codigo]);
+    datosExcel.push(['Grado:', estudiante.NombreGrado]);
+    datosExcel.push(['Sección:', estudiante.NombreSeccion]);
+    datosExcel.push(['Jornada:', estudiante.NombreJornada]);
+    datosExcel.push(['Ciclo Escolar:', estudiante.CicloEscolar]);
     datosExcel.push([]);
 
     // Tabla de calificaciones
@@ -131,15 +284,18 @@ const BoletaCalificacionesFamilia = () => {
 
     cursos.forEach(curso => {
       const fila = [curso.NombreCurso];
-      curso.unidades.forEach(unidad => {
-        fila.push(unidad.NotaFinal);
+      // Validar las 4 unidades
+      [1, 2, 3, 4].forEach(numUnidad => {
+        const unidad = curso.unidades.find(u => u.NumeroUnidad === numUnidad);
+        fila.push(unidad && unidad.NotaFinal !== null && unidad.NotaFinal !== undefined ? unidad.NotaFinal : '-');
       });
-      fila.push(curso.promedio);
+      fila.push(curso.promedio !== null && curso.promedio !== undefined && curso.promedio !== '' ? curso.promedio : '-');
       datosExcel.push(fila);
     });
 
     datosExcel.push([]);
-    datosExcel.push(['PROMEDIO GENERAL:', '', '', '', '', promedioGeneral]);
+    const promedioFinal = promedioGeneral !== null && promedioGeneral !== undefined && promedioGeneral !== '' ? promedioGeneral : '-';
+    datosExcel.push(['PROMEDIO GENERAL:', '', '', '', '', promedioFinal]);
 
     // Crear libro y hoja
     const wb = XLSX.utils.book_new();
@@ -158,7 +314,7 @@ const BoletaCalificacionesFamilia = () => {
     XLSX.utils.book_append_sheet(wb, ws, 'Boleta');
 
     // Descargar archivo
-    const filename = `Boleta_${alumno.Nombres}_${alumno.Apellidos}_${alumno.CicloEscolar}.xlsx`;
+    const filename = `Boleta_${estudiante.Nombres}_${estudiante.Apellidos}_${estudiante.CicloEscolar}.xlsx`;
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     saveAs(new Blob([excelBuffer]), filename);
 
@@ -197,35 +353,50 @@ const BoletaCalificacionesFamilia = () => {
       width: 120,
     },
     {
-      title: 'Acción',
-      key: 'accion',
-      width: 200,
+      title: 'Acciones',
+      key: 'acciones',
+      width: 250,
       align: 'center',
       render: (_, record) => (
-        <Button
-          type="primary"
-          icon={<FileTextOutlined />}
-          onClick={() => cargarCalificaciones(record)}
-          loading={loadingCalificaciones && hijoSeleccionado?.IdAlumno === record.IdAlumno}
-        >
-          Ver Boleta
-        </Button>
+        <Space>
+          <Button
+            type="primary"
+            icon={<FileTextOutlined />}
+            onClick={() => cargarCalificaciones(record)}
+            loading={loadingCalificaciones && hijoSeleccionado?.IdAlumno === record.IdAlumno}
+          >
+            Ver Boleta
+          </Button>
+          <Button
+            icon={<FilePdfOutlined />}
+            onClick={() => imprimirBoleta(record)}
+          >
+            PDF
+          </Button>
+        </Space>
       ),
     },
   ];
 
   // Columnas para la tabla de calificaciones
-  const columnasCalificaciones = calificaciones?.cursos[0]?.unidades.map((_, index) => ({
-    title: `Unidad ${index + 1}`,
-    key: `unidad${index + 1}`,
+  const columnasCalificaciones = [1, 2, 3, 4].map((numUnidad) => ({
+    title: `Unidad ${numUnidad}`,
+    key: `unidad${numUnidad}`,
     width: 100,
     align: 'center',
     render: (_, record) => {
-      const nota = record.unidades[index]?.NotaFinal || 0;
+      const unidad = record.unidades.find(u => u.NumeroUnidad === numUnidad);
+
+      // Si no existe la unidad o la nota es null/undefined, mostrar guión
+      if (!unidad || unidad.NotaFinal === null || unidad.NotaFinal === undefined) {
+        return <Tag color="default">-</Tag>;
+      }
+
+      const nota = unidad.NotaFinal;
       const color = nota >= 60 ? 'green' : nota > 0 ? 'red' : 'default';
       return <Tag color={color}>{nota}</Tag>;
     },
-  })) || [];
+  }));
 
   const todasColumnasCalificaciones = [
     {
@@ -244,6 +415,10 @@ const BoletaCalificacionesFamilia = () => {
       align: 'center',
       fixed: 'right',
       render: (promedio) => {
+        // Mostrar guión si el promedio es null, undefined o vacío
+        if (promedio === null || promedio === undefined || promedio === '') {
+          return <Tag color="default" style={{ fontSize: 14, fontWeight: 'bold' }}>-</Tag>;
+        }
         const color = promedio >= 60 ? 'green' : promedio > 0 ? 'red' : 'default';
         return <Tag color={color} style={{ fontSize: 14, fontWeight: 'bold' }}>{promedio}</Tag>;
       },
@@ -272,29 +447,38 @@ const BoletaCalificacionesFamilia = () => {
       </Card>
 
       {/* Tabla de Calificaciones */}
-      {calificaciones && calificaciones.alumno && (
+      {calificaciones && calificaciones.estudiante && (
         <Card
           title={
             <Space direction="vertical" size={0}>
               <Text strong style={{ fontSize: 18 }}>
-                Boleta de Calificaciones - {calificaciones.alumno.Nombres} {calificaciones.alumno.Apellidos}
+                Boleta de Calificaciones - {calificaciones.estudiante.Nombres} {calificaciones.estudiante.Apellidos}
               </Text>
               <Space size="large" style={{ marginTop: 8 }}>
-                <Text type="secondary">Grado: {calificaciones.alumno.NombreGrado}</Text>
-                <Text type="secondary">Sección: {calificaciones.alumno.NombreSeccion}</Text>
-                <Text type="secondary">Ciclo: {calificaciones.alumno.CicloEscolar}</Text>
+                <Text type="secondary">Grado: {calificaciones.estudiante.NombreGrado}</Text>
+                <Text type="secondary">Sección: {calificaciones.estudiante.NombreSeccion}</Text>
+                <Text type="secondary">Ciclo: {calificaciones.estudiante.CicloEscolar}</Text>
               </Space>
             </Space>
           }
           extra={
-            <Button
-              type="primary"
-              icon={<DownloadOutlined />}
-              onClick={exportarExcel}
-              size="large"
-            >
-              Descargar Excel
-            </Button>
+            <Space>
+              <Button
+                type="primary"
+                icon={<FilePdfOutlined />}
+                onClick={() => imprimirBoleta(hijoSeleccionado)}
+                size="large"
+              >
+                Generar PDF
+              </Button>
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={exportarExcel}
+                size="large"
+              >
+                Descargar Excel
+              </Button>
+            </Space>
           }
           style={{ marginTop: 24 }}
           loading={loadingCalificaciones}
@@ -306,19 +490,25 @@ const BoletaCalificacionesFamilia = () => {
             pagination={false}
             bordered
             scroll={{ x: 1000 }}
-            footer={() => (
-              <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: 16 }}>
-                <Space>
-                  <Text>PROMEDIO GENERAL:</Text>
-                  <Tag
-                    color={calificaciones.promedioGeneral >= 60 ? 'green' : 'red'}
-                    style={{ fontSize: 16, padding: '4px 16px' }}
-                  >
-                    {calificaciones.promedioGeneral}
-                  </Tag>
-                </Space>
-              </div>
-            )}
+            footer={() => {
+              const promedioGeneral = calificaciones.promedioGeneral;
+              const promedioTexto = promedioGeneral === null || promedioGeneral === undefined || promedioGeneral === '' ? '-' : promedioGeneral;
+              const color = promedioGeneral >= 60 ? 'green' : promedioGeneral > 0 ? 'red' : 'default';
+
+              return (
+                <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: 16 }}>
+                  <Space>
+                    <Text>PROMEDIO GENERAL:</Text>
+                    <Tag
+                      color={color}
+                      style={{ fontSize: 16, padding: '4px 16px' }}
+                    >
+                      {promedioTexto}
+                    </Tag>
+                  </Space>
+                </div>
+              );
+            }}
           />
         </Card>
       )}

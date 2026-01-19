@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Select, Form, Input, Button, Checkbox, message, Row, Col } from 'antd';
 import apiClient from '../../../../api/apiClient';
+import { jsPDF } from 'jspdf';
 
 const { Option } = Select;
 
@@ -86,15 +87,19 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
 
       // PASO 1: CREAR USUARIO DE LA FAMILIA PRIMERO
       let IdUsuarioFamilia = null;
+      let credencialesUsuario = null;
+
       try {
-        // Generar nombre de usuario: "familia_" + apellidos en minúsculas sin espacios
-        const apellidosFamilia = state.alumno.Apellidos.trim().toLowerCase().replace(/\s+/g, '_');
-        const nombreUsuarioFamilia = `familia_${apellidosFamilia}`;
+        // Generar nombre de usuario: NombreFamilia sin espacios (ej: RiveraEscobar)
+        const nombreUsuarioFamilia = values.NombreFamilia.trim().replace(/\s+/g, '');
+
+        // Generar contraseña aleatoria de 6 caracteres
+        const contrasenaGenerada = generarContrasenaAleatoria();
 
         const usuarioFamiliaPayload = {
           NombreUsuario: nombreUsuarioFamilia,
           NombreCompleto: values.NombreFamilia,
-          Contrasena: nombreUsuarioFamilia, // La contraseña es igual al usuario
+          Contrasena: contrasenaGenerada,
           IdRol: 3, // Rol de familia
           IdColaborador: IdColaborador
         };
@@ -108,6 +113,13 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
         // Capturar IdUsuario de la respuesta
         IdUsuarioFamilia = usuarioFamiliaRes.data.IdUsuario || usuarioFamiliaRes.data.data?.IdUsuario;
         console.log('✅ Usuario de la familia creado → IdUsuario:', IdUsuarioFamilia);
+
+        // Guardar credenciales para generar PDF después
+        credencialesUsuario = {
+          nombreUsuario: nombreUsuarioFamilia,
+          contrasena: contrasenaGenerada,
+          nombreFamilia: values.NombreFamilia
+        };
 
         message.success(`Usuario creado: ${nombreUsuarioFamilia}`);
       } catch (errorUsuario) {
@@ -179,6 +191,17 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
         );
       }
       message.success('Familia y responsables creados');
+
+      // Generar PDF con las credenciales si se creó el usuario
+      if (credencialesUsuario) {
+        generarPDFCredenciales(
+          credencialesUsuario.nombreUsuario,
+          credencialesUsuario.contrasena,
+          credencialesUsuario.nombreFamilia
+        );
+        message.info('PDF de credenciales descargado');
+      }
+
       form.resetFields();
       setResponsablePrincipal(null);
       onSelect(nuevaFamilia);
@@ -191,6 +214,79 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
 
   const handlePrincipalChange = (tipo) => {
     setResponsablePrincipal(prev => (prev === tipo ? null : tipo));
+  };
+
+  // Generar contraseña aleatoria de 6 caracteres (letras y números)
+  const generarContrasenaAleatoria = () => {
+    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let contrasena = '';
+    for (let i = 0; i < 6; i++) {
+      contrasena += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    return contrasena;
+  };
+
+  // Generar PDF con las credenciales
+  const generarPDFCredenciales = (nombreUsuario, contrasena, nombreFamilia) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+
+    // Título
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CREDENCIALES DE ACCESO', pageWidth / 2, 30, { align: 'center' });
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Sistema de Gestión Académica', pageWidth / 2, 40, { align: 'center' });
+
+    // Línea separadora
+    doc.setLineWidth(0.5);
+    doc.line(20, 50, pageWidth - 20, 50);
+
+    // Información de la familia
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Familia:', 30, 70);
+    doc.setFont('helvetica', 'normal');
+    doc.text(nombreFamilia, 30, 78);
+
+    // Credenciales
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CREDENCIALES DE ACCESO:', 30, 100);
+
+    // Nombre de usuario
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Nombre Usuario:', 30, 115);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(14);
+    doc.text(nombreUsuario, 30, 125);
+
+    // Contraseña
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Contraseña:', 30, 145);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(14);
+    doc.text(contrasena, 30, 155);
+
+    // Instrucciones
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'italic');
+    doc.text('IMPORTANTE: Guarde estas credenciales en un lugar seguro.', 30, 180);
+    doc.text('Podrá cambiar su contraseña después del primer ingreso.', 30, 188);
+
+    // Footer
+    const footerY = doc.internal.pageSize.height - 20;
+    doc.setFontSize(8);
+    doc.text('Sistema de Gestión Académica', pageWidth / 2, footerY, { align: 'center' });
+    doc.text(`Generado el ${new Date().toLocaleDateString('es-GT')}`, pageWidth / 2, footerY + 4, { align: 'center' });
+
+    // Descargar PDF
+    const fileName = `Credenciales_${nombreUsuario}.pdf`;
+    doc.save(fileName);
   };
 
   return (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Menu, Badge } from 'antd';
-import { Link } from 'react-router-dom';
+import { Link,useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import {
   SettingOutlined,
@@ -28,13 +28,28 @@ import {
   FundViewOutlined,
   HistoryOutlined,
   FileSearchOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons';
 
 const { Sider } = Layout;
 
-const Sidebar = ({ user }) => {
+const Sidebar = ({ user, onLogout }) => {
+  const navigate = useNavigate();
   const [openKeys, setOpenKeys] = useState(['1']);
   const [pendientesSolicitudes, setPendientesSolicitudes] = useState(0);
+
+   const handleLogout = () => {
+    // Limpiar localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    // Llamar callback si existe (para limpiar estado en App.jsx)
+    if (onLogout) {
+      onLogout();
+    }
+    // Redirigir al login
+    navigate('/login');
+  };
+
 
   useEffect(() => {
     // Solo cargar solicitudes pendientes para administradores y operadores
@@ -233,6 +248,15 @@ const customizedMenuItems = menuItems.map((item) => ({
     icon: null,
   })),
 }));
+
+  // Agregar opción de cerrar sesión al final
+  customizedMenuItems.push({
+    key: 'logout',
+    icon: <LogoutOutlined />,
+    label: 'Cerrar Sesión',
+    onClick: handleLogout,
+    style: { marginTop: 'auto' }
+  });
 
   return (
     <Sider width={250} style={{ background: '#001f3f', height: '100vh', position: 'fixed', color: '#fff' }}>

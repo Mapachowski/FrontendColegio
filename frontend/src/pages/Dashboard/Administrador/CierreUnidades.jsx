@@ -84,9 +84,6 @@ const CierreUnidades = ({ user }) => {
         // Filtrar solo cursos NO listos (PENDIENTE o INCOMPLETO)
         const cursosNoListos = data.cursos?.filter(c => c.EstadoGeneral !== 'LISTO') || [];
 
-        console.log('📊 Datos de unidad recibidos:', data);
-        console.log('🔑 IdUnidad:', data.IdUnidad);
-
         setCursosData({
           ...data,
           cursosNoListos,
@@ -94,8 +91,7 @@ const CierreUnidades = ({ user }) => {
           cursosListos: data.resumen.cursosListos,
           cursosPendientes: data.resumen.cursosPendientes,
           cursosIncompletos: data.resumen.cursosIncompletos,
-          numeroUnidad,
-          idUnidad: data.IdUnidad // Guardar el IdUnidad de la base de datos
+          numeroUnidad
         });
       }
     } catch (error) {
@@ -112,10 +108,10 @@ const CierreUnidades = ({ user }) => {
 
     setLoading(true);
     try {
-      // Simplemente recargar los datos desde la caché (instantáneo)
-      // El estado ya se actualiza automáticamente al crear/editar actividades o calificar
+      // Primero recalcular estados, luego cargar datos
+      await apiClient.post(`/cierre-unidades/actualizar-todos-por-numero/${unidadSeleccionada}`);
       await cargarDatosUnidad(unidadSeleccionada);
-      message.success('Vista actualizada correctamente');
+      message.success('Estados actualizados correctamente');
     } catch (error) {
       console.error('Error al actualizar estado:', error);
       message.error('Error al actualizar el estado');
@@ -183,21 +179,12 @@ const CierreUnidades = ({ user }) => {
 
   const handleConfirmarNotificacion = async () => {
     console.log('✅ Usuario confirmó notificación');
-
-    if (!cursosData?.idUnidad) {
-      message.error('No se pudo obtener el ID de la unidad');
-      console.error('❌ IdUnidad no disponible en cursosData:', cursosData);
-      return;
-    }
-
     setProcesando(true);
     setModalNotificarVisible(false);
 
     try {
-      // Usar el IdUnidad de la base de datos, NO el número de unidad
-      const url = `/notificaciones-docentes/generar/${cursosData.idUnidad}`;
+      const url = `/notificaciones-docentes/generar-por-numero/${unidadSeleccionada}`;
       console.log('📤 Enviando POST a:', url);
-      console.log('🔑 Usando IdUnidad:', cursosData.idUnidad);
       const response = await apiClient.post(url);
       console.log('📥 Respuesta recibida:', response.data);
       if (response.data.success) {
@@ -399,10 +386,10 @@ const CierreUnidades = ({ user }) => {
               <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic
-                    title="Pendientes"
-                    value={cursosData.cursosPendientes}
+                    title="Por Notificar"
+                    value={cursosData.cursosPendientes + cursosData.cursosIncompletos}
                     valueStyle={{ color: '#faad14' }}
-                    prefix={<ClockCircleOutlined />}
+                    prefix={<BellOutlined />}
                     suffix={
                       <Button
                         type="default"
@@ -413,7 +400,7 @@ const CierreUnidades = ({ user }) => {
                         disabled={cursosData.cursosPendientes + cursosData.cursosIncompletos === 0}
                         style={{ marginLeft: 8 }}
                       >
-                        Notificar
+                        Notificar {cursosData.cursosPendientes + cursosData.cursosIncompletos}
                       </Button>
                     }
                   />
