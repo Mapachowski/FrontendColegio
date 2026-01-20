@@ -16,7 +16,6 @@ const App = () => {
         const userData = JSON.parse(savedUser);
         setUser(userData);
       } catch (error) {
-        console.error('Error al recuperar sesión:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }

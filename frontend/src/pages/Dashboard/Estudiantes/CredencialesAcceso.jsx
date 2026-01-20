@@ -67,7 +67,6 @@ const CredencialesAcceso = () => {
               const detalle = await apiClient.get(`/alumnos/${alumno.IdAlumno}`);
               return detalle.data.data;
             } catch (err) {
-              console.error(`Error al obtener alumno ${alumno.IdAlumno}:`, err);
               return alumno;
             }
           })
@@ -85,7 +84,6 @@ const CredencialesAcceso = () => {
         message.info('No se encontraron alumnos');
       }
     } catch (error) {
-      console.error('Error al buscar alumnos:', error);
       message.error('Error al buscar alumnos');
       setAlumnos([]);
     } finally {
@@ -140,7 +138,6 @@ const CredencialesAcceso = () => {
         form.resetFields();
       }
     } catch (error) {
-      console.error('Error al resetear contraseña:', error);
       const mensajeError = error.response?.data?.error || error.response?.data?.message || 'Error al resetear contraseña';
       message.error(mensajeError);
     }
@@ -208,19 +205,13 @@ const CredencialesAcceso = () => {
 
     setLoadingFamilias(true);
     const busquedaLower = busquedaFamilias.toLowerCase().trim();
-    console.log('=== INICIANDO BÚSQUEDA DE FAMILIAS ===');
-    console.log('Término de búsqueda:', busquedaFamilias);
 
     try {
       // Obtener responsables activos que tienen usuario
-      console.log('📡 Llamando a /responsables/activos...');
       const response = await apiClient.get('/responsables/activos');
-      console.log('Response /responsables/activos:', response.data);
 
       // Obtener todos los usuarios con IdRol = 3 (Familia)
-      console.log('📡 Llamando a /usuarios...');
       const usuariosResponse = await apiClient.get('/usuarios');
-      console.log('Response /usuarios:', usuariosResponse.data);
 
       let usuariosFamilia = [];
       if (usuariosResponse.data.success && usuariosResponse.data.data) {
@@ -230,8 +221,6 @@ const CredencialesAcceso = () => {
         }
         // Filtrar solo usuarios con IdRol = 3
         usuariosFamilia = todosUsuarios.filter(u => u.IdRol === 3);
-        console.log('👨‍👩‍👧 Usuarios con IdRol=3 (Familia):', usuariosFamilia.length);
-        console.log('Usuarios Familia:', usuariosFamilia);
       }
 
       // Primero: Buscar directamente en usuarios de familia
@@ -243,7 +232,6 @@ const CredencialesAcceso = () => {
         return coincide;
       });
 
-      console.log('🔍 Usuarios familia que coinciden con búsqueda:', usuariosFiltrados);
 
       // Procesar responsables si hay datos
       let responsablesLimpios = [];
@@ -253,8 +241,6 @@ const CredencialesAcceso = () => {
         if (datosReales) {
           responsablesLimpios = Object.values(datosReales);
         }
-        console.log('👥 Responsables activos:', responsablesLimpios.length);
-        console.log('Responsables:', responsablesLimpios);
       }
 
       // Combinar: crear lista de familias con usuario
@@ -310,7 +296,6 @@ const CredencialesAcceso = () => {
         }
       });
 
-      console.log('✅ Familias resultado final:', familiasResultado);
 
       setFamilias(familiasResultado);
 
@@ -320,13 +305,10 @@ const CredencialesAcceso = () => {
         message.success(`${familiasResultado.length} familia(s) encontrada(s)`);
       }
     } catch (error) {
-      console.error('❌ Error al buscar familias:', error);
-      console.error('Error response:', error.response?.data);
       message.error('Error al buscar familias');
       setFamilias([]);
     } finally {
       setLoadingFamilias(false);
-      console.log('=== FIN BÚSQUEDA DE FAMILIAS ===');
     }
   };
 
@@ -375,7 +357,6 @@ const CredencialesAcceso = () => {
         form.resetFields();
       }
     } catch (error) {
-      console.error('Error al resetear contraseña:', error);
       const mensajeError = error.response?.data?.error || error.response?.data?.message || 'Error al resetear contraseña';
       message.error(mensajeError);
     }

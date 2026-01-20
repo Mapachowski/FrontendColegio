@@ -17,14 +17,10 @@ const CrearEditarActividadModal = ({ visible, actividad, unidad, modoEdicion, on
   const [cantidadCalificaciones, setCantidadCalificaciones] = useState(0);
 
   useEffect(() => {
-    console.log('🔷 Modal visible cambió:', visible);
-    console.log('   Modo edición:', modoEdicion);
-    console.log('   Unidad:', unidad);
 
     if (visible) {
       if (modoEdicion && actividad) {
         // Modo edición: cargar datos de la actividad
-        console.log('   Cargando datos de actividad para edición:', actividad);
         form.setFieldsValue({
           NombreActividad: actividad.NombreActividad,
           Descripcion: actividad.Descripcion,
@@ -37,7 +33,6 @@ const CrearEditarActividadModal = ({ visible, actividad, unidad, modoEdicion, on
         setPunteoActual(parseFloat(actividad.PunteoMaximo));
       } else {
         // Modo creación: limpiar formulario
-        console.log('   Modo creación: limpiando formulario');
         form.resetFields();
         setTipoActividad('zona');
         setPunteoActual(0);
@@ -103,7 +98,6 @@ const CrearEditarActividadModal = ({ visible, actividad, unidad, modoEdicion, on
         });
       }
     } catch (error) {
-      console.error('Error al validar punteo:', error);
     }
   };
 
@@ -126,16 +120,11 @@ const CrearEditarActividadModal = ({ visible, actividad, unidad, modoEdicion, on
   };
 
   const handleSubmit = async () => {
-    console.log('🔵 handleSubmit llamado');
-    console.log('   Unidad:', unidad);
-    console.log('   Modo edición:', modoEdicion);
 
     try {
       const values = await form.validateFields();
-      console.log('✅ Validación de formulario exitosa:', values);
 
       if (!validacionPunteo.valida) {
-        console.log('❌ Validación de punteo falló:', validacionPunteo);
         message.error('El punteo ingresado excede el máximo permitido');
         return;
       }
@@ -153,11 +142,9 @@ const CrearEditarActividadModal = ({ visible, actividad, unidad, modoEdicion, on
             const miDocente = docentesResponse.data.data.find(doc => doc.idUsuario === user.IdUsuario);
             if (miDocente) {
               userIdForCreation = String(miDocente.idDocente);
-              console.log('   Docente encontrado - idDocente:', userIdForCreation);
             }
           }
         } catch (error) {
-          console.error('Error al obtener idDocente:', error);
         }
       }
 
@@ -173,27 +160,20 @@ const CrearEditarActividadModal = ({ visible, actividad, unidad, modoEdicion, on
         ModificadoPor: userIdForCreation
       };
 
-      console.log('📤 Enviando payload:', payload);
 
       let response;
       if (modoEdicion) {
-        console.log('   Endpoint:', `PUT /actividades/${actividad.IdActividad}`);
         response = await apiClient.put(`/actividades/${actividad.IdActividad}`, payload);
       } else {
-        console.log('   Endpoint:', 'POST /actividades');
         response = await apiClient.post('/actividades', payload);
       }
 
-      console.log('📥 Respuesta del servidor:', response);
-      console.log('   Response.data:', response.data);
 
       if (response.data.success) {
         message.success(modoEdicion ? 'Actividad actualizada correctamente' : 'Actividad creada correctamente');
         onSuccess();
       }
     } catch (error) {
-      console.error('❌ Error al guardar actividad:', error);
-      console.error('   Error response:', error.response?.data);
       if (error.response?.data?.error) {
         message.error(error.response.data.error);
       } else {

@@ -34,6 +34,7 @@ const CrearPagoInscripcion = () => {
   const [loading, setLoading] = useState(false);
   const [fechaPago, setFechaPago] = useState(dayjs());
   const [montoInscripcion, setMontoInscripcion] = useState(200); // Monto por defecto
+  const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
   const user = JSON.parse(localStorage.getItem('user')) || { IdUsuario: null, rol: null };
   const navigate = useNavigate();
 
@@ -48,7 +49,6 @@ const CrearPagoInscripcion = () => {
         setAlumnos(alumnosResponse.data?.data || alumnosResponse.data || []);
         setMetodosPago(metodosPagoResponse.data?.data || metodosPagoResponse.data || []);
       } catch (error) {
-        console.error('Error al cargar datos iniciales:', error);
         message.error('Error al cargar datos: Revisa la conexión.');
       }
     };
@@ -73,7 +73,6 @@ const CrearPagoInscripcion = () => {
         message.warning('No se encontraron datos para el alumno en este ciclo.');
       }
     } catch (error) {
-      console.error('Error al buscar alumno:', error);
       message.error('Error al buscar alumno');
       setAlumnoData([]);
     }
@@ -82,6 +81,15 @@ const CrearPagoInscripcion = () => {
   const handleRowDoubleClick = async (record) => {
     const data = record[0];
     const idAlumno = data.IdAlumno;
+
+    // Guardar información completa del alumno
+    setAlumnoSeleccionado({
+      IdAlumno: idAlumno,
+      NombreCompleto: `${data.Nombres} ${data.Apellidos}`,
+      Grado: data.NombreGrado || '',
+      Seccion: data.NombreSeccion || '',
+      Jornada: data.NombreJornada || ''
+    });
 
     form.setFieldsValue({
       IdAlumno: idAlumno,
@@ -141,10 +149,8 @@ const CrearPagoInscripcion = () => {
         Anio: getCicloActual(),
       };
 
-      console.log('📦 Enviando pago de inscripción:', payload);
 
       const response = await apiClient.post('/pagos', payload);
-      console.log('✅ Respuesta:', response.data);
 
       message.success('Pago de inscripción registrado exitosamente.');
 
@@ -158,7 +164,6 @@ const CrearPagoInscripcion = () => {
       handleNuevoPago();
 
     } catch (error) {
-      console.error('❌ Error al registrar pago:', error);
       const mensajeError = error.response?.data?.error || error.response?.data?.message || 'Error al registrar el pago. Intenta de nuevo.';
       message.error(mensajeError);
     } finally {
@@ -170,6 +175,7 @@ const CrearPagoInscripcion = () => {
     form.resetFields();
     setSelectedAlumno(null);
     setAlumnoData([]);
+    setAlumnoSeleccionado(null);
     setMontoInscripcion(200);
     setFechaPago(dayjs());
     message.info('Listo para un nuevo pago de inscripción.');
@@ -203,17 +209,10 @@ const CrearPagoInscripcion = () => {
             />
           </Form.Item>
 
-          {/* Buscar Alumno */}
-          <Form.Item label="Alumno">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Input.Group compact style={{ flex: 1 }}>
-                <Form.Item name="Nombres" noStyle>
-                  <Input readOnly style={{ flex: 2 }} placeholder="Nombre del Alumno" />
-                </Form.Item>
-                <Form.Item name="IdAlumno" noStyle>
-                  <Input readOnly style={{ flex: 1 }} placeholder="Carnet" />
-                </Form.Item>
-              </Input.Group>
+          {/* Card de Alumno Seleccionado */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <strong>Alumno</strong>
               <Button
                 type="primary"
                 onClick={() => setIsSearchModalOpen(true)}
@@ -222,12 +221,51 @@ const CrearPagoInscripcion = () => {
                 Buscar Alumno
               </Button>
             </div>
-          </Form.Item>
 
-          {/* Grado (solo lectura) */}
-          <Form.Item name="Grado" label="Grado">
-            <Input readOnly placeholder="Se mostrará al seleccionar alumno" />
-          </Form.Item>
+            {alumnoSeleccionado ? (
+              <Card
+                size="small"
+                style={{
+                  background: '#f6ffed',
+                  border: '1px solid #b7eb8f'
+                }}
+              >
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Carnet</Text>
+                    <div style={{ fontWeight: 500 }}>{alumnoSeleccionado.IdAlumno}</div>
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Nombre Completo</Text>
+                    <div style={{ fontWeight: 500 }}>{alumnoSeleccionado.NombreCompleto}</div>
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Grado</Text>
+                    <div style={{ fontWeight: 500 }}>{alumnoSeleccionado.Grado}</div>
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Sección</Text>
+                    <div style={{ fontWeight: 500 }}>{alumnoSeleccionado.Seccion}</div>
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Jornada</Text>
+                    <div style={{ fontWeight: 500 }}>{alumnoSeleccionado.Jornada}</div>
+                  </div>
+                </div>
+              </Card>
+            ) : (
+              <Card
+                size="small"
+                style={{
+                  background: '#fff7e6',
+                  border: '1px solid #ffd591',
+                  textAlign: 'center'
+                }}
+              >
+                <Text type="secondary">No se ha seleccionado un alumno</Text>
+              </Card>
+            )}
+          </div>
 
           {/* Monto de Inscripción */}
           <Form.Item label="Monto de Inscripción" required>
@@ -368,10 +406,11 @@ const CrearPagoInscripcion = () => {
 
         <Table
           columns={[
-            { title: 'Carnet', dataIndex: ['0', 'IdAlumno'], width: 120 },
-            { title: 'Nombres', dataIndex: ['0', 'Nombres'], width: 150 },
-            { title: 'Apellidos', dataIndex: ['0', 'Apellidos'], width: 150 },
-            { title: 'Grado', dataIndex: ['0', 'NombreGrado'] },
+            { title: 'Carnet', dataIndex: ['0', 'IdAlumno'], width: 100 },
+            { title: 'Nombre Completo', width: 250, render: (_, record) => `${record[0]?.Nombres || ''} ${record[0]?.Apellidos || ''}` },
+            { title: 'Grado', dataIndex: ['0', 'NombreGrado'], width: 180 },
+            { title: 'Sección', dataIndex: ['0', 'NombreSeccion'], width: 100 },
+            { title: 'Jornada', dataIndex: ['0', 'NombreJornada'], width: 120 },
           ]}
           dataSource={alumnoData}
           rowKey={(r) => r[0]?.IdAlumno}
@@ -379,7 +418,7 @@ const CrearPagoInscripcion = () => {
             onDoubleClick: () => handleRowDoubleClick(record),
           })}
           pagination={false}
-          scroll={{ y: 300 }}
+          scroll={{ y: 300, x: 800 }}
         />
       </Modal>
     </div>

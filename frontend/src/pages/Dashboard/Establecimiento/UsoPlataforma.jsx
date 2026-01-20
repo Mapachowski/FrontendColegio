@@ -51,7 +51,6 @@ const UsoPlataforma = () => {
       const usuariosData = response.data?.data || response.data || [];
       setUsuarios(Array.isArray(usuariosData) ? usuariosData : []);
     } catch (error) {
-      console.error('Error al cargar usuarios:', error);
       message.error('Error al cargar la lista de usuarios');
     }
   };
@@ -89,7 +88,6 @@ const UsoPlataforma = () => {
       setTotalRegistros(total);
       setLoading(false);
     } catch (error) {
-      console.error('Error al cargar bitácoras:', error);
       message.error('Error al cargar las bitácoras');
       setBitacoras([]);
       setLoading(false);

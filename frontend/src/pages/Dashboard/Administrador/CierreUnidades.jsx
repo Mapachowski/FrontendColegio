@@ -67,7 +67,6 @@ const CierreUnidades = ({ user }) => {
         setUnidadSeleccionada(1); // Seleccionar NumeroUnidad = 1
       }
     } catch (error) {
-      console.error('Error al cargar unidades:', error);
       message.error('Error al cargar las unidades');
     } finally {
       setLoading(false);
@@ -95,7 +94,6 @@ const CierreUnidades = ({ user }) => {
         });
       }
     } catch (error) {
-      console.error('Error al cargar datos de unidad:', error);
       message.error('Error al cargar datos de la unidad');
       setCursosData(null);
     } finally {
@@ -113,7 +111,6 @@ const CierreUnidades = ({ user }) => {
       await cargarDatosUnidad(unidadSeleccionada);
       message.success('Estados actualizados correctamente');
     } catch (error) {
-      console.error('Error al actualizar estado:', error);
       message.error('Error al actualizar el estado');
     } finally {
       setLoading(false);
@@ -121,35 +118,27 @@ const CierreUnidades = ({ user }) => {
   };
 
   const cerrarCursosListos = () => {
-    console.log('🎯 cerrarCursosListos LLAMADA');
-    console.log('📊 Datos:', { unidadSeleccionada, cursosListos: cursosData?.cursosListos });
 
     if (!unidadSeleccionada || !cursosData || cursosData.cursosListos === 0) {
-      console.log('⚠️ No hay cursos listos para cerrar');
       message.warning('No hay cursos listos para cerrar');
       return;
     }
 
-    console.log('📝 Mostrando modal de cierre');
     setModalCerrarVisible(true);
   };
 
   const handleConfirmarCierre = async () => {
-    console.log('✅ Usuario confirmó el cierre');
     setProcesando(true);
     setModalCerrarVisible(false);
 
     try {
       const url = `/cierre-unidades/cerrar-cursos-listos-por-numero/${unidadSeleccionada}`;
-      console.log('📤 Enviando POST a:', url);
       const response = await apiClient.post(url);
-      console.log('📥 Respuesta recibida:', response.data);
       if (response.data.success) {
         message.success(response.data.message);
         await cargarDatosUnidad(unidadSeleccionada);
       }
     } catch (error) {
-      console.error('❌ Error al cerrar cursos:', error);
       const errorMsg = error.response?.data?.error || 'Error al cerrar los cursos';
       message.error(errorMsg);
     } finally {
@@ -158,7 +147,6 @@ const CierreUnidades = ({ user }) => {
   };
 
   const notificarPendientes = () => {
-    console.log('🔔 notificarPendientes LLAMADA');
 
     if (!unidadSeleccionada || !cursosData) {
       message.warning('No hay datos para notificar');
@@ -166,32 +154,26 @@ const CierreUnidades = ({ user }) => {
     }
 
     const totalPendientes = cursosData.cursosPendientes + cursosData.cursosIncompletos;
-    console.log('📊 Total pendientes:', totalPendientes);
 
     if (totalPendientes === 0) {
       message.info('No hay cursos con pendientes para notificar');
       return;
     }
 
-    console.log('📝 Mostrando modal');
     setModalNotificarVisible(true);
   };
 
   const handleConfirmarNotificacion = async () => {
-    console.log('✅ Usuario confirmó notificación');
     setProcesando(true);
     setModalNotificarVisible(false);
 
     try {
       const url = `/notificaciones-docentes/generar-por-numero/${unidadSeleccionada}`;
-      console.log('📤 Enviando POST a:', url);
       const response = await apiClient.post(url);
-      console.log('📥 Respuesta recibida:', response.data);
       if (response.data.success) {
         message.success(`${response.data.notificacionesCreadas || 0} notificaciones enviadas con plazo de 3 días`);
       }
     } catch (error) {
-      console.error('❌ Error al notificar:', error);
       const errorMsg = error.response?.data?.error || 'Error al enviar notificaciones';
       message.error(errorMsg);
     } finally {

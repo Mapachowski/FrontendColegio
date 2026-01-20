@@ -30,21 +30,14 @@ const ActividadesModal = ({ visible, curso, esEstudiante, esDocente, esAdmin, on
     setLoading(true);
     try {
       const idAsignacion = curso.IdAsignacionDocente || curso.idAsignacion;
-      console.log('=== CARGANDO ACTIVIDADES ===');
-      console.log('IdAsignacion:', idAsignacion);
-      console.log('IdAlumno (para estudiantes):', idAlumno);
-      console.log('Es Admin:', esAdmin);
 
       let url = '';
 
       // Para ADMIN: usa el nuevo endpoint que no requiere idAlumno
       if (esAdmin) {
         url = `/asignaciones/${idAsignacion}/actividades`;
-        console.log('🔗 URL ACTIVIDADES (ADMIN):', `http://localhost:4000/api${url}`);
 
         const response = await apiClient.get(url);
-        console.log('📦 Response status:', response.status);
-        console.log('📦 Response actividades (ADMIN):', response.data);
 
         if (response.data.success && response.data.data) {
           const data = response.data.data;
@@ -66,7 +59,6 @@ const ActividadesModal = ({ visible, curso, esEstudiante, esDocente, esAdmin, on
             });
           }
 
-          console.log('📚 Total actividades (ADMIN):', todasActividades.length);
           setActividades(todasActividades);
         } else {
           setActividades([]);
@@ -75,11 +67,8 @@ const ActividadesModal = ({ visible, curso, esEstudiante, esDocente, esAdmin, on
       // Para ESTUDIANTES: usa endpoint con idAlumno
       else if (esEstudiante && idAlumno) {
         url = `/asignaciones/${idAsignacion}/actividades-alumno?idAlumno=${idAlumno}`;
-        console.log('🔗 URL ACTIVIDADES (ESTUDIANTE):', `http://localhost:4000/api${url}`);
 
         const response = await apiClient.get(url);
-        console.log('📦 Response status:', response.status);
-        console.log('📦 Response actividades:', response.data);
 
         let actividadesData = [];
         if (response.data.success && response.data.data) {
@@ -90,17 +79,13 @@ const ActividadesModal = ({ visible, curso, esEstudiante, esDocente, esAdmin, on
           actividadesData = response.data;
         }
 
-        console.log('📚 Total actividades cargadas:', actividadesData.length);
         setActividades(actividadesData);
       }
       // Para DOCENTES: mismo endpoint que estudiante pero sin idAlumno
       else {
         url = `/asignaciones/${idAsignacion}/actividades-alumno${idAlumno ? `?idAlumno=${idAlumno}` : ''}`;
-        console.log('🔗 URL ACTIVIDADES (DOCENTE):', `http://localhost:4000/api${url}`);
 
         const response = await apiClient.get(url);
-        console.log('📦 Response status:', response.status);
-        console.log('📦 Response actividades:', response.data);
 
         let actividadesData = [];
         if (response.data.success && response.data.data) {
@@ -111,12 +96,9 @@ const ActividadesModal = ({ visible, curso, esEstudiante, esDocente, esAdmin, on
           actividadesData = response.data;
         }
 
-        console.log('📚 Total actividades cargadas:', actividadesData.length);
         setActividades(actividadesData);
       }
     } catch (error) {
-      console.error('❌ Error al cargar actividades:', error);
-      console.error('❌ Response:', error.response?.data);
       message.error('Error al cargar actividades');
       setActividades([]);
     } finally {

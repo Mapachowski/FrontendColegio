@@ -45,7 +45,6 @@ const EditarCursoModal = ({ visible, curso, grados, onCancel, onSuccess }) => {
         onSuccess();
       }
     } catch (error) {
-      console.error('Error al actualizar curso:', error);
       message.error(error.response?.data?.message || 'Error al actualizar el curso');
     } finally {
       setLoading(false);

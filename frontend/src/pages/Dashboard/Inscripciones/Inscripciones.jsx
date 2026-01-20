@@ -24,7 +24,6 @@ const Inscripciones = () => {
 
 
   const handleOk = (tipo) => {
-    console.log('Tipo seleccionado:', tipo);
     setIsModalOpen(false); // Cerramos al hacer OK
     // Aquí puedes redirigir o abrir otro formulario
   };
@@ -114,7 +113,6 @@ const Inscripciones = () => {
   };
   const navigate = useNavigate();
   const handleFinalizar = async () => {
-    console.log('INICIANDO FINALIZAR INSCRIPCIÓN...');
     dispatch({ type: 'SET_LOADING', payload: true });
 
     try {
@@ -122,7 +120,6 @@ const Inscripciones = () => {
 
       // 1. CREAR ALUMNO (nuevo)
       if (state.modo === 'nuevo') {
-        console.log('CREANDO ALUMNO:', state.alumno);
         const alumnoPayload = {
           IdColaborador: state.user.IdColaborador,
           Matricula: state.alumno.Matricula || `MAT-${new Date().getFullYear()}-${state.siguienteCarnet}`,
@@ -138,7 +135,6 @@ const Inscripciones = () => {
 
         const res = await apiClient.post('/alumnos', alumnoPayload);
         IdAlumno = res.data.IdAlumno || res.data.data?.IdAlumno;
-        console.log('ALUMNO CREADO → IdAlumno:', IdAlumno);
 
         // 1.1. CREAR USUARIO DEL ESTUDIANTE
         try {
@@ -151,43 +147,31 @@ const Inscripciones = () => {
             IdColaborador: state.user.IdColaborador
           };
 
-          console.log('=== CREANDO USUARIO ESTUDIANTE ===');
-          console.log('Payload:', usuarioEstudiantePayload);
 
           const usuarioRes = await apiClient.post('/usuarios', usuarioEstudiantePayload);
-          console.log('Response usuario:', usuarioRes.data);
 
           // Capturar IdUsuario de la respuesta
           const IdUsuario = usuarioRes.data.IdUsuario || usuarioRes.data.data?.IdUsuario;
-          console.log('✅ Usuario del estudiante creado → IdUsuario:', IdUsuario);
 
           // 1.2. ACTUALIZAR ALUMNO CON EL IdUsuario
           if (IdUsuario) {
             try {
-              console.log('=== ACTUALIZANDO ALUMNO CON IdUsuario ===');
               await apiClient.put(`/alumnos/${IdAlumno}`, {
                 IdColaborador: state.user.IdColaborador, // Campo obligatorio
                 IdUsuario: IdUsuario
               });
-              console.log('✅ Alumno actualizado con IdUsuario');
             } catch (errorUpdate) {
-              console.error('❌ Error al actualizar alumno con IdUsuario:', errorUpdate);
-              console.error('Response:', errorUpdate.response?.data);
               message.warning('Usuario creado, pero no se pudo vincular al alumno');
             }
           } else {
-            console.warn('⚠️ No se pudo obtener IdUsuario de la respuesta');
           }
         } catch (errorUsuario) {
-          console.error('❌ Error al crear usuario del estudiante:', errorUsuario);
-          console.error('Response:', errorUsuario.response?.data);
           // No bloqueamos la inscripción si falla la creación del usuario
           message.warning('Estudiante creado, pero hubo un error al crear su usuario de acceso');
         }
       }
 
       // 2. CREAR INSCRIPCIÓN
-      console.log('CREANDO INSCRIPCIÓN:', { IdAlumno, ...state.inscripcion });
       const inscPayload = {
         IdColaborador: state.user.IdColaborador,
         IdAlumno,
@@ -200,44 +184,28 @@ const Inscripciones = () => {
       };
 
       const inscRes = await apiClient.post('/inscripciones', inscPayload);
-      console.log('INSCRIPCIÓN CREADA:', inscRes.data);
 
       // Obtener IdInscripcion de la respuesta
       const IdInscripcion = inscRes.data.IdInscripcion || inscRes.data.data?.IdInscripcion;
-      console.log('IdInscripcion obtenido:', IdInscripcion);
 
       // 2.1. ASIGNAR ACTIVIDADES AL ALUMNO (proceso invisible)
       // Este proceso crea las calificaciones para el alumno si ya existen actividades creadas
       if (IdInscripcion) {
         try {
-          console.log('=== ASIGNANDO ACTIVIDADES AL ALUMNO (PROCESO AUTOMÁTICO) ===');
-          console.log('Payload asignar-actividades:', {
-            IdInscripcion: IdInscripcion,
-            IdColaborador: state.user.IdColaborador
-          });
-
           const asignarActividadesRes = await apiClient.post('/inscripciones/asignar-actividades', {
             IdInscripcion: IdInscripcion,
             IdColaborador: state.user.IdColaborador
           });
 
-          console.log('📚 Respuesta asignar-actividades:', asignarActividadesRes.data);
 
           if (asignarActividadesRes.data.success) {
             const { actividadesEncontradas, calificacionesCreadas } = asignarActividadesRes.data.data || {};
-            console.log(`✅ Actividades encontradas: ${actividadesEncontradas}`);
-            console.log(`✅ Calificaciones creadas: ${calificacionesCreadas}`);
-            console.log(`✅ Mensaje: ${asignarActividadesRes.data.message}`);
           }
-          console.log('=== FIN ASIGNAR ACTIVIDADES ===');
         } catch (errorActividades) {
           // No bloqueamos la inscripción si falla la asignación de actividades
-          console.error('❌ Error al asignar actividades (no crítico):', errorActividades);
-          console.error('Response:', errorActividades.response?.data);
           // No mostramos mensaje al usuario, es un proceso interno
         }
       } else {
-        console.warn('⚠️ No se pudo obtener IdInscripcion, no se asignarán actividades');
       }
 
       // 3. CREAR PAGOS SI SELECCIONADOS (solo si NO es inscripción sin pagos)
@@ -324,9 +292,7 @@ const Inscripciones = () => {
           }
         }
 
-        console.log('PAGOS CREADOS:', pagosCreados);
       } else {
-        console.log('INSCRIPCIÓN SIN PAGOS - No se crearon pagos');
       }
 
       // Registrar en bitácora la creación del alumno
@@ -370,7 +336,6 @@ const Inscripciones = () => {
       navigate('/dashboard');
 
     } catch (error) {
-      console.error('ERROR FINAL:', error.response?.data || error.message);
       // Sanitizar mensaje de error del servidor para prevenir XSS
       const errorMsg = escapeHTML(error.response?.data?.message || error.message);
       message.error(`Error: ${errorMsg}`);

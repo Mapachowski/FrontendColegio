@@ -72,12 +72,7 @@ const AsignacionCursos = () => {
         setJornadas(jornadasRes.data.data || []);
       }
 
-      console.log('=== CATÁLOGOS CARGADOS ===');
-      console.log('Secciones:', seccionesRes.data);
-      console.log('Jornadas:', jornadasRes.data);
-      console.log('========================');
     } catch (error) {
-      console.error('Error al cargar catálogos:', error);
       message.error('Error al cargar catálogos');
     }
   };
@@ -95,14 +90,6 @@ const AsignacionCursos = () => {
 
       const response = await apiClient.get('/asignaciones', { params });
 
-      console.log('=== DEBUG ASIGNACIONES ===');
-      console.log('1. Response completo:', response);
-      console.log('2. Response.data:', response.data);
-      console.log('3. Response.data.success:', response.data.success);
-      console.log('4. Response.data.data:', response.data.data);
-      console.log('5. Es Array?', Array.isArray(response.data.data));
-      console.log('6. Tipo de data:', typeof response.data.data);
-      console.log('7. Params enviados:', params);
 
       // Manejar diferentes estructuras de respuesta
       let asignacionesData = [];
@@ -120,31 +107,23 @@ const AsignacionCursos = () => {
               .filter(key => !isNaN(key)) // Solo claves numéricas
               .map(key => primerElemento[key])
               .filter(item => item && item.IdAsignacionDocente); // Filtrar items válidos
-            console.log('✅ Convertido de objeto con claves numéricas a array con', asignacionesData.length, 'elementos');
           }
           // Si es un array normal de asignaciones
           else if (data.length > 0 && data[0].IdAsignacionDocente) {
             asignacionesData = data;
-            console.log('✅ Es un array con', data.length, 'elementos');
           }
         }
         // Si data es un objeto único, convertirlo en array
         else if (typeof data === 'object' && data.IdAsignacionDocente) {
           asignacionesData = [data];
-          console.log('⚠️ API devolvió un objeto único, convertido a array');
         }
       } else if (Array.isArray(response.data)) {
         asignacionesData = response.data;
-        console.log('✅ Response.data es array directo');
       }
 
-      console.log('8. Asignaciones finales a mostrar:', asignacionesData);
-      console.log('9. Cantidad de asignaciones:', asignacionesData.length);
-      console.log('=========================');
 
       setAsignaciones(asignacionesData);
     } catch (error) {
-      console.error('Error al cargar asignaciones:', error);
       message.error('Error al cargar asignaciones');
       setAsignaciones([]); // Asegurar que sea array vacío en caso de error
     } finally {
@@ -213,7 +192,6 @@ const AsignacionCursos = () => {
             cargarAsignaciones();
           }
         } catch (error) {
-          console.error('Error al eliminar asignación:', error);
           message.error(error.response?.data?.message || 'Error al eliminar asignación');
         }
       }

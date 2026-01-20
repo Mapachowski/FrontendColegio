@@ -76,7 +76,6 @@ const Insolventes = () => {
         message.success('No hay alumnos insolventes');
       }
     } catch (err) {
-      console.error('Error al cargar insolventes:', err);
       message.error('Error al cargar alumnos insolventes');
       setInsolventes([]);
     } finally {

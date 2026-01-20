@@ -8,7 +8,6 @@ const getIdColaborador = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     return user?.IdUsuario || null;
   } catch (error) {
-    console.error('Error al obtener usuario del localStorage:', error);
     return null;
   }
 };
@@ -142,7 +141,6 @@ export const useInscripcionForm = () => {
           return a.IdGrado - b.IdGrado;
         });
 
-        console.log('GRADOS ORDENADOS (final):', gradosOrdenados);
 
         dispatch({
           type: 'SET_CATALOGOS',
@@ -154,7 +152,6 @@ export const useInscripcionForm = () => {
           },
         });
       } catch (error) {
-        console.error('Error cargando catálogos:', error);
       } finally {
         if (isMounted) {
           dispatch({ type: 'SET_LOADING', payload: false });

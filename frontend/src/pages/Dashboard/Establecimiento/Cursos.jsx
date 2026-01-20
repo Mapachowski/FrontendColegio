@@ -31,7 +31,6 @@ const Cursos = () => {
         setGrados(response.data.data);
       }
     } catch (error) {
-      console.error('Error al cargar grados:', error);
       message.error('Error al cargar la lista de grados');
     }
   };
@@ -45,7 +44,6 @@ const Cursos = () => {
         setCursos(response.data.data);
       }
     } catch (error) {
-      console.error('Error al cargar cursos:', error);
       message.error('Error al cargar la lista de cursos');
     } finally {
       setLoading(false);
@@ -66,7 +64,6 @@ const Cursos = () => {
         cargarCursos(filtroGrado);
       }
     } catch (error) {
-      console.error('Error al eliminar curso:', error);
       message.error(error.response?.data?.message || 'Error al eliminar curso');
     }
   };

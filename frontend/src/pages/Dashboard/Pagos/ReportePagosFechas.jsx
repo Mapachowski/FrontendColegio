@@ -58,7 +58,6 @@ const ReportePagosFechas = () => {
         message.info('No se encontraron pagos en el rango de fechas seleccionado');
       }
     } catch (err) {
-      console.error('Error al buscar pagos:', err);
       message.error('Error al buscar pagos');
       setPagos([]);
     } finally {

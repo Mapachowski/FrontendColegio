@@ -27,7 +27,6 @@ const Docentes = () => {
         setDocentes(response.data.data);
       }
     } catch (error) {
-      console.error('Error al cargar docentes:', error);
       message.error('Error al cargar la lista de docentes');
     } finally {
       setLoading(false);
@@ -52,7 +51,6 @@ const Docentes = () => {
         cargarDocentes();
       }
     } catch (error) {
-      console.error('Error al eliminar docente:', error);
       message.error(error.response?.data?.message || 'Error al eliminar docente');
     }
   };

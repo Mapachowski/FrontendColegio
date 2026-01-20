@@ -26,7 +26,6 @@ const GestionarSolicitudesReapertura = () => {
         setSolicitudes(response.data.data || []);
       }
     } catch (error) {
-      console.error('Error al cargar solicitudes:', error);
       message.error('Error al cargar las solicitudes de reapertura');
     } finally {
       setLoading(false);
@@ -55,7 +54,6 @@ const GestionarSolicitudesReapertura = () => {
         cargarSolicitudes(); // Recargar la lista
       }
     } catch (error) {
-      console.error('Error al procesar solicitud:', error);
       const errorMsg = error.response?.data?.error || 'Error al procesar la solicitud';
       message.error(errorMsg);
     }

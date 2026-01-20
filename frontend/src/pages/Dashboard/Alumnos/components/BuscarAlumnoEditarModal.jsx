@@ -35,7 +35,6 @@ const BuscarAlumnoEditarModal = ({ open, onCancel, onAlumnoSeleccionado }) => {
         const alumnosList = Array.isArray(res.data) ? res.data : res.data.data || [];
         setAlumnos(alumnosList);
       } catch (error) {
-        console.error('ERROR CARGANDO ALUMNOS:', error);
         message.error('Error al cargar la lista de alumnos');
       }
     };
@@ -71,7 +70,6 @@ const BuscarAlumnoEditarModal = ({ open, onCancel, onAlumnoSeleccionado }) => {
         message.info('No se encontró inscripción para este alumno en el ciclo seleccionado');
       }
     } catch (error) {
-      console.error('ERROR AL BUSCAR:', error);
       message.error('Error al buscar alumno. Intenta nuevamente.');
       setData([]);
     } finally {

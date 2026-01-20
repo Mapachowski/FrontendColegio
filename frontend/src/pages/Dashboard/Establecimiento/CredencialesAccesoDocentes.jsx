@@ -60,7 +60,6 @@ const CredencialesAccesoDocentes = () => {
         message.info('No se encontraron docentes');
       }
     } catch (error) {
-      console.error('Error al buscar docentes:', error);
       message.error('Error al buscar docentes');
       setDocentes([]);
     } finally {
@@ -115,7 +114,6 @@ const CredencialesAccesoDocentes = () => {
         form.resetFields();
       }
     } catch (error) {
-      console.error('Error al resetear contraseña:', error);
       const mensajeError = error.response?.data?.error || error.response?.data?.message || 'Error al resetear contraseña';
       message.error(mensajeError);
     }

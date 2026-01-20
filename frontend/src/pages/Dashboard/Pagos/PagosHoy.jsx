@@ -47,7 +47,6 @@ const PagosHoy = () => {
         message.info('No hay pagos registrados hoy');
       }
     } catch (err) {
-      console.error('Error al cargar pagos de hoy:', err);
       message.error('Error al cargar pagos de hoy');
       setPagos([]);
     } finally {

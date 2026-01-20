@@ -21,23 +21,14 @@ const CerrarUnidadModal = ({ visible, onCancel, unidad, asignacion, onSuccess })
   const validarCierre = async () => {
     setValidandoCierre(true);
     try {
-      console.log('Validando cierre de unidad:', unidad.IdUnidad);
       const response = await apiClient.get(`/unidades/${unidad.IdUnidad}/validar-cierre`);
-      console.log('Datos de validación recibidos:', response.data);
 
       if (response.data.success) {
         setDatosValidacion(response.data);
       } else {
-        console.error('Error en validación:', response.data);
         message.error(response.data.error || 'Error al validar el cierre de la unidad');
       }
     } catch (error) {
-      console.error('Error al validar cierre:', error);
-      console.error('Detalles del error:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
       message.error('Error al validar el cierre de la unidad. Revisa la consola para más detalles.');
     } finally {
       setValidandoCierre(false);
@@ -52,9 +43,7 @@ const CerrarUnidadModal = ({ visible, onCancel, unidad, asignacion, onSuccess })
 
     setCerrando(true);
     try {
-      console.log('Intentando cerrar unidad:', unidad.IdUnidad);
       const response = await apiClient.post(`/unidades/${unidad.IdUnidad}/cerrar`);
-      console.log('Respuesta del backend al cerrar:', response.data);
 
       if (response.data.success) {
         const notasRegistradas = response.data.data?.notasRegistradas || 0;
@@ -79,16 +68,9 @@ const CerrarUnidadModal = ({ visible, onCancel, unidad, asignacion, onSuccess })
         onSuccess?.();
         onCancel();
       } else {
-        console.error('Backend retornó success:false:', response.data);
         message.error(response.data.error || 'Error al cerrar la unidad');
       }
     } catch (error) {
-      console.error('Error al cerrar unidad:', error);
-      console.error('Detalles del error:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
       message.error({
         content: error.response?.data?.error || 'Error al cerrar la unidad. Revisa la consola para más detalles.',
         duration: 10

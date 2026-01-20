@@ -27,7 +27,6 @@ const MisActividades = () => {
       message.info('Cargando cursos del estudiante...');
       setCursos([]);
     } catch (error) {
-      console.error('Error al cargar cursos:', error);
       message.error('Error al cargar tus cursos');
     } finally {
       setLoading(false);
@@ -43,7 +42,6 @@ const MisActividades = () => {
       message.info('Función en desarrollo - próximamente verás tus actividades aquí');
       setActividades([]);
     } catch (error) {
-      console.error('Error al cargar actividades:', error);
       message.error('Error al cargar las actividades');
     } finally {
       setLoading(false);

@@ -99,7 +99,6 @@ const Actividades = () => {
         }
       }
     } catch (error) {
-      console.error('Error al obtener idDocente:', error);
       message.error('Error al obtener información del docente');
     }
   };
@@ -118,7 +117,6 @@ const Actividades = () => {
       if (Array.isArray(seccionesRes.data)) setSecciones(seccionesRes.data);
       if (Array.isArray(jornadasRes.data)) setJornadas(jornadasRes.data);
     } catch (error) {
-      console.error('Error al cargar catálogos:', error);
       message.error('Error al cargar catálogos');
     }
   };
@@ -157,7 +155,6 @@ const Actividades = () => {
 
       setAsignaciones(asignacionesData);
     } catch (error) {
-      console.error('Error al cargar asignaciones:', error);
       message.error('Error al cargar asignaciones');
       setAsignaciones([]);
     } finally {
@@ -176,7 +173,6 @@ const Actividades = () => {
         message.warning('No se encontraron unidades para esta asignación');
       }
     } catch (error) {
-      console.error('Error al cargar unidades:', error);
       message.error('Error al cargar las unidades');
       setUnidades([]);
     } finally {
@@ -187,26 +183,15 @@ const Actividades = () => {
   const cargarActividadesUnidad = async (idUnidad) => {
     setLoadingActividades(true);
     try {
-      console.log('Cargando actividades para unidad:', idUnidad);
       const response = await apiClient.get(`/actividades/unidad/${idUnidad}`);
-      console.log('Respuesta completa de actividades:', response.data);
 
       if (response.data.success) {
         const actividadesData = response.data.data || [];
-        console.log('Actividades recibidas:', actividadesData);
-        console.log('Cantidad de actividades:', actividadesData.length);
         setActividades(actividadesData);
       } else {
-        console.error('Backend retornó success: false:', response.data);
         setActividades([]);
       }
     } catch (error) {
-      console.error('Error al cargar actividades:', error);
-      console.error('Detalles del error:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
       message.error('Error al cargar las actividades');
       setActividades([]);
     } finally {
@@ -261,7 +246,6 @@ const Actividades = () => {
         }
       }
     } catch (error) {
-      console.error('Error al verificar solicitud pendiente:', error);
       setTieneSolicitudPendiente(false);
       setEstadoSolicitud(null);
     }
@@ -324,7 +308,6 @@ const Actividades = () => {
         await cargarActividadesUnidad(unidadSeleccionada.IdUnidad);
       }
     } catch (error) {
-      console.error('Error al eliminar actividad:', error);
       message.error(error.response?.data?.error || 'Error al eliminar actividad');
     }
   }; */

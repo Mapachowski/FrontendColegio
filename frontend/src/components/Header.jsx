@@ -40,7 +40,6 @@ const HeaderComponent = () => {
           setRoles(rolesMap);
         }
       } catch (error) {
-        console.error('Error cargando roles:', error);
       }
     };
 

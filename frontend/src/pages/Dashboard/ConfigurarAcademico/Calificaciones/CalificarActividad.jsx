@@ -97,7 +97,6 @@ const CalificarActividad = () => {
         }
       }
     } catch (error) {
-      console.error('Error al verificar zonas completas:', error);
       setZonasCompletas(false);
     }
   };
@@ -134,7 +133,6 @@ const CalificarActividad = () => {
         setNotasZonaPorAlumno(notasZona);
       }
     } catch (error) {
-      console.error('Error al cargar notas de zona:', error);
     }
   };
 
@@ -160,7 +158,6 @@ const CalificarActividad = () => {
         setCalificaciones(calificacionesIniciales);
       }
     } catch (error) {
-      console.error('Error al cargar alumnos:', error);
       message.error('Error al cargar la lista de alumnos');
     } finally {
       setLoading(false);
@@ -217,7 +214,6 @@ const CalificarActividad = () => {
         await cargarAlumnos();
       }
     } catch (error) {
-      console.error('Error al guardar calificaciones:', error);
 
       // Manejar error específico de unidad cerrada
       if (error.response?.data?.unidadCerrada) {

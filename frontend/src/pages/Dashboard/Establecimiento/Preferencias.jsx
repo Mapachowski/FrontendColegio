@@ -66,7 +66,6 @@ const Preferencias = () => {
       setPrecios(preciosIniciales);
       message.success('Datos cargados correctamente');
     } catch (err) {
-      console.error('Error al cargar grados:', err);
       message.error('Error al cargar los grados');
     } finally {
       setLoading(false);
@@ -124,7 +123,6 @@ const Preferencias = () => {
       // Recargar los grados para reflejar los cambios
       await cargarGrados();
     } catch (err) {
-      console.error('Error al actualizar precios:', err);
       message.error('Error al actualizar los precios');
     } finally {
       setGuardando(false);

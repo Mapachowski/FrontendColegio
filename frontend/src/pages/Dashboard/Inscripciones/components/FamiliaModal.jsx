@@ -27,7 +27,6 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
         setFamilias(Array.isArray(famRes.data.data) ? famRes.data.data : famRes.data);
         setTiposResponsable(Array.isArray(tiposRes.data.data) ? tiposRes.data.data : tiposRes.data);
       } catch (error) {
-        console.error('Error cargando datos:', error);
         message.error('Error al cargar datos');
       }
     };
@@ -73,17 +72,9 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
       const IdColaborador = userFromStorage.IdUsuario;
 
       if (!IdColaborador) {
-        console.error('ERROR: IdUsuario no existe o es null');
         message.error('No se detectó usuario. Recarga la página.');
         return;
       }
-
-      console.log('ENVIANDO A BACKEND:', {
-        NombreFamilia: values.NombreFamilia,
-        IdColaborador: IdColaborador,
-        DireccionRecibo: values.DireccionRecibo,
-        NombreRecibo: values.NombreRecibo,
-      });
 
       // PASO 1: CREAR USUARIO DE LA FAMILIA PRIMERO
       let IdUsuarioFamilia = null;
@@ -104,15 +95,11 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
           IdColaborador: IdColaborador
         };
 
-        console.log('=== CREANDO USUARIO FAMILIA ===');
-        console.log('Payload:', usuarioFamiliaPayload);
 
         const usuarioFamiliaRes = await apiClient.post('/usuarios', usuarioFamiliaPayload);
-        console.log('Response usuario familia:', usuarioFamiliaRes.data);
 
         // Capturar IdUsuario de la respuesta
         IdUsuarioFamilia = usuarioFamiliaRes.data.IdUsuario || usuarioFamiliaRes.data.data?.IdUsuario;
-        console.log('✅ Usuario de la familia creado → IdUsuario:', IdUsuarioFamilia);
 
         // Guardar credenciales para generar PDF después
         credencialesUsuario = {
@@ -123,8 +110,6 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
 
         message.success(`Usuario creado: ${nombreUsuarioFamilia}`);
       } catch (errorUsuario) {
-        console.error('❌ Error al crear usuario de la familia:', errorUsuario);
-        console.error('Response:', errorUsuario.response?.data);
         // Continuamos sin IdUsuario si falla
         message.warning('Error al crear usuario de la familia. Se creará la familia sin usuario.');
       }
@@ -142,7 +127,6 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
       });
 
       const nuevaFamilia = familiaRes.data.data || familiaRes.data;
-      console.log('✅ Familia creada con IdUsuario:', IdUsuarioFamilia);
 
       dispatch({
         type: 'UPDATE_PAGO',
@@ -207,7 +191,6 @@ const FamiliaModal = ({ open, onSelect, onCancel, state, dispatch }) => {
       onSelect(nuevaFamilia);
       onCancel();
     } catch (error) {
-      console.error('Error:', error);
       message.error('Error al crear familia');
     }
   };

@@ -9,10 +9,6 @@ const VerAsignacionModal = ({ visible, asignacion, onCancel }) => {
 
   useEffect(() => {
     if (visible && asignacion) {
-      console.log('=== DEBUG VER ASIGNACION ===');
-      console.log('Asignacion recibida:', asignacion);
-      console.log('IdAsignacionDocente:', asignacion.IdAsignacionDocente);
-      console.log('===========================');
       cargarUnidades();
     } else {
       setUnidades([]);
@@ -28,7 +24,6 @@ const VerAsignacionModal = ({ visible, asignacion, onCancel }) => {
         setUnidades(response.data.data);
       }
     } catch (error) {
-      console.error('Error al cargar unidades:', error);
       message.error('Error al cargar unidades');
     } finally {
       setLoading(false);

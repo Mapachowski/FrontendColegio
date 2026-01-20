@@ -79,20 +79,6 @@ const Paso1_Alumno = ({ state, dispatch }) => {
       return;
     }
 
-    console.log('PAYLOAD ALUMNO AL IR AL PASO 2:', {
-      IdColaborador: state.user.IdColaborador,
-      Matricula: alumno.Matricula || `MAT-${getCicloActual()}-${siguienteCarnet}`,
-      Nombres: alumno.Nombres,
-      Apellidos: alumno.Apellidos,
-      FechaNacimiento: alumno.FechaNacimiento,
-      Genero: alumno.Genero,
-      IdFamilia: alumno.IdFamilia,
-      ComentarioEstado: "Inscrito sin observaciones",
-      NumeroEmergencia: alumno.NumeroEmergencia || "",
-      ComunidadLinguistica: alumno.ComunidadLinguistica || "28",
-      CarnetFuturo: siguienteCarnet,
-    });
-
     dispatch({ type: 'NEXT_STEP' });
   };
 

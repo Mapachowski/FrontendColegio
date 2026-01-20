@@ -82,7 +82,6 @@ const EditarAlumno = () => {
         setSecciones(Array.isArray(seccionesRes.data) ? seccionesRes.data : seccionesRes.data.data || []);
         setJornadas(Array.isArray(jornadasRes.data) ? jornadasRes.data : jornadasRes.data.data || []);
       } catch (error) {
-        console.error('ERROR CARGANDO CATÁLOGOS:', error);
       }
     };
     cargarCatalogos();
@@ -91,8 +90,6 @@ const EditarAlumno = () => {
   const handleAlumnoSeleccionado = async (record) => {
     setLoading(true);
     try {
-      console.log('RECORD RECIBIDO COMPLETO:', record);
-      console.log('🔍 CicloEscolar en record:', record.CicloEscolar);
 
       // Guardar datos del alumno
       setAlumnoData(record);
@@ -101,7 +98,6 @@ const EditarAlumno = () => {
       // Guardar el ciclo escolar
       if (record.CicloEscolar) {
         setCicloEscolar(record.CicloEscolar);
-        console.log('✅ CicloEscolar guardado:', record.CicloEscolar);
       }
 
       // Mapear campos editables del alumno
@@ -147,7 +143,6 @@ const EditarAlumno = () => {
           };
           setFamiliaData(familiaFromAPI);
         } catch (error) {
-          console.error('Error al cargar datos de familia:', error);
           const familiaFromRecord = {
             IdFamilia: record.IdFamilia,
             NombreFamilia: record.NombreFamilia,
@@ -162,7 +157,6 @@ const EditarAlumno = () => {
 
       setOpenBuscar(false);
     } catch (error) {
-      console.error('ERROR AL CARGAR DATOS:', error);
       message.error('Error al cargar los datos del alumno');
     } finally {
       setLoading(false);
@@ -170,12 +164,10 @@ const EditarAlumno = () => {
   };
 
   const recargarDatosAlumno = async () => {
-    console.log('🔄 Iniciando recarga de datos del alumno...');
     try {
       const cicloEscolarActual = cicloEscolar || inscripcionData?.CicloEscolar || alumnoData?.CicloEscolar;
 
       if (!cicloEscolarActual) {
-        console.error('❌ No se encontró el ciclo escolar');
         return;
       }
 
@@ -240,14 +232,11 @@ const EditarAlumno = () => {
             };
             setFamiliaData(familiaActualizada);
           } catch (error) {
-            console.error('Error al recargar familia:', error);
           }
         }
 
-        console.log('✅ Datos del alumno recargados correctamente');
       }
     } catch (error) {
-      console.error('❌ Error al recargar datos del alumno:', error);
     }
   };
 
@@ -288,7 +277,6 @@ const EditarAlumno = () => {
 
       await recargarDatosAlumno();
     } catch (error) {
-      console.error('ERROR AL GUARDAR DATOS DEL ALUMNO:', error);
       message.error('Error al guardar los cambios del alumno. Intenta nuevamente.');
     } finally {
       setLoading(false);
@@ -325,7 +313,6 @@ const EditarAlumno = () => {
       message.success('Cambio de grado, sección y/o jornada guardado correctamente.');
       await recargarDatosAlumno();
     } catch (error) {
-      console.error('ERROR AL GUARDAR CAMBIO:', error);
       message.error('Error al guardar los cambios. Intenta nuevamente.');
     } finally {
       setLoading(false);
@@ -369,11 +356,9 @@ const EditarAlumno = () => {
         payload.IdJornadaNueva = idJornadaNueva;
       }
 
-      console.log('📤 Enviando cambio de grupo:', payload);
 
       const response = await apiClient.post('/inscripciones/cambiar-grupo', payload);
 
-      console.log('📥 Respuesta cambio de grupo:', response.data);
 
       if (response.data.success) {
         await registrarBitacora(
@@ -395,7 +380,6 @@ const EditarAlumno = () => {
         await recargarDatosAlumno();
       }
     } catch (error) {
-      console.error('ERROR AL CAMBIAR GRUPO:', error);
       const errorMsg = error.response?.data?.error || 'Error al realizar el cambio de grupo.';
       message.error(errorMsg);
     } finally {
@@ -444,7 +428,6 @@ const EditarAlumno = () => {
 
       await recargarDatosAlumno();
     } catch (error) {
-      console.error('ERROR AL GUARDAR SUSPENSIÓN:', error);
       message.error('Error al guardar los cambios.');
     } finally {
       setLoading(false);

@@ -44,7 +44,6 @@ const AsignacionMasiva = () => {
 
   const cargarCatalogos = async () => {
     try {
-      console.log('=== CARGANDO CATALOGOS ===');
       const [docentesRes, gradosRes, seccionesRes, jornadasRes] = await Promise.all([
         apiClient.get('/docentes'),
         apiClient.get('/grados'),
@@ -52,10 +51,6 @@ const AsignacionMasiva = () => {
         apiClient.get('/jornadas')
       ]);
 
-      console.log('Docentes response:', docentesRes.data);
-      console.log('Grados response:', gradosRes.data);
-      console.log('Secciones response:', seccionesRes.data);
-      console.log('Jornadas response:', jornadasRes.data);
 
       // Todos los endpoints vienen con {success, data}
       if (docentesRes.data.success) {
@@ -73,9 +68,7 @@ const AsignacionMasiva = () => {
         setJornadas(jornadasRes.data.data || []);
       }
 
-      console.log('=========================');
     } catch (error) {
-      console.error('Error al cargar catálogos:', error);
       message.error('Error al cargar catálogos');
     }
   };
@@ -90,12 +83,9 @@ const AsignacionMasiva = () => {
         anio: filtros.anio
       };
 
-      console.log('=== CARGANDO CURSOS POR GRADO ===');
-      console.log('Params:', params);
 
       const response = await apiClient.get('/cursos/por-grado', { params });
 
-      console.log('Response completa:', response.data);
 
       let cursosData = [];
 
@@ -113,23 +103,17 @@ const AsignacionMasiva = () => {
               .map(key => primerElemento[key])
               .filter(item => item && item.idCurso);
 
-            console.log('✅ Convertido de objeto con claves numéricas a array');
           } else if (primerElemento.idCurso) {
             // Es un array normal
             cursosData = data;
-            console.log('✅ Es un array normal');
           }
         }
       }
 
-      console.log('Cursos procesados:', cursosData);
-      console.log('Total cursos:', cursosData.length);
-      console.log('================================');
 
       setCursos(cursosData);
       setCursosModificados({}); // Limpiar selecciones previas
     } catch (error) {
-      console.error('Error al cargar cursos:', error);
       message.error('Error al cargar cursos del grado');
     } finally {
       setLoading(false);
@@ -137,7 +121,6 @@ const AsignacionMasiva = () => {
   };
 
   const handleDocenteChange = (idCurso, idDocente) => {
-    console.log(`Cambio en curso ${idCurso}: Docente ${idDocente}`);
     setCursosModificados(prev => ({
       ...prev,
       [idCurso]: idDocente
@@ -155,9 +138,6 @@ const AsignacionMasiva = () => {
       return tieneDocenteSeleccionado && noEstaAsignado;
     });
 
-    console.log('=== CREAR ASIGNACIONES MASIVAS ===');
-    console.log('Cursos modificados:', cursosModificados);
-    console.log('Asignaciones por crear:', asignacionesPorCrear);
 
     if (asignacionesPorCrear.length === 0) {
       message.warning('No hay nuevas asignaciones para crear. Seleccione docentes para los cursos sin asignar.');
@@ -181,32 +161,23 @@ const AsignacionMasiva = () => {
           CreadoPor: String(IdColaborador)
         };
 
-        console.log('Creando asignación:', payload);
 
         try {
           const response = await apiClient.post('/asignaciones', payload);
 
           if (response.data.success) {
             exitosas++;
-            console.log(`✅ Asignación creada para curso ${curso.Curso}`);
           } else {
             fallidas++;
             errores.push(`${curso.Curso}: ${response.data.message}`);
-            console.error(`❌ Error en curso ${curso.Curso}:`, response.data.message);
           }
         } catch (error) {
           fallidas++;
           const mensajeError = error.response?.data?.message || 'Error desconocido';
           errores.push(`${curso.Curso}: ${mensajeError}`);
-          console.error(`❌ Error en curso ${curso.Curso}:`, error);
         }
       }
 
-      console.log('=== RESUMEN ===');
-      console.log('Exitosas:', exitosas);
-      console.log('Fallidas:', fallidas);
-      console.log('Errores:', errores);
-      console.log('===============');
 
       // Mostrar resumen
       if (exitosas > 0 && fallidas === 0) {
@@ -220,10 +191,8 @@ const AsignacionMasiva = () => {
       }
 
       if (errores.length > 0) {
-        console.error('Errores detallados:', errores);
       }
     } catch (error) {
-      console.error('Error general en creación masiva:', error);
       message.error('Error al crear asignaciones');
     } finally {
       setCreandoAsignaciones(false);

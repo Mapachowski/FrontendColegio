@@ -20,7 +20,6 @@ const Paso2_Inscripcion = ({ state, dispatch }) => {
   }, [inscripcion.FechaInscripcion, dispatch]);
 
   useEffect(() => {
-    console.log('GRADOS EN PASO 2:', catalogos.grados);
   }, [catalogos.grados]);
 
   // CARGAR COSTO E INSCRIPCIÓN AUTOMÁTICOS
@@ -43,7 +42,6 @@ const Paso2_Inscripcion = ({ state, dispatch }) => {
         });
       }
     } catch (error) {
-      console.error('Error:', error);
       message.error('Error al cargar costos');
     }
   };
@@ -65,16 +63,6 @@ const Paso2_Inscripcion = ({ state, dispatch }) => {
       message.error('Seleccione grado, sección y jornada');
       return;
     }
-
-    console.log('PASO 2 → PASO 3 (INSCRIPCIÓN):', {
-      IdAlumno: alumno.IdAlumno || 'Pendiente',
-      IdGrado: inscripcion.IdGrado,
-      IdSeccion: inscripcion.IdSeccion,
-      IdJornada: inscripcion.IdJornada,
-      FechaInscripcion: inscripcion.FechaInscripcion,
-      Mensualidad: Number(inscripcion.Mensualidad || 0).toFixed(2),
-      CicloEscolar: '2026',
-    });
 
     dispatch({ type: 'NEXT_STEP' });
   };

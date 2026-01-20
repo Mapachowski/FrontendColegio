@@ -21,7 +21,6 @@ const EditarFamiliaModal = ({ open, onCancel, familiaData, onFamiliaActualizada 
         const res = await apiClient.get(`/responsables/familia/${familiaData.IdFamilia}`);
         const listaResponsables = Array.isArray(res.data) ? res.data : res.data.data || [];
 
-        console.log('RESPONSABLES CARGADOS:', listaResponsables);
 
         // Separar por tipo de responsable (IdResponsableTipo)
         const padreTipo = listaResponsables.find(r => r.IdResponsableTipo === 1); // Padre
@@ -32,12 +31,7 @@ const EditarFamiliaModal = ({ open, onCancel, familiaData, onFamiliaActualizada 
         setMadre(madreTipo || null);
         setOtro(otroTipo || null);
 
-        console.log('PADRE:', padreTipo);
-        console.log('MADRE:', madreTipo);
-        console.log('OTRO:', otroTipo);
       } catch (error) {
-        console.error('ERROR CARGANDO RESPONSABLES:', error);
-        console.error('Detalles del error:', error.response?.data || error.message);
         // No mostrar error al usuario si no hay responsables
       }
     };
@@ -89,7 +83,6 @@ const EditarFamiliaModal = ({ open, onCancel, familiaData, onFamiliaActualizada 
         return;
       }
 
-      console.log('IdColaborador obtenido:', IdColaborador);
 
       // 1. Actualizar datos de familia
       await apiClient.put(`/familias/${familiaData.IdFamilia}`, {
@@ -183,7 +176,6 @@ const EditarFamiliaModal = ({ open, onCancel, familiaData, onFamiliaActualizada 
       onFamiliaActualizada(familiaActualizada);
       onCancel();
     } catch (error) {
-      console.error('ERROR AL GUARDAR:', error);
       message.error('Error al guardar los cambios');
     } finally {
       setLoading(false);

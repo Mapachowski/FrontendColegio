@@ -21,17 +21,12 @@ const BuscarAlumnoModal = ({ open, onCancel, state, dispatch }) => {
   useEffect(() => {
     const fetchAlumnos = async () => {
       try {
-        console.log('FETCH ALUMNOS PARA SELECT...');
         const res = await apiClient.get('/alumnos');
-        console.log('RESPUESTA /alumnos:', res);
-        console.log('res.data:', res.data);
 
         const alumnosList = Array.isArray(res.data) ? res.data : res.data.data || [];
-        console.log('ALUMNOS FINALES (para Select):', alumnosList);
 
         setAlumnos(alumnosList);
       } catch (error) {
-        console.error('ERROR CARGANDO ALUMNOS PARA SELECT:', error);
       }
     };
     if (open) fetchAlumnos();
@@ -69,7 +64,6 @@ const BuscarAlumnoModal = ({ open, onCancel, state, dispatch }) => {
       setData(dataValidada);
 
     } catch (error) {
-      console.error(error);
       setData([]);
     } finally {
       setLoading(false);

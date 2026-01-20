@@ -58,7 +58,6 @@ const BuscarRecibo = () => {
         message.info('No se encontraron pagos con los criterios de búsqueda');
       }
     } catch (err) {
-      console.error('Error al buscar recibo:', err);
       message.error('Error al buscar recibo');
       setPagos([]);
     } finally {

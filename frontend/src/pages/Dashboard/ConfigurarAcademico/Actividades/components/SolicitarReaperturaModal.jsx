@@ -42,7 +42,6 @@ const SolicitarReaperturaModal = ({ visible, onCancel, unidad, asignacion, idDoc
         onCancel();
       }
     } catch (error) {
-      console.error('Error al enviar solicitud:', error);
 
       // Extraer el mensaje de error del backend
       const errorMsg = error.response?.data?.error ||

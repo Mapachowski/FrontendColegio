@@ -23,7 +23,6 @@ const MisSolicitudesReapertura = () => {
         setSolicitudes(response.data.data || []);
       }
     } catch (error) {
-      console.error('Error al cargar solicitudes:', error);
       message.error('Error al cargar las solicitudes de reapertura');
     } finally {
       setLoading(false);

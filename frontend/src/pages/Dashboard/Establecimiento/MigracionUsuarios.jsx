@@ -44,7 +44,6 @@ const MigracionUsuarios = () => {
 
       setLoading(false);
     } catch (error) {
-      console.error('Error al cargar datos:', error);
       message.error('Error al cargar la información');
       setLoading(false);
     }
@@ -112,7 +111,6 @@ const MigracionUsuarios = () => {
             errores++;
             const errorMsg = error.response?.data?.message || error.message || 'Error desconocido';
             agregarLog('error', `❌ ${alumno.Nombres} ${alumno.Apellidos}: ${errorMsg}`);
-            console.error(`Error con alumno ${alumno.IdAlumno}:`, error);
           }
 
           // Actualizar progreso
@@ -202,7 +200,6 @@ const MigracionUsuarios = () => {
             errores++;
             const errorMsg = error.response?.data?.message || error.message || 'Error desconocido';
             agregarLog('error', `❌ ${familia.NombreFamilia}: ${errorMsg}`);
-            console.error(`Error con familia ${familia.IdFamilia}:`, error);
           }
 
           // Actualizar progreso

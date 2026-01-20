@@ -56,7 +56,6 @@ const ActividadesFamilia = () => {
         message.error('Error al cargar los hijos');
       }
     } catch (error) {
-      console.error('Error al cargar hijos:', error);
       message.error('Error al cargar la información de los hijos');
     } finally {
       setLoading(false);
@@ -79,24 +78,9 @@ const ActividadesFamilia = () => {
         }
       });
 
-      console.log('=== RESPUESTA CURSOS ===');
-      console.log('Response completa:', response.data);
 
       if (response.data.success) {
         const cursosData = response.data.data.cursos || [];
-        console.log('📚 Cursos recibidos:', cursosData);
-        console.log('📚 Cantidad de cursos:', cursosData.length);
-
-        // Log detallado de cada curso
-        cursosData.forEach((curso, index) => {
-          console.log(`Curso ${index + 1}:`, {
-            IdCurso: curso.IdCurso,
-            NombreCurso: curso.NombreCurso,
-            Nombre: curso.Nombre,
-            nombreCurso: curso.nombreCurso,
-            keys: Object.keys(curso)
-          });
-        });
 
         setCursos(cursosData);
         if (cursosData.length === 0) {
@@ -105,9 +89,7 @@ const ActividadesFamilia = () => {
       } else {
         message.error('Error al cargar los cursos');
       }
-      console.log('=== FIN RESPUESTA CURSOS ===');
     } catch (error) {
-      console.error('Error al cargar cursos:', error);
       message.error('Error al cargar los cursos del estudiante');
     } finally {
       setLoadingCursos(false);

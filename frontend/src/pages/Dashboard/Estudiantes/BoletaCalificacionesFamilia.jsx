@@ -49,7 +49,6 @@ const BoletaCalificacionesFamilia = () => {
         message.error('Error al cargar los hijos');
       }
     } catch (error) {
-      console.error('Error al cargar hijos:', error);
       message.error('Error al cargar la información de los hijos');
     } finally {
       setLoading(false);
@@ -76,8 +75,6 @@ const BoletaCalificacionesFamilia = () => {
 
         // Validar que tenga la estructura esperada (backend devuelve 'estudiante', no 'alumno')
         if (!calificacionesData.estudiante) {
-          console.error('⚠️ ADVERTENCIA: No se encontró el objeto estudiante en la respuesta');
-          console.error('Estructura recibida:', calificacionesData);
           message.warning('Las calificaciones se cargaron pero falta información del estudiante');
         }
 
@@ -87,7 +84,6 @@ const BoletaCalificacionesFamilia = () => {
         message.error('Error al cargar las calificaciones');
       }
     } catch (error) {
-      console.error('Error al cargar calificaciones:', error);
       message.error('Error al cargar las calificaciones del estudiante');
     } finally {
       setLoadingCalificaciones(false);
@@ -212,7 +208,6 @@ const BoletaCalificacionesFamilia = () => {
       return doc;
 
     } catch (error) {
-      console.error('Error en generarPDFBoleta:', error);
       throw error;
     }
   };
@@ -245,7 +240,6 @@ const BoletaCalificacionesFamilia = () => {
         message.success({ content: 'PDF generado exitosamente', key: 'pdf' });
       }
     } catch (error) {
-      console.error('Error al generar PDF:', error);
       message.error({ content: 'Error al generar el PDF', key: 'pdf' });
     }
   };
@@ -261,7 +255,6 @@ const BoletaCalificacionesFamilia = () => {
     // Validar que estudiante exista
     if (!estudiante) {
       message.error('No se encontró información del estudiante');
-      console.error('Estructura de calificaciones:', calificaciones);
       return;
     }
 

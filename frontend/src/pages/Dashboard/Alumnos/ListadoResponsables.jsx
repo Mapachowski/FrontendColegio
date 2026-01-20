@@ -1,7 +1,7 @@
 // src/pages/Dashboard/Alumnos/ListadoResponsables.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, message, Typography, Button, Select, Input, Tabs } from 'antd';
+import { Card, Table, message, Typography, Button, Select, Input, Tabs, Checkbox } from 'antd';
 import { DownloadOutlined, TeamOutlined, UserOutlined, FilterOutlined } from '@ant-design/icons';
 import apiClient from '../../../api/apiClient';
 import { saveAs } from 'file-saver';
@@ -19,6 +19,7 @@ const ListadoResponsables = () => {
   // Estados para Listado 1: Responsables Actuales
   const [responsablesActivos, setResponsablesActivos] = useState([]);
   const [loadingActivos, setLoadingActivos] = useState(false);
+  const [mostrarTodosActivos, setMostrarTodosActivos] = useState(false);
 
   // Estados para Listado 2: Familias Completas
   const [familiasCompletas, setFamiliasCompletas] = useState([]);
@@ -27,6 +28,7 @@ const ListadoResponsables = () => {
   // Estados para Listado 3: Responsables por Grado
   const [responsablesPorGrado, setResponsablesPorGrado] = useState([]);
   const [loadingPorGrado, setLoadingPorGrado] = useState(false);
+  const [mostrarTodosPorGrado, setMostrarTodosPorGrado] = useState(false);
   const [filtros, setFiltros] = useState({
     p_CicloEscolar: getCicloActual().toString(),
     IdGrado: null,
@@ -40,20 +42,6 @@ const ListadoResponsables = () => {
     secciones: [],
     jornadas: [],
   });
-
-  // Cargar catálogos al montar componente
-  useEffect(() => {
-    cargarCatalogos();
-  }, []);
-
-  // Cargar datos según la pestaña activa
-  useEffect(() => {
-    if (activeTab === '1') {
-      cargarResponsablesActivos();
-    } else if (activeTab === '2') {
-      cargarFamiliasCompletas();
-    }
-  }, [activeTab]);
 
   const cargarCatalogos = async () => {
     try {
@@ -73,16 +61,17 @@ const ListadoResponsables = () => {
         jornadas: Array.isArray(jornadas) ? jornadas : []
       });
     } catch (err) {
-      console.error('Error al cargar catálogos:', err);
       message.error('Error al cargar catálogos');
     }
   };
 
   // ==================== LISTADO 1: RESPONSABLES ACTIVOS ====================
-  const cargarResponsablesActivos = async () => {
+  const cargarResponsablesActivos = useCallback(async () => {
     setLoadingActivos(true);
     try {
-      const res = await apiClient.get('/responsables/activos');
+      // Agregar parámetro soloResponsables si no está marcado "Mostrar Todos"
+      const params = mostrarTodosActivos ? {} : { soloResponsables: true };
+      const res = await apiClient.get('/responsables/activos', { params });
 
       if (res.data.success && res.data.data) {
         // El primer elemento del array contiene los datos reales con índices numéricos
@@ -96,18 +85,16 @@ const ListadoResponsables = () => {
         message.info('No hay responsables activos');
       }
     } catch (err) {
-      console.error('Error al cargar responsables activos:', err);
       message.error('Error al cargar responsables activos');
       setResponsablesActivos([]);
     } finally {
       setLoadingActivos(false);
     }
-  };
+  }, [mostrarTodosActivos]);
 
   const columnasResponsablesActivos = [
     { title: '#', render: (_, __, i) => i + 1, width: 60, fixed: 'left' },
     { title: 'Nombre Completo', dataIndex: 'NombreResponsable', width: 250 },
-    { title: 'Tipo', dataIndex: 'TipoResponsable', width: 120 },
     { title: 'DPI', dataIndex: 'DPI', width: 150, render: (text) => text || '-' },
     { title: 'NIT', dataIndex: 'NIT', width: 120, render: (text) => text || '-' },
     { title: 'Cantidad Hijos', dataIndex: 'CantidadHijos', width: 130, align: 'center' },
@@ -130,7 +117,6 @@ const ListadoResponsables = () => {
     const filas = responsablesActivos.map((r, i) => ({
       '#': i + 1,
       'Nombre Completo': r.NombreResponsable,
-      'Tipo': r.TipoResponsable,
       'DPI': r.DPI || '-',
       'NIT': r.NIT || '-',
       'Cantidad Hijos': r.CantidadHijos,
@@ -141,8 +127,8 @@ const ListadoResponsables = () => {
     const ws = XLSX.utils.json_to_sheet(filas, { origin: 'A8' });
 
     const wscols = [
-      { wch: 6 }, { wch: 15 }, { wch: 35 }, { wch: 15 },
-      { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 60 }
+      { wch: 6 }, { wch: 35 }, { wch: 18 },
+      { wch: 15 }, { wch: 15 }, { wch: 60 }
     ];
     ws['!cols'] = wscols;
 
@@ -161,7 +147,7 @@ const ListadoResponsables = () => {
   };
 
   // ==================== LISTADO 2: FAMILIAS COMPLETAS ====================
-  const cargarFamiliasCompletas = async () => {
+  const cargarFamiliasCompletas = useCallback(async () => {
     setLoadingFamilias(true);
     try {
       const res = await apiClient.get('/familias/completas');
@@ -186,13 +172,34 @@ const ListadoResponsables = () => {
         message.info('No hay familias registradas');
       }
     } catch (err) {
-      console.error('Error al cargar familias:', err);
       message.error('Error al cargar familias completas');
       setFamiliasCompletas([]);
     } finally {
       setLoadingFamilias(false);
     }
-  };
+  }, []);
+
+  // Cargar catálogos al montar componente
+  useEffect(() => {
+    cargarCatalogos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Cargar datos según la pestaña activa
+  useEffect(() => {
+    if (activeTab === '1') {
+      cargarResponsablesActivos();
+    } else if (activeTab === '2') {
+      cargarFamiliasCompletas();
+    }
+  }, [activeTab, cargarResponsablesActivos, cargarFamiliasCompletas]);
+
+  // Recargar cuando cambie el checkbox de mostrar todos en Responsables Activos
+  useEffect(() => {
+    if (activeTab === '1') {
+      cargarResponsablesActivos();
+    }
+  }, [activeTab, mostrarTodosActivos, cargarResponsablesActivos]);
 
   const columnasFamilias = [
     { title: '#', render: (_, __, i) => i + 1, width: 60, fixed: 'left' },
@@ -307,6 +314,9 @@ const ListadoResponsables = () => {
       if (filtros.IdSeccion) params.append('IdSeccion', filtros.IdSeccion);
       if (filtros.IdJornada) params.append('IdJornada', filtros.IdJornada);
 
+      // Agregar parámetro soloResponsables si no está marcado "Mostrar Todos"
+      if (!mostrarTodosPorGrado) params.append('soloResponsables', 'true');
+
       const res = await apiClient.get('/responsables/por-grado', { params });
 
       if (res.data.success && res.data.data) {
@@ -324,7 +334,6 @@ const ListadoResponsables = () => {
         message.info('No se encontraron responsables con esos filtros');
       }
     } catch (err) {
-      console.error('Error al buscar por grado:', err);
       message.error('Error al buscar responsables por grado');
       setResponsablesPorGrado([]);
     } finally {
@@ -335,7 +344,6 @@ const ListadoResponsables = () => {
   const columnasResponsablesPorGrado = [
     { title: '#', render: (_, __, i) => i + 1, width: 60, fixed: 'left' },
     { title: 'Responsable', dataIndex: 'NombreResponsable', width: 250 },
-    { title: 'Tipo', dataIndex: 'TipoResponsable', width: 120 },
     { title: 'DPI', dataIndex: 'DPI', width: 150, render: (text) => text || '-' },
     { title: 'NIT', dataIndex: 'NIT', width: 120, render: (text) => text || '-' },
     { title: 'Carnet Hijo', dataIndex: 'IdAlumno', width: 120 },
@@ -361,7 +369,6 @@ const ListadoResponsables = () => {
     const filas = responsablesPorGrado.map((r, i) => ({
       '#': i + 1,
       'Responsable': r.NombreResponsable,
-      'Tipo': r.TipoResponsable,
       'DPI': r.DPI || '-',
       'NIT': r.NIT || '-',
       'Carnet Hijo': r.IdAlumno,
@@ -376,7 +383,7 @@ const ListadoResponsables = () => {
     const ws = XLSX.utils.json_to_sheet(filas, { origin: 'A10' });
 
     const wscols = [
-      { wch: 6 }, { wch: 35 }, { wch: 15 }, { wch: 18 }, { wch: 15 },
+      { wch: 6 }, { wch: 35 }, { wch: 18 }, { wch: 15 },
       { wch: 15 }, { wch: 35 }, { wch: 22 }, { wch: 12 }, { wch: 15 }, { wch: 25 }
     ];
     ws['!cols'] = wscols;
@@ -417,14 +424,22 @@ const ListadoResponsables = () => {
           <Card
             title={<strong>{responsablesActivos.length} responsable{responsablesActivos.length !== 1 ? 's' : ''} activo{responsablesActivos.length !== 1 ? 's' : ''}</strong>}
             extra={
-              <Button
-                type="primary"
-                icon={<DownloadOutlined />}
-                onClick={exportarResponsablesActivos}
-                disabled={responsablesActivos.length === 0}
-              >
-                Exportar Excel
-              </Button>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <Checkbox
+                  checked={mostrarTodosActivos}
+                  onChange={(e) => setMostrarTodosActivos(e.target.checked)}
+                >
+                  Mostrar todos los responsables
+                </Checkbox>
+                <Button
+                  type="primary"
+                  icon={<DownloadOutlined />}
+                  onClick={exportarResponsablesActivos}
+                  disabled={responsablesActivos.length === 0}
+                >
+                  Exportar Excel
+                </Button>
+              </div>
             }
           >
             <Table
@@ -495,6 +510,14 @@ const ListadoResponsables = () => {
           key="3"
         >
           <Card style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 16 }}>
+              <Checkbox
+                checked={mostrarTodosPorGrado}
+                onChange={(e) => setMostrarTodosPorGrado(e.target.checked)}
+              >
+                Mostrar todos los responsables
+              </Checkbox>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
               <div>
                 <strong>Ciclo Escolar *</strong>

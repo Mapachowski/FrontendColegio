@@ -87,7 +87,6 @@ const Unidades = () => {
         }
       }
     } catch (error) {
-      console.error('Error al obtener idDocente:', error);
       message.error('Error al obtener información del docente');
     }
   };
@@ -120,7 +119,6 @@ const Unidades = () => {
         setJornadas(jornadasData);
       }
     } catch (error) {
-      console.error('Error al cargar catálogos:', error);
       message.error('Error al cargar catálogos');
     }
   };
@@ -161,7 +159,6 @@ const Unidades = () => {
 
       setAsignaciones(asignacionesData);
     } catch (error) {
-      console.error('Error al cargar asignaciones:', error);
       message.error('Error al cargar asignaciones');
       setAsignaciones([]);
     } finally {
@@ -181,7 +178,6 @@ const Unidades = () => {
         message.warning('No se encontraron unidades para esta asignación');
       }
     } catch (error) {
-      console.error('Error al cargar unidades:', error);
       message.error('Error al cargar las unidades');
       setUnidades([]);
     } finally {
@@ -227,9 +223,6 @@ const Unidades = () => {
   };
 
   const handleCerrarYAbrirSiguiente = () => {
-    console.log('🔵 handleCerrarYAbrirSiguiente llamado');
-    console.log('   Asignación seleccionada:', asignacionSeleccionada);
-    console.log('   Unidades:', unidades);
 
     if (!asignacionSeleccionada) {
       message.warning('Seleccione una asignación primero');
@@ -237,7 +230,6 @@ const Unidades = () => {
     }
 
     const unidadActiva = unidades.find(u => u.Activa === 1);
-    console.log('   Unidad activa encontrada:', unidadActiva);
 
     if (!unidadActiva) {
       message.warning('No hay ninguna unidad activa');
@@ -258,7 +250,6 @@ const Unidades = () => {
       okText: 'Sí, continuar',
       cancelText: 'Cancelar',
       onOk: async () => {
-        console.log('🟢 Confirmación aceptada - Cerrando y abriendo siguiente');
         try {
           const user = JSON.parse(localStorage.getItem('user')) || { IdUsuario: null };
           const response = await apiClient.post(
@@ -271,7 +262,6 @@ const Unidades = () => {
             await cargarUnidadesAsignacion(asignacionSeleccionada.IdAsignacionDocente);
           }
         } catch (error) {
-          console.error('❌ Error al cerrar y abrir unidad:', error);
           message.error(error.response?.data?.error || 'Error al cerrar y abrir unidad');
         }
       }
@@ -279,7 +269,6 @@ const Unidades = () => {
   };
 
   const handleActivarUnidad = (unidad) => {
-    console.log('🔵 handleActivarUnidad llamado - Unidad:', unidad);
 
     confirm({
       title: '¿Activar esta unidad?',
@@ -295,7 +284,6 @@ const Unidades = () => {
       okText: 'Sí, activar',
       cancelText: 'Cancelar',
       onOk: async () => {
-        console.log('🟢 Confirmación aceptada - Activando unidad:', unidad.IdUnidad);
         try {
           const user = JSON.parse(localStorage.getItem('user')) || { IdUsuario: null };
           const response = await apiClient.put(
@@ -308,7 +296,6 @@ const Unidades = () => {
             await cargarUnidadesAsignacion(asignacionSeleccionada.IdAsignacionDocente);
           }
         } catch (error) {
-          console.error('❌ Error al activar unidad:', error);
           message.error(error.response?.data?.error || 'Error al activar unidad');
         }
       }

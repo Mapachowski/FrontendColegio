@@ -57,7 +57,6 @@ const CrearDocenteModal = ({ visible, onCancel, onSuccess }) => {
         onSuccess();
       }
     } catch (error) {
-      console.error('Error al crear docente:', error);
       message.error(error.response?.data?.message || 'Error al crear el docente');
     } finally {
       setLoading(false);

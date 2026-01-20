@@ -77,7 +77,6 @@ const Login = ({ onLoginSuccess }) => {
             })
           });
         } catch (errBitacora) {
-          console.error('Error al registrar bitácora:', errBitacora);
           // No bloquear el login si falla el registro de bitácora
         }
 

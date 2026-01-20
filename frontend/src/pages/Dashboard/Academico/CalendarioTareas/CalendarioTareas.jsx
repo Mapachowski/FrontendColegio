@@ -67,7 +67,6 @@ const CalendarioTareas = () => {
       setActividades(Array.isArray(actividadesData) ? actividadesData : []);
       setLoading(false);
     } catch (error) {
-      console.error('❌ Error al cargar actividades:', error);
       message.error('Error al cargar las actividades');
       setActividades([]);
       setLoading(false);

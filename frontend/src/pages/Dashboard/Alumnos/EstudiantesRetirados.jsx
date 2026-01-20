@@ -90,7 +90,6 @@ const EstudiantesRetirados = () => {
         message.info('No hay estudiantes retirados');
       }
     } catch (err) {
-      console.error('Error al cargar estudiantes retirados:', err);
       message.error('Error al cargar los datos de estudiantes retirados');
       setData([]);
     } finally {

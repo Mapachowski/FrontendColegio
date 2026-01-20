@@ -13,7 +13,6 @@ export const registrarBitacora = async (accion, observacion = '') => {
     const idUsuario = user.IdUsuario;
 
     if (!idUsuario) {
-      console.warn('⚠️ No se pudo registrar bitácora: Usuario no encontrado en localStorage');
       return;
     }
 
@@ -31,11 +30,9 @@ export const registrarBitacora = async (accion, observacion = '') => {
 
     // Log solo en desarrollo
     if (process.env.NODE_ENV === 'development') {
-      console.log('📝 Bitácora registrada:', payload);
     }
   } catch (error) {
     // No bloquear la operación principal si falla el registro de bitácora
-    console.error('❌ Error al registrar bitácora:', error);
   }
 };
 

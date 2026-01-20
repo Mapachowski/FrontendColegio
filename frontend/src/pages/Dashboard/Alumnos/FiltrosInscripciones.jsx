@@ -208,7 +208,6 @@ const exportarExcel = async () => {
     };
 
     img.onerror = () => {
-      console.warn('No se pudo cargar el logo, se genera sin imagen');
       XLSX.utils.book_append_sheet(wb, ws, 'Alumnos');
       const filename = `Listado_Inscritos_${filtros.p_CicloEscolar}.xlsx`;
       const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });

@@ -54,7 +54,6 @@ const ConfigurarPunteosModal = ({ visible, unidad, onCancel, onSuccess }) => {
         onSuccess();
       }
     } catch (error) {
-      console.error('Error al actualizar punteos:', error);
       message.error(error.response?.data?.error || 'Error al actualizar los punteos');
     } finally {
       setLoading(false);

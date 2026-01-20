@@ -8,32 +8,23 @@ const Home = ({ usuario, onLogout }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    console.log('👤 Usuario objeto completo:', usuario);
-    console.log('🔍 Rol:', usuario?.rol, 'IdDocente:', usuario?.IdDocente);
 
     // Solo cargar notificaciones si el usuario es docente (rol 4)
     if (usuario?.rol === 4 && usuario?.IdDocente) {
-      console.log('✅ Condiciones cumplidas - cargando notificaciones...');
       cargarNotificaciones();
     } else {
-      console.log('⚠️ Condiciones no cumplidas - rol:', usuario?.rol, 'IdDocente:', usuario?.IdDocente);
     }
   }, [usuario]);
 
   const cargarNotificaciones = async () => {
-    console.log('📡 Cargando notificaciones para IdDocente:', usuario.IdDocente);
     setLoading(true);
     try {
       const response = await apiClient.get(`/notificaciones-docentes/pendientes/${usuario.IdDocente}`);
-      console.log('📥 Respuesta del servidor:', response.data);
       if (response.data.success) {
-        console.log('✅ Notificaciones recibidas:', response.data.notificaciones?.length || 0);
         setNotificaciones(response.data.notificaciones || []);
       } else {
-        console.log('⚠️ Respuesta no exitosa:', response.data);
       }
     } catch (error) {
-      console.error('❌ Error al cargar notificaciones:', error);
     } finally {
       setLoading(false);
     }

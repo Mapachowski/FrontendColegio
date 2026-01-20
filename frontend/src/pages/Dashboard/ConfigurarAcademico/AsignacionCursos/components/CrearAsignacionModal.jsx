@@ -52,12 +52,7 @@ const CrearAsignacionModal = ({ visible, onCancel, onSuccess }) => {
         setJornadas(jornadasRes.data.data || []);
       }
 
-      console.log('=== CATÁLOGOS MODAL CREAR ===');
-      console.log('Secciones:', seccionesRes.data);
-      console.log('Jornadas:', jornadasRes.data);
-      console.log('===========================');
     } catch (error) {
-      console.error('Error al cargar catálogos:', error);
       message.error('Error al cargar catálogos');
     }
   };
@@ -79,7 +74,6 @@ const CrearAsignacionModal = ({ visible, onCancel, onSuccess }) => {
         params: { idGrado, idSeccion, idJornada, anio }
       });
 
-      console.log('Cursos disponibles response:', response.data);
 
       // Manejar diferentes estructuras de respuesta
       let cursosDisponibles = [];
@@ -111,7 +105,6 @@ const CrearAsignacionModal = ({ visible, onCancel, onSuccess }) => {
         cursosDisponibles = response.data;
       }
 
-      console.log('Cursos procesados:', cursosDisponibles);
       setCursos(cursosDisponibles);
 
       // Si no hay cursos disponibles, mostrar mensaje
@@ -119,7 +112,6 @@ const CrearAsignacionModal = ({ visible, onCancel, onSuccess }) => {
         message.info('Todos los cursos de este grado ya han sido asignados para esta sección, jornada y año');
       }
     } catch (error) {
-      console.error('Error al cargar cursos disponibles:', error);
       message.error('Error al cargar cursos disponibles');
       setCursos([]);
     }
@@ -153,7 +145,6 @@ const CrearAsignacionModal = ({ visible, onCancel, onSuccess }) => {
         setDuplicado(response.data.data);
       }
     } catch (error) {
-      console.error('Error al validar duplicado:', error);
       setDuplicado(null);
     } finally {
       setValidando(false);
@@ -215,7 +206,6 @@ const CrearAsignacionModal = ({ visible, onCancel, onSuccess }) => {
         message.error(response.data.message || 'Error al crear asignación');
       }
     } catch (error) {
-      console.error('Error al crear asignación:', error);
       const mensajeError = error.response?.data?.message || 'Error al crear asignación';
       message.error(mensajeError);
     } finally {

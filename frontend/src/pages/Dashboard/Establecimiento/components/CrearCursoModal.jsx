@@ -34,7 +34,6 @@ const CrearCursoModal = ({ visible, grados, onCancel, onSuccess }) => {
         onSuccess();
       }
     } catch (error) {
-      console.error('Error al crear curso:', error);
       message.error(error.response?.data?.message || 'Error al crear el curso');
     } finally {
       setLoading(false);

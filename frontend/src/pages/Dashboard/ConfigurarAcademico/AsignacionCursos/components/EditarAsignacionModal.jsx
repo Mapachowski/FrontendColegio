@@ -12,10 +12,6 @@ const EditarAsignacionModal = ({ visible, asignacion, onCancel, onSuccess }) => 
 
   useEffect(() => {
     if (visible && asignacion) {
-      console.log('=== DEBUG EDITAR ASIGNACION ===');
-      console.log('Asignacion recibida:', asignacion);
-      console.log('IdDocente:', asignacion.IdDocente);
-      console.log('================================');
 
       cargarDocentes();
       form.setFieldsValue({
@@ -33,7 +29,6 @@ const EditarAsignacionModal = ({ visible, asignacion, onCancel, onSuccess }) => 
         setDocentes(response.data.data);
       }
     } catch (error) {
-      console.error('Error al cargar docentes:', error);
       message.error('Error al cargar docentes');
     }
   };
@@ -55,17 +50,12 @@ const EditarAsignacionModal = ({ visible, asignacion, onCancel, onSuccess }) => 
         ModificadoPor: String(IdColaborador)
       };
 
-      console.log('=== PAYLOAD EDITAR ASIGNACION ===');
-      console.log('URL:', `/asignaciones/${asignacion.IdAsignacionDocente}`);
-      console.log('Payload enviado:', payload);
-      console.log('=================================');
 
       const response = await apiClient.put(
         `/asignaciones/${asignacion.IdAsignacionDocente}`,
         payload
       );
 
-      console.log('Response:', response.data);
 
       if (response.data.success) {
         message.success({
@@ -78,8 +68,6 @@ const EditarAsignacionModal = ({ visible, asignacion, onCancel, onSuccess }) => 
         message.error(response.data.message || 'Error al actualizar asignación');
       }
     } catch (error) {
-      console.error('Error al actualizar asignación:', error);
-      console.error('Error response:', error.response?.data);
       const mensajeError = error.response?.data?.message || 'Error al actualizar asignación';
       message.error(mensajeError);
     } finally {

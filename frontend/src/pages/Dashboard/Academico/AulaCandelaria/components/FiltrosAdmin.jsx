@@ -42,9 +42,7 @@ const FiltrosAdmin = ({ filtros, onFiltrosChange }) => {
         setJornadas(jornadasRes.data.data);
       }
 
-      console.log('✅ Catálogos cargados para filtros admin');
     } catch (error) {
-      console.error('❌ Error al cargar catálogos:', error);
       message.error('Error al cargar filtros');
     }
   };

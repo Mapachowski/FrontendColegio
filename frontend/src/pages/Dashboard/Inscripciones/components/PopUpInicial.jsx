@@ -11,7 +11,6 @@ const PopUpInicial = ({ open, onOk, onCancel, dispatch }) => {
   useEffect(() => {
     if (!open) {
       hasLoaded.current = false; // ← Permite recargar la próxima vez que se abra
-      console.log('POPUP CERRADO → BANDERA REINICIADA');
     }
   }, [open]);
 

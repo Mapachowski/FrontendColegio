@@ -13,7 +13,6 @@ const ModalRegresarEstudiante = ({ visible, estudiante, onCancel, onSuccess }) =
 
       if (!IdColaborador) {
         message.error('No se pudo obtener el ID del colaborador');
-        console.error('Usuario no encontrado en localStorage');
         return;
       }
 
@@ -32,10 +31,7 @@ const ModalRegresarEstudiante = ({ visible, estudiante, onCancel, onSuccess }) =
         message.error('Error al regresar el estudiante al sistema');
       }
     } catch (err) {
-      console.error('Error al regresar estudiante:', err);
       if (err.response) {
-        console.error('Status:', err.response.status);
-        console.error('Data:', err.response.data);
       }
       message.error('Error al regresar el estudiante al sistema');
     }

@@ -8,11 +8,12 @@ import {
   Modal,
   Table,
   Checkbox,
-  DatePicker, 
-  Tag, 
-  Space, 
-  Typography, 
-  Radio 
+  DatePicker,
+  Tag,
+  Space,
+  Typography,
+  Radio,
+  Card
 } from 'antd';
 import apiClient from '../../../api/apiClient';
 import { useNavigate } from 'react-router-dom';
@@ -38,6 +39,7 @@ const CrearPago = () => {
   const [mesesPago, setMesesPago] = useState([]);
   const [selectedMeses, setSelectedMeses] = useState([]);
   const [loadingMeses, setLoadingMeses] = useState(false);
+  const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
   const user = JSON.parse(localStorage.getItem('user')) || { IdUsuario: null, rol: null };
   const [fechaPago, setFechaPago] = useState(dayjs()); // por defecto hoy
 
@@ -52,7 +54,6 @@ const CrearPago = () => {
         setAlumnos(alumnosResponse.data?.data || alumnosResponse.data || []);
         setMetodosPago(metodosPagoResponse.data?.data || metodosPagoResponse.data || []);
       } catch (error) {
-        console.error('Error al cargar datos iniciales:', error);
         message.error('Error al cargar datos: Revisa la conexión.');
       }
     };
@@ -110,7 +111,6 @@ const CrearPago = () => {
 
 
     } catch (error) {
-      console.error('Error al cargar meses:', error);
       message.error('Error al cargar los meses.');
       setMesesPago([]);
     } finally {
@@ -190,12 +190,9 @@ const CrearPago = () => {
       setLoadingMeses(true);
 
       // LOG: Ver estructura de pagos antes de enviar
-      console.log('📦 PAGOS A ENVIAR:', JSON.stringify(pagos, null, 2));
-      console.log('📦 Cantidad de pagos:', pagos.length);
 
       const responses = await Promise.all(
         pagos.map(payload => {
-          console.log('📤 Enviando pago individual:', payload);
           return apiClient.post('/pagos', payload);
         })
       );
@@ -215,10 +212,6 @@ const CrearPago = () => {
       await cargarMesesDesdeSP(idAlumno, idTipoPago, cicloEscolar);
 
     } catch (error) {
-      console.error('❌ Error al registrar pagos:', error);
-      console.error('❌ Respuesta del servidor:', error.response?.data);
-      console.error('❌ Status:', error.response?.status);
-      console.error('❌ Headers:', error.response?.headers);
 
       const mensajeError = error.response?.data?.error || error.response?.data?.message || 'Error al registrar los pagos. Intenta de nuevo.';
       message.error(mensajeError);
@@ -245,7 +238,6 @@ const CrearPago = () => {
         message.warning('No se encontraron datos para el alumno en este ciclo.');
       }
     } catch (error) {
-      console.error('Error al buscar alumno:', error);
       message.error('Error al buscar alumno');
       setAlumnoData([]);
     }
@@ -261,8 +253,17 @@ const CrearPago = () => {
 
     if (tipoPago === 'mecanografia' && !esPrimero) {
       setTipoPago('mensualidad');
-      message.warning('Mecanoografía solo disponible para Primero Básico.');
+      message.warning('Mecanografía solo disponible para Primero Básico.');
     }
+
+    // Guardar información completa del alumno
+    setAlumnoSeleccionado({
+      IdAlumno: idAlumno,
+      NombreCompleto: `${data.Nombres} ${data.Apellidos}`,
+      Grado: data.NombreGrado || '',
+      Seccion: data.NombreSeccion || '',
+      Jornada: data.NombreJornada || ''
+    });
 
     form.setFieldsValue({
       IdAlumno: idAlumno,
@@ -355,7 +356,7 @@ const CrearPago = () => {
         >
           <Radio.Button value="mensualidad">Mensualidad</Radio.Button>
           {esPrimeroBasico && (
-            <Radio.Button value="mecanografia">Mecanoografía</Radio.Button>
+            <Radio.Button value="mecanografia">Mecanografía</Radio.Button>
           )}
         </Radio.Group>
         {!form.getFieldValue('IdAlumno') && (
@@ -381,16 +382,10 @@ const CrearPago = () => {
             />
           </Form.Item>
 
-        <Form.Item label="Alumno">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Input.Group compact style={{ flex: 1 }}>
-              <Form.Item name="Nombres" noStyle>
-                <Input readOnly style={{ flex: 2 }} placeholder="Nombre del Alumno" />
-              </Form.Item>
-              <Form.Item name="IdAlumno" noStyle>
-                <Input readOnly style={{ flex: 1 }} placeholder="Carnet" />
-              </Form.Item>
-            </Input.Group>
+        {/* Card de Alumno Seleccionado */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <strong>Alumno</strong>
             <Button
               type="primary"
               onClick={() => setIsSearchModalOpen(true)}
@@ -399,7 +394,51 @@ const CrearPago = () => {
               Buscar Alumno
             </Button>
           </div>
-        </Form.Item>
+
+          {alumnoSeleccionado ? (
+            <Card
+              size="small"
+              style={{
+                background: '#e6f7ff',
+                border: '1px solid #91d5ff'
+              }}
+            >
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Carnet</Text>
+                  <div style={{ fontWeight: 500 }}>{alumnoSeleccionado.IdAlumno}</div>
+                </div>
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Nombre Completo</Text>
+                  <div style={{ fontWeight: 500 }}>{alumnoSeleccionado.NombreCompleto}</div>
+                </div>
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Grado</Text>
+                  <div style={{ fontWeight: 500 }}>{alumnoSeleccionado.Grado}</div>
+                </div>
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Sección</Text>
+                  <div style={{ fontWeight: 500 }}>{alumnoSeleccionado.Seccion}</div>
+                </div>
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Jornada</Text>
+                  <div style={{ fontWeight: 500 }}>{alumnoSeleccionado.Jornada}</div>
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <Card
+              size="small"
+              style={{
+                background: '#fff7e6',
+                border: '1px solid #ffd591',
+                textAlign: 'center'
+              }}
+            >
+              <Text type="secondary">No se ha seleccionado un alumno</Text>
+            </Card>
+          )}
+        </div>
 
         <Form.Item
           name="IdMetodoPago"
@@ -478,6 +517,7 @@ const CrearPago = () => {
               form.resetFields();
               setSelectedAlumno(null);
               setAlumnoData([]);
+              setAlumnoSeleccionado(null);
               setSelectedMeses([]);
               setMesesPago([]);
               setEsPrimeroBasico(false);
@@ -554,10 +594,11 @@ const CrearPago = () => {
 
         <Table
           columns={[
-            { title: 'Carnet', dataIndex: ['0', 'IdAlumno'], width: 120 },
-            { title: 'Nombres', dataIndex: ['0', 'Nombres'], width: 150 },
-            { title: 'Apellidos', dataIndex: ['0', 'Apellidos'], width: 150 },
-            { title: 'Grado', dataIndex: ['0', 'NombreGrado'] },
+            { title: 'Carnet', dataIndex: ['0', 'IdAlumno'], width: 100 },
+            { title: 'Nombre Completo', width: 250, render: (_, record) => `${record[0]?.Nombres || ''} ${record[0]?.Apellidos || ''}` },
+            { title: 'Grado', dataIndex: ['0', 'NombreGrado'], width: 180 },
+            { title: 'Sección', dataIndex: ['0', 'NombreSeccion'], width: 100 },
+            { title: 'Jornada', dataIndex: ['0', 'NombreJornada'], width: 120 },
           ]}
           dataSource={alumnoData}
           rowKey={(r) => r[0]?.IdAlumno}
@@ -565,7 +606,7 @@ const CrearPago = () => {
             onDoubleClick: () => handleRowDoubleClick(record),
           })}
           pagination={false}
-          scroll={{ y: 300 }}
+          scroll={{ y: 300, x: 800 }}
         />
       </Modal>
 

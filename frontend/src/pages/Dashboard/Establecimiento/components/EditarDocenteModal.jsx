@@ -47,7 +47,6 @@ const EditarDocenteModal = ({ visible, docente, onCancel, onSuccess }) => {
         onSuccess();
       }
     } catch (error) {
-      console.error('Error al actualizar docente:', error);
       message.error(error.response?.data?.message || 'Error al actualizar el docente');
     } finally {
       setLoading(false);

@@ -9,7 +9,6 @@ import autoTable from 'jspdf-autotable';
 const { Option } = Select;
 
 const BoletaCalificaciones = () => {
-  console.log('🎯 BoletaCalificaciones component mounted');
 
   // Estados para filtros
   const [filtros, setFiltros] = useState({
@@ -52,7 +51,6 @@ const BoletaCalificaciones = () => {
       if (seccionesRes.data.success) setSecciones(seccionesRes.data.data);
       if (jornadasRes.data.success) setJornadas(jornadasRes.data.data);
     } catch (error) {
-      console.error('Error al cargar catálogos:', error);
       message.error('Error al cargar los catálogos');
     } finally {
       setLoadingCatalogos(false);
@@ -79,7 +77,6 @@ const BoletaCalificaciones = () => {
         }
       }
     } catch (error) {
-      console.error('Error al cargar estudiantes:', error);
       message.error('Error al cargar los estudiantes');
       setEstudiantes([]);
     } finally {
@@ -102,7 +99,6 @@ const BoletaCalificaciones = () => {
         setBoletaSeleccionada(response.data.data);
       }
     } catch (error) {
-      console.error('Error al cargar boleta:', error);
       message.error('Error al cargar la boleta');
       setModalVisible(false);
     } finally {
@@ -112,15 +108,12 @@ const BoletaCalificaciones = () => {
 
   const generarPDFBoleta = async (dataBoleta) => {
     try {
-      console.log('🔧 Iniciando generación de PDF');
-      console.log('📦 Data recibida:', dataBoleta);
 
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.width;
       const pageHeight = doc.internal.pageSize.height;
       const margin = 15;
 
-      console.log('📄 Documento creado');
 
       // Encabezado del colegio
       doc.setFontSize(18);
@@ -131,7 +124,6 @@ const BoletaCalificaciones = () => {
       doc.setFont('helvetica', 'normal');
       doc.text(`Ciclo Escolar ${dataBoleta.estudiante.CicloEscolar}`, pageWidth / 2, 27, { align: 'center' });
 
-      console.log('✅ Encabezado agregado');
 
       // Información del estudiante (centrada y organizada)
       let yPosition = 40;
@@ -156,16 +148,12 @@ const BoletaCalificaciones = () => {
       // Jornada (centrada)
       doc.text(`Jornada: ${dataBoleta.estudiante.NombreJornada}`, pageWidth / 2, yPosition, { align: 'center' });
 
-      console.log('✅ Información del estudiante agregada');
 
       // Tabla de calificaciones
       yPosition += 12;
 
-      console.log('🔄 Procesando cursos...');
-      console.log('📚 Total cursos:', dataBoleta.cursos.length);
 
       const tableData = dataBoleta.cursos.map((curso, index) => {
-        console.log(`  📖 Curso ${index + 1}:`, curso);
 
         const unidades = [1, 2, 3, 4].map(numUnidad => {
           const unidad = curso.unidades.find(u => u.NumeroUnidad === numUnidad);
@@ -191,9 +179,7 @@ const BoletaCalificaciones = () => {
         ];
       });
 
-      console.log('✅ Datos de tabla preparados:', tableData);
 
-      console.log('📊 Creando tabla...');
       autoTable(doc, {
         startY: yPosition,
         head: [['Curso', 'U1', 'U2', 'U3', 'U4', 'Prom']],
@@ -223,7 +209,6 @@ const BoletaCalificaciones = () => {
         margin: { left: margin, right: margin }
       });
 
-      console.log('✅ Tabla creada');
 
       // Promedio General
       const finalY = doc.lastAutoTable.finalY + 10;
@@ -237,7 +222,6 @@ const BoletaCalificaciones = () => {
 
       doc.text(promedioGeneralTexto, pageWidth / 2, finalY, { align: 'center' });
 
-      console.log('✅ Promedio general agregado');
 
       // Footer
       const footerY = pageHeight - 20;
@@ -246,14 +230,10 @@ const BoletaCalificaciones = () => {
       doc.text('Sistema de Gestión Académica', pageWidth / 2, footerY, { align: 'center' });
       doc.text(`Generado el ${new Date().toLocaleDateString('es-GT')}`, pageWidth / 2, footerY + 4, { align: 'center' });
 
-      console.log('✅ Footer agregado');
-      console.log('✅ PDF completado exitosamente');
 
       return doc;
 
     } catch (error) {
-      console.error('❌ Error en generarPDFBoleta:', error);
-      console.error('Stack:', error.stack);
       throw error;
     }
   };
@@ -262,39 +242,23 @@ const BoletaCalificaciones = () => {
     try {
       message.loading({ content: 'Generando PDF...', key: 'pdf' });
 
-      // 🔍 DEBUG: Ver qué estamos enviando al endpoint individual
-      console.log('📤 Solicitando boleta individual:', {
-        idAlumno,
-        params: filtros
-      });
-
       const response = await apiClient.get(
         `/boleta-calificaciones/calificaciones/${idAlumno}`,
         { params: filtros }
       );
 
       if (response.data.success) {
-        console.log('✅ Response exitosa del backend');
         const dataBoleta = response.data.data;
-        console.log('📊 Datos de la boleta:', dataBoleta);
-        console.log('👤 Estudiante:', dataBoleta.estudiante);
-        console.log('📚 Cursos:', dataBoleta.cursos);
 
-        console.log('🔨 Generando PDF...');
         const doc = await generarPDFBoleta(dataBoleta);
-        console.log('✅ PDF generado:', doc);
 
         const fileName = `Boleta_${dataBoleta.estudiante.Codigo}_${dataBoleta.estudiante.Nombres}_${dataBoleta.estudiante.Apellidos}.pdf`;
-        console.log('💾 Guardando como:', fileName);
         doc.save(fileName);
 
         message.success({ content: 'PDF generado exitosamente', key: 'pdf' });
-        console.log('✅ Proceso completado');
       } else {
-        console.log('❌ Response no exitosa:', response.data);
       }
     } catch (error) {
-      console.error('Error al generar PDF:', error);
       message.error({ content: 'Error al generar el PDF', key: 'pdf' });
     }
   };
@@ -320,8 +284,6 @@ const BoletaCalificaciones = () => {
       };
 
       // 🔍 DEBUG: Ver qué estamos enviando
-      console.log('📤 Enviando al backend (lote):', payload);
-      console.log('📋 Primer estudiante de ejemplo:', estudiantes[0]);
 
       const response = await apiClient.post('/boleta-calificaciones/lote', payload);
 
@@ -329,9 +291,6 @@ const BoletaCalificaciones = () => {
         const boletas = response.data.data;
 
         // 🔍 DEBUG: Ver estructura de datos del backend
-        console.log('📦 Respuesta completa del backend:', response.data);
-        console.log('📊 Total de boletas recibidas:', boletas.length);
-        console.log('🎯 Primera boleta (estructura):', boletas[0]);
 
         if (!boletas || boletas.length === 0) {
           message.warning('No se recibieron boletas del backend');
@@ -466,7 +425,6 @@ const BoletaCalificaciones = () => {
         message.success({ content: `PDF generado con ${boletas.length} boletas`, key: 'pdfMasivo' });
       }
     } catch (error) {
-      console.error('Error al generar PDF masivo:', error);
       message.error({ content: 'Error al generar el PDF masivo', key: 'pdfMasivo' });
     }
   };
