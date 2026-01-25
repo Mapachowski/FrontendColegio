@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout } from 'antd';
 import { Routes, Route } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar';
@@ -40,12 +40,14 @@ import './Dashboard.css';
 const { Content } = Layout;
 
 const Dashboard = ({ user }) => {
+  const [collapsed, setCollapsed] = useState(false);
+
   if (!user) return null;
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sidebar user={user} />
-      <Layout style={{ marginLeft: 250 }}> {/* Ajusta el margen izquierdo al ancho del Sidebar */}
+      <Sidebar user={user} collapsed={collapsed} setCollapsed={setCollapsed} />
+      <Layout style={{ marginLeft: collapsed ? 80 : 250, transition: 'margin-left 0.2s' }}> {/* Ajusta el margen según el estado */}
         <Header user={user} />
         <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', minHeight: 'calc(100vh - 64px)' }}>
           <Routes>

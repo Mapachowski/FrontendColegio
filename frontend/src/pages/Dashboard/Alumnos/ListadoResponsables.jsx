@@ -11,6 +11,7 @@ import { registrarDescargaExcel } from '../../../utils/bitacora';
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
+const { Option } = Select;
 
 const ListadoResponsables = () => {
   const navigate = useNavigate();
@@ -24,11 +25,13 @@ const ListadoResponsables = () => {
   // Estados para Listado 2: Familias Completas
   const [familiasCompletas, setFamiliasCompletas] = useState([]);
   const [loadingFamilias, setLoadingFamilias] = useState(false);
+  const [mostrarResponsablesFamilias, setMostrarResponsablesFamilias] = useState('no'); // 'si' o 'no'
 
   // Estados para Listado 3: Responsables por Grado
   const [responsablesPorGrado, setResponsablesPorGrado] = useState([]);
   const [loadingPorGrado, setLoadingPorGrado] = useState(false);
   const [mostrarTodosPorGrado, setMostrarTodosPorGrado] = useState(false);
+  const [mostrarPorResponsable, setMostrarPorResponsable] = useState(false); // false = por familia (default), true = por responsable
   const [filtros, setFiltros] = useState({
     p_CicloEscolar: getCicloActual().toString(),
     IdGrado: null,
@@ -201,51 +204,68 @@ const ListadoResponsables = () => {
     }
   }, [activeTab, mostrarTodosActivos, cargarResponsablesActivos]);
 
-  const columnasFamilias = [
-    { title: '#', render: (_, __, i) => i + 1, width: 60, fixed: 'left' },
-    { title: 'Nombre Familia', dataIndex: 'NombreFamilia', width: 200 },
-    {
-      title: 'Responsable 1',
-      width: 250,
-      render: (_, record) => {
-        const nombre = record.Responsable1Nombre;
-        const tipo = record.Responsable1Tipo;
-        return nombre ? `${nombre} (${tipo})` : '-';
-      }
-    },
-    {
-      title: 'Responsable 2',
-      width: 250,
-      render: (_, record) => {
-        const nombre = record.Responsable2Nombre;
-        const tipo = record.Responsable2Tipo;
-        return nombre ? `${nombre} (${tipo})` : '-';
-      }
-    },
-    {
-      title: 'Responsable 3',
-      width: 250,
-      render: (_, record) => {
-        const nombre = record.Responsable3Nombre;
-        const tipo = record.Responsable3Tipo;
-        return nombre ? `${nombre} (${tipo})` : '-';
-      }
-    },
-    {
-      title: 'Cantidad Hijos',
-      width: 130,
-      align: 'center',
-      render: (_, record) => record.HijosParsed?.length || 0
-    },
-    {
-      title: 'Hijos',
-      width: 400,
-      render: (_, record) => {
-        if (!record.HijosParsed || record.HijosParsed.length === 0) return '-';
-        return record.HijosParsed.map(h => h.NombreCompleto).join(', ');
-      }
-    },
-  ];
+  // Columnas dinámicas basadas en si se muestran responsables o no
+  const getColumnasFamilias = () => {
+    const columnasBase = [
+      { title: '#', render: (_, __, i) => i + 1, width: 60, fixed: 'left' },
+      { title: 'Nombre Familia', dataIndex: 'NombreFamilia', width: 200 },
+    ];
+
+    if (mostrarResponsablesFamilias === 'si') {
+      // Mostrar columnas de responsables individuales (sin tipo)
+      return [
+        ...columnasBase,
+        {
+          title: 'Responsable 1',
+          width: 250,
+          render: (_, record) => record.Responsable1Nombre || '-'
+        },
+        {
+          title: 'Responsable 2',
+          width: 250,
+          render: (_, record) => record.Responsable2Nombre || '-'
+        },
+        {
+          title: 'Responsable 3',
+          width: 250,
+          render: (_, record) => record.Responsable3Nombre || '-'
+        },
+        {
+          title: 'Cantidad Hijos',
+          width: 130,
+          align: 'center',
+          render: (_, record) => record.HijosParsed?.length || 0
+        },
+        {
+          title: 'Hijos',
+          width: 400,
+          render: (_, record) => {
+            if (!record.HijosParsed || record.HijosParsed.length === 0) return '-';
+            return record.HijosParsed.map(h => h.NombreCompleto).join(', ');
+          }
+        },
+      ];
+    } else {
+      // Mostrar vista simple sin responsables individuales
+      return [
+        ...columnasBase,
+        {
+          title: 'Cantidad Hijos',
+          width: 130,
+          align: 'center',
+          render: (_, record) => record.HijosParsed?.length || 0
+        },
+        {
+          title: 'Hijos',
+          width: 400,
+          render: (_, record) => {
+            if (!record.HijosParsed || record.HijosParsed.length === 0) return '-';
+            return record.HijosParsed.map(h => h.NombreCompleto).join(', ');
+          }
+        },
+      ];
+    }
+  };
 
   const exportarFamiliasCompletas = async () => {
     if (familiasCompletas.length === 0) {
@@ -306,22 +326,37 @@ const ListadoResponsables = () => {
     setLoadingPorGrado(true);
 
     try {
-      const params = new URLSearchParams({
-        p_CicloEscolar: filtros.p_CicloEscolar,
-        IdGrado: filtros.IdGrado,
-      });
+      let res;
 
-      if (filtros.IdSeccion) params.append('IdSeccion', filtros.IdSeccion);
-      if (filtros.IdJornada) params.append('IdJornada', filtros.IdJornada);
+      if (mostrarPorResponsable) {
+        // Mostrar por Responsable - usa endpoint /responsables/por-grado
+        const params = new URLSearchParams({
+          p_CicloEscolar: filtros.p_CicloEscolar,
+          IdGrado: filtros.IdGrado,
+        });
 
-      // Agregar parámetro soloResponsables si no está marcado "Mostrar Todos"
-      if (!mostrarTodosPorGrado) params.append('soloResponsables', 'true');
+        if (filtros.IdSeccion) params.append('IdSeccion', filtros.IdSeccion);
+        if (filtros.IdJornada) params.append('IdJornada', filtros.IdJornada);
 
-      const res = await apiClient.get('/responsables/por-grado', { params });
+        // Agregar parámetro soloResponsables si no está marcado "Mostrar Todos"
+        if (!mostrarTodosPorGrado) params.append('soloResponsables', 'true');
+
+        res = await apiClient.get('/responsables/por-grado', { params });
+      } else {
+        // Mostrar por Familia (DEFAULT) - usa endpoint /familias/familias-hijos-por-grado
+        const params = new URLSearchParams({
+          p_CicloEscolar: filtros.p_CicloEscolar,
+          IdGrado: filtros.IdGrado,
+        });
+
+        if (filtros.IdSeccion) params.append('IdSeccion', filtros.IdSeccion);
+        if (filtros.IdJornada) params.append('IdJornada', filtros.IdJornada);
+
+        res = await apiClient.get('/familias/familias-hijos-por-grado', { params });
+      }
 
       if (res.data.success && res.data.data) {
         // El primer elemento del array contiene los datos reales con índices numéricos
-        // El segundo elemento contiene metadatos de MySQL que debemos ignorar
         const datosReales = res.data.data[0];
 
         // Extraer solo los objetos que tienen datos (ignorar metadatos)
@@ -331,28 +366,47 @@ const ListadoResponsables = () => {
         message.success(`${responsablesLimpios.length} registro${responsablesLimpios.length !== 1 ? 's' : ''} encontrado${responsablesLimpios.length !== 1 ? 's' : ''}`);
       } else {
         setResponsablesPorGrado([]);
-        message.info('No se encontraron responsables con esos filtros');
+        message.info('No se encontraron datos con esos filtros');
       }
     } catch (err) {
-      message.error('Error al buscar responsables por grado');
+      message.error('Error al buscar datos por grado');
       setResponsablesPorGrado([]);
     } finally {
       setLoadingPorGrado(false);
     }
   };
 
-  const columnasResponsablesPorGrado = [
-    { title: '#', render: (_, __, i) => i + 1, width: 60, fixed: 'left' },
-    { title: 'Responsable', dataIndex: 'NombreResponsable', width: 250 },
-    { title: 'DPI', dataIndex: 'DPI', width: 150, render: (text) => text || '-' },
-    { title: 'NIT', dataIndex: 'NIT', width: 120, render: (text) => text || '-' },
-    { title: 'Carnet Hijo', dataIndex: 'IdAlumno', width: 120 },
-    { title: 'Nombre Hijo', dataIndex: 'NombreHijo', width: 250 },
-    { title: 'Grado', dataIndex: 'Grado', width: 180 },
-    { title: 'Sección', dataIndex: 'Seccion', width: 100 },
-    { title: 'Jornada', dataIndex: 'Jornada', width: 120 },
-    { title: 'Familia', dataIndex: 'NombreFamilia', width: 200 },
-  ];
+  // Columnas dinámicas según el modo (familias o responsables)
+  const getColumnasResponsablesPorGrado = () => {
+    if (mostrarPorResponsable) {
+      // Vista por Responsable (antigua vista)
+      return [
+        { title: '#', render: (_, __, i) => i + 1, width: 60, fixed: 'left' },
+        { title: 'Responsable', dataIndex: 'NombreResponsable', width: 250 },
+        { title: 'DPI', dataIndex: 'DPI', width: 150, render: (text) => text || '-' },
+        { title: 'NIT', dataIndex: 'NIT', width: 120, render: (text) => text || '-' },
+        { title: 'Carnet Hijo', dataIndex: 'IdAlumno', width: 120 },
+        { title: 'Nombre Hijo', dataIndex: 'NombreHijo', width: 250 },
+        { title: 'Grado', dataIndex: 'Grado', width: 180 },
+        { title: 'Sección', dataIndex: 'Seccion', width: 100 },
+        { title: 'Jornada', dataIndex: 'Jornada', width: 120 },
+        { title: 'Familia', dataIndex: 'NombreFamilia', width: 200 },
+      ];
+    } else {
+      // Vista por Familia (nueva vista - DEFAULT)
+      return [
+        { title: '#', render: (_, __, i) => i + 1, width: 60, fixed: 'left' },
+        { title: 'Familia', dataIndex: 'Familia', width: 200 },
+        { title: 'Carnet Hijo', dataIndex: 'CarnetHijo', width: 120 },
+        { title: 'Nombre Alumno', dataIndex: 'NombreAlumno', width: 250 },
+        { title: 'DPI Responsable', dataIndex: 'DPIResponsable', width: 150, render: (text) => text || '-' },
+        { title: 'NIT Responsable', dataIndex: 'NITREsponsable', width: 120, render: (text) => text || '-' },
+        { title: 'Grado', dataIndex: 'Grado', width: 180 },
+        { title: 'Sección', dataIndex: 'Seccion', width: 100 },
+        { title: 'Jornada', dataIndex: 'Jornada', width: 120 },
+      ];
+    }
+  };
 
   const exportarResponsablesPorGrado = async () => {
     if (responsablesPorGrado.length === 0) {
@@ -472,18 +526,31 @@ const ListadoResponsables = () => {
           <Card
             title={<strong>{familiasCompletas.length} familia{familiasCompletas.length !== 1 ? 's' : ''}</strong>}
             extra={
-              <Button
-                type="primary"
-                icon={<DownloadOutlined />}
-                onClick={exportarFamiliasCompletas}
-                disabled={familiasCompletas.length === 0}
-              >
-                Exportar Excel
-              </Button>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>Mostrar Responsables:</span>
+                  <Select
+                    value={mostrarResponsablesFamilias}
+                    onChange={(value) => setMostrarResponsablesFamilias(value)}
+                    style={{ width: 100 }}
+                  >
+                    <Option value="no">No</Option>
+                    <Option value="si">Sí</Option>
+                  </Select>
+                </div>
+                <Button
+                  type="primary"
+                  icon={<DownloadOutlined />}
+                  onClick={exportarFamiliasCompletas}
+                  disabled={familiasCompletas.length === 0}
+                >
+                  Exportar Excel
+                </Button>
+              </div>
             }
           >
             <Table
-              columns={columnasFamilias}
+              columns={getColumnasFamilias()}
               dataSource={familiasCompletas}
               rowKey="IdFamilia"
               loading={loadingFamilias}
@@ -510,13 +577,30 @@ const ListadoResponsables = () => {
           key="3"
         >
           <Card style={{ marginBottom: 24 }}>
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 16, display: 'flex', gap: 24, flexDirection: 'column' }}>
               <Checkbox
-                checked={mostrarTodosPorGrado}
-                onChange={(e) => setMostrarTodosPorGrado(e.target.checked)}
+                checked={mostrarPorResponsable}
+                onChange={(e) => {
+                  setMostrarPorResponsable(e.target.checked);
+                  // Si se desmarca, limpiar la tabla para forzar nueva búsqueda
+                  if (!e.target.checked) {
+                    setMostrarTodosPorGrado(false);
+                  }
+                }}
               >
-                Mostrar todos los responsables
+                Mostrar por responsable
               </Checkbox>
+
+              {mostrarPorResponsable && (
+                <div style={{ marginLeft: 24 }}>
+                  <Checkbox
+                    checked={mostrarTodosPorGrado}
+                    onChange={(e) => setMostrarTodosPorGrado(e.target.checked)}
+                  >
+                    Mostrar todos los responsables
+                  </Checkbox>
+                </div>
+              )}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
               <div>
@@ -610,9 +694,9 @@ const ListadoResponsables = () => {
               }
             >
               <Table
-                columns={columnasResponsablesPorGrado}
+                columns={getColumnasResponsablesPorGrado()}
                 dataSource={responsablesPorGrado}
-                rowKey={(record) => `${record.IdResponsable}-${record.IdAlumno}`}
+                rowKey={(record, index) => mostrarPorResponsable ? `${record.IdResponsable}-${record.IdAlumno}-${index}` : `${record.CarnetHijo}-${index}`}
                 loading={loadingPorGrado}
                 pagination={{
                   pageSize: 50,

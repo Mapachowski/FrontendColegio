@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Badge } from 'antd';
+import { Layout, Menu, Badge, Button } from 'antd';
 import { Link,useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import {
@@ -29,11 +29,13 @@ import {
   HistoryOutlined,
   FileSearchOutlined,
   LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from '@ant-design/icons';
 
 const { Sider } = Layout;
 
-const Sidebar = ({ user, onLogout }) => {
+const Sidebar = ({ user, onLogout, collapsed, setCollapsed }) => {
   const navigate = useNavigate();
   const [openKeys, setOpenKeys] = useState(['1']);
   const [pendientesSolicitudes, setPendientesSolicitudes] = useState(0);
@@ -269,14 +271,45 @@ const customizedMenuItems = menuItems.map((item) => ({
   });
 
   return (
-    <Sider width={250} style={{ background: '#001f3f', height: '100vh', position: 'fixed', color: '#fff' }}>
+    <Sider
+      collapsible
+      collapsed={collapsed}
+      onCollapse={(value) => setCollapsed(value)}
+      width={250}
+      style={{ background: '#001f3f', height: '100vh', position: 'fixed', color: '#fff' }}
+      trigger={null}
+    >
+      {/* Botón de colapsar/expandir en la parte superior */}
+      <div style={{
+        height: 64,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#001529',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+      }}>
+        <Button
+          type="text"
+          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          onClick={() => setCollapsed(!collapsed)}
+          style={{
+            fontSize: '18px',
+            width: 64,
+            height: 64,
+            color: '#fff',
+            border: 'none',
+          }}
+        />
+      </div>
+
       <Menu
         mode="inline"
         defaultSelectedKeys={['1']}
-        openKeys={openKeys}
+        openKeys={collapsed ? [] : openKeys}
         onOpenChange={onOpenChange}
-        style={{ background: '#001f3f', color: '#fff', borderRight: 0, height: '100%' }}
+        style={{ background: '#001f3f', color: '#fff', borderRight: 0, height: 'calc(100% - 64px)' }}
         items={customizedMenuItems}
+        inlineCollapsed={collapsed}
       />
     </Sider>
   );
