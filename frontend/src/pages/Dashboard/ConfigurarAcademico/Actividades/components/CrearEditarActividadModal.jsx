@@ -3,6 +3,9 @@ import { Modal, Form, Input, InputNumber, Select, DatePicker, Switch, message, A
 import { WarningOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import apiClient from '../../../../../api/apiClient';
 import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -26,7 +29,7 @@ const CrearEditarActividadModal = ({ visible, actividad, unidad, modoEdicion, on
           Descripcion: actividad.Descripcion,
           PunteoMaximo: parseFloat(actividad.PunteoMaximo),
           TipoActividad: actividad.TipoActividad,
-          FechaActividad: actividad.FechaActividad ? dayjs(actividad.FechaActividad) : null,
+          FechaActividad: actividad.FechaActividad ? dayjs(actividad.FechaActividad, 'YYYY-MM-DD') : null,
           Estado: actividad.Estado
         });
         setTipoActividad(actividad.TipoActividad);
@@ -275,6 +278,7 @@ const CrearEditarActividadModal = ({ visible, actividad, unidad, modoEdicion, on
           <Form.Item
             name="FechaActividad"
             label="Fecha de Entrega"
+            rules={[{ required: true, message: 'Seleccione la fecha de entrega' }]}
             style={{ width: 180 }}
           >
             <DatePicker

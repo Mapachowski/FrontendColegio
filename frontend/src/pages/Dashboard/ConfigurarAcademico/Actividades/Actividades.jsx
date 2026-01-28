@@ -9,6 +9,10 @@ import VerActividadModal from './components/VerActividadModal';
 import CerrarUnidadModal from './components/CerrarUnidadModal';
 import SolicitarReaperturaModal from './components/SolicitarReaperturaModal';
 import CalificarActividadModal from './components/CalificarActividadModal';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 const { Option } = Select;
 
@@ -487,7 +491,7 @@ const Actividades = () => {
       key: 'FechaActividad',
       width: 120,
       align: 'center',
-      render: (fecha) => fecha ? new Date(fecha).toLocaleDateString('es-GT') : '-'
+      render: (fecha) => fecha ? dayjs(fecha, 'YYYY-MM-DD').format('DD/MM/YYYY') : '-'
     },
     {
       title: 'Calificaciones',

@@ -3,6 +3,10 @@ import { Card, Table, Tag, message, Badge, Space, Empty } from 'antd';
 import { CalendarOutlined, CheckCircleOutlined, CloseCircleOutlined, BookOutlined } from '@ant-design/icons';
 import apiClient from '../../../api/apiClient';
 import { getCicloActual } from '../../../utils/cicloEscolar';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 const MisActividades = () => {
   const [cursos, setCursos] = useState([]);
@@ -113,13 +117,13 @@ const MisActividades = () => {
       align: 'center',
       render: (fecha) => {
         if (!fecha) return '-';
-        const fechaActividad = new Date(fecha);
-        const hoy = new Date();
-        const esVencida = fechaActividad < hoy;
+        const fechaActividad = dayjs(fecha, 'YYYY-MM-DD');
+        const hoy = dayjs();
+        const esVencida = fechaActividad.isBefore(hoy, 'day');
 
         return (
           <Tag color={esVencida ? 'red' : 'green'}>
-            {fechaActividad.toLocaleDateString('es-GT')}
+            {fechaActividad.format('DD/MM/YYYY')}
           </Tag>
         );
       }

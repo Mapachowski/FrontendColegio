@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Alert, Card, Tag, List, Spin, Empty } from 'antd';
 import { BellOutlined, ClockCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import apiClient from '../api/apiClient';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 const Home = ({ usuario, onLogout }) => {
   const [notificaciones, setNotificaciones] = useState([]);
@@ -99,7 +103,7 @@ const Home = ({ usuario, onLogout }) => {
                         </div>
                         <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: '12px', color: '#999' }}>
-                            <ClockCircleOutlined /> Fecha límite: {new Date(notif.FechaLimite).toLocaleDateString('es-GT')}
+                            <ClockCircleOutlined /> Fecha límite: {dayjs(notif.FechaLimite, 'YYYY-MM-DD').format('DD/MM/YYYY')}
                           </span>
                           {esUrgente ? (
                             <Tag color="red">¡URGENTE! {diasRestantes} día(s)</Tag>

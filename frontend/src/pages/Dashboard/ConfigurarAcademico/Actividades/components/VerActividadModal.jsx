@@ -1,6 +1,12 @@
 import React from 'react';
 import { Modal, Descriptions, Tag, Badge } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import 'dayjs/locale/es';
+
+dayjs.extend(customParseFormat);
+dayjs.locale('es');
 
 const VerActividadModal = ({ visible, actividad, onCancel }) => {
   if (!actividad) return null;
@@ -40,12 +46,7 @@ const VerActividadModal = ({ visible, actividad, onCancel }) => {
 
         <Descriptions.Item label="Fecha de Actividad">
           {actividad.FechaActividad
-            ? new Date(actividad.FechaActividad).toLocaleDateString('es-GT', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })
+            ? dayjs(actividad.FechaActividad, 'YYYY-MM-DD').format('dddd, D [de] MMMM [de] YYYY')
             : '-'}
         </Descriptions.Item>
 
