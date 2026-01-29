@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Table, message, Typography, Button, Select, Input, Tag } from 'antd';
-import { DownloadOutlined, ReloadOutlined, ExclamationCircleOutlined, WarningOutlined } from '@ant-design/icons';
+import { DownloadOutlined, ReloadOutlined, CheckCircleOutlined, SmileOutlined } from '@ant-design/icons';
 import apiClient from '../../../api/apiClient';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
@@ -12,9 +12,9 @@ import { registrarDescargaExcel } from '../../../utils/bitacora';
 const { Title } = Typography;
 const { Option } = Select;
 
-const Insolventes = () => {
+const ListadoSolventes = () => {
   const navigate = useNavigate();
-  const [insolventes, setInsolventes] = useState([]);
+  const [solventes, setSolventes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [cicloEscolar, setCicloEscolar] = useState(getCicloActual().toString());
   const [mes, setMes] = useState(new Date().getMonth() + 1); // 1-12
@@ -34,11 +34,11 @@ const Insolventes = () => {
 
   useEffect(() => {
     if (cicloEscolar && cicloEscolar.length === 4 && mes) {
-      cargarInsolventes();
+      cargarSolventes();
     }
   }, []);
 
-  const cargarInsolventes = async () => {
+  const cargarSolventes = async () => {
     if (!cicloEscolar || cicloEscolar.length !== 4) {
       message.warning('Por favor ingresa un ciclo escolar válido (4 dígitos)');
       return;
@@ -52,34 +52,36 @@ const Insolventes = () => {
     setLoading(true);
 
     try {
-      const res = await apiClient.get(`/pagos/insolventes?cicloEscolar=${cicloEscolar}&mes=${mes}`);
+      const res = await apiClient.get(`/pagos/solventes?cicloEscolar=${cicloEscolar}&mes=${mes}`);
 
       if (res.data.success && res.data.data) {
         // Extraer datos reales (primer elemento del array)
         const datosReales = res.data.data[0];
-        const insolventesLimpios = Object.values(datosReales);
+        const solventesLimpios = Object.values(datosReales);
 
-        setInsolventes(insolventesLimpios);
+        setSolventes(solventesLimpios);
 
-        if (insolventesLimpios.length > 0) {
-          message.warning({
-            content: `${insolventesLimpios.length} alumno${insolventesLimpios.length !== 1 ? 's' : ''} insolvente${insolventesLimpios.length !== 1 ? 's' : ''} encontrado${insolventesLimpios.length !== 1 ? 's' : ''}`,
-            icon: <WarningOutlined style={{ color: '#faad14' }} />,
+        if (solventesLimpios.length > 0) {
+          message.success({
+            content: `${solventesLimpios.length} alumno${solventesLimpios.length !== 1 ? 's' : ''} solvente${solventesLimpios.length !== 1 ? 's' : ''} encontrado${solventesLimpios.length !== 1 ? 's' : ''}`,
+            icon: <SmileOutlined style={{ color: '#52c41a' }} />,
           });
         } else {
-          message.success('No hay alumnos insolventes en este mes');
+          message.info('No hay alumnos solventes en este mes');
         }
       } else {
-        setInsolventes([]);
-        message.success('No hay alumnos insolventes');
+        setSolventes([]);
+        message.info('No hay alumnos solventes');
       }
     } catch (err) {
-      message.error('Error al cargar alumnos insolventes');
-      setInsolventes([]);
+      message.error('Error al cargar alumnos solventes');
+      setSolventes([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const mesNombreActual = meses.find(m => m.value === mes)?.label || '';
 
   const columnas = [
     {
@@ -126,36 +128,25 @@ const Insolventes = () => {
       align: 'center'
     },
     {
-      title: 'Meses Pendientes',
-      dataIndex: 'MesesPendientes',
-      width: 200,
-      render: (meses) => {
-        if (!meses) return '-';
-        const listaMeses = meses.split(',').map(m => m.trim());
-        return (
-          <div>
-            {listaMeses.map((m, idx) => (
-              <Tag key={idx} color="red" style={{ marginBottom: 4 }}>
-                {m}
-              </Tag>
-            ))}
-          </div>
-        );
-      }
+      title: 'Estado',
+      width: 250,
+      render: () => (
+        <Tag color="green" icon={<CheckCircleOutlined />}>
+          Alumno al día hasta el mes de: {mesNombreActual}
+        </Tag>
+      )
     },
   ];
 
   const exportarExcel = async () => {
-    if (insolventes.length === 0) {
+    if (solventes.length === 0) {
       return message.info('No hay datos para exportar');
     }
 
     // Registrar en bitácora
-    await registrarDescargaExcel('Reporte de Alumnos Insolventes');
+    await registrarDescargaExcel('Reporte de Alumnos Solventes');
 
-    const mesNombre = meses.find(m => m.value === mes)?.label || '';
-
-    const filas = insolventes.map((alumno, i) => ({
+    const filas = solventes.map((alumno, i) => ({
       '#': i + 1,
       'Carnet': alumno.Carnet,
       'Matrícula': alumno.Matricula,
@@ -163,7 +154,7 @@ const Insolventes = () => {
       'Grado': alumno.NombreGrado,
       'Sección': alumno.NombreSeccion,
       'Jornada': alumno.NombreJornada,
-      'Meses Pendientes': alumno.MesesPendientes || '-'
+      'Estado': `Alumno al día hasta el mes de: ${mesNombreActual}`
     }));
 
     const wb = XLSX.utils.book_new();
@@ -177,39 +168,37 @@ const Insolventes = () => {
       { wch: 20 },  // Grado
       { wch: 10 },  // Sección
       { wch: 12 },  // Jornada
-      { wch: 30 }   // Meses Pendientes
+      { wch: 40 }   // Estado
     ];
     ws['!cols'] = wscols;
 
-    XLSX.utils.sheet_add_aoa(ws, [['ALUMNOS INSOLVENTES']], { origin: 'A1' });
+    XLSX.utils.sheet_add_aoa(ws, [['ALUMNOS SOLVENTES']], { origin: 'A1' });
     ws['A1'].s = { font: { name: 'Arial', sz: 18, bold: true }, alignment: { horizontal: 'center' } };
 
-    XLSX.utils.sheet_add_aoa(ws, [[`Mes: ${mesNombre} | Ciclo Escolar: ${cicloEscolar}`]], { origin: 'A3' });
+    XLSX.utils.sheet_add_aoa(ws, [[`Mes: ${mesNombreActual} | Ciclo Escolar: ${cicloEscolar}`]], { origin: 'A3' });
     ws['A3'].s = { font: { name: 'Arial', sz: 12, italic: true }, alignment: { horizontal: 'center' } };
 
     const fecha = dayjs().format('DD/MM/YYYY HH:mm');
     XLSX.utils.sheet_add_aoa(ws, [[`Generado: ${fecha}`]], { origin: 'A4' });
     ws['A4'].s = { font: { name: 'Arial', sz: 10 }, alignment: { horizontal: 'center' } };
 
-    XLSX.utils.sheet_add_aoa(ws, [[`Total de alumnos insolventes: ${insolventes.length}`]], { origin: 'A6' });
-    ws['A6'].s = { font: { name: 'Arial', sz: 11, bold: true, color: { rgb: 'FF0000' } }, alignment: { horizontal: 'center' } };
+    XLSX.utils.sheet_add_aoa(ws, [[`Total de alumnos solventes: ${solventes.length}`]], { origin: 'A6' });
+    ws['A6'].s = { font: { name: 'Arial', sz: 11, bold: true, color: { rgb: '52c41a' } }, alignment: { horizontal: 'center' } };
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Insolventes');
-    const filename = `Insolventes_${mesNombre}_${cicloEscolar}_${dayjs().format('DDMMYYYY')}.xlsx`;
+    XLSX.utils.book_append_sheet(wb, ws, 'Solventes');
+    const filename = `Solventes_${mesNombreActual}_${cicloEscolar}_${dayjs().format('DDMMYYYY')}.xlsx`;
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     saveAs(new Blob([excelBuffer]), filename);
     message.success('Excel generado correctamente');
   };
 
-  const mesNombreActual = meses.find(m => m.value === mes)?.label || '';
-
   return (
     <div style={{ padding: 24 }}>
       <Title level={2}>
-        <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} /> Alumnos Insolventes
+        <CheckCircleOutlined style={{ color: '#52c41a' }} /> Alumnos Solventes
       </Title>
       <Title level={5} type="secondary">
-        Listado de alumnos con pagos pendientes
+        Listado de alumnos al día con sus pagos
       </Title>
 
       <Card style={{ marginBottom: 24 }}>
@@ -219,7 +208,7 @@ const Insolventes = () => {
             <Input
               value={cicloEscolar}
               maxLength={4}
-              placeholder="Ej: 2025"
+              placeholder="Ej: 2026"
               onChange={(e) => {
                 const val = e.target.value.replace(/\D/g, '').slice(0, 4);
                 setCicloEscolar(val);
@@ -248,23 +237,23 @@ const Insolventes = () => {
           <Button
             type="primary"
             icon={<ReloadOutlined />}
-            onClick={cargarInsolventes}
+            onClick={cargarSolventes}
             loading={loading}
             size="large"
-            danger
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
           >
-            Buscar Insolventes
+            Buscar Solventes
           </Button>
         </div>
       </Card>
 
-      {insolventes.length > 0 && (
+      {solventes.length > 0 && (
         <Card
           title={
             <div>
-              <WarningOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />
-              <strong style={{ color: '#ff4d4f' }}>
-                {insolventes.length} alumno{insolventes.length !== 1 ? 's' : ''} insolvente{insolventes.length !== 1 ? 's' : ''}
+              <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />
+              <strong style={{ color: '#52c41a' }}>
+                {solventes.length} alumno{solventes.length !== 1 ? 's' : ''} solvente{solventes.length !== 1 ? 's' : ''}
               </strong>
               <span style={{ marginLeft: 12, color: '#666', fontSize: 14 }}>
                 Mes: {mesNombreActual} {cicloEscolar}
@@ -283,31 +272,31 @@ const Insolventes = () => {
         >
           <Table
             columns={columnas}
-            dataSource={insolventes}
+            dataSource={solventes}
             rowKey={(record, index) => `${record.Carnet}-${index}`}
             loading={loading}
             pagination={{
               pageSize: 50,
               showSizeChanger: true,
               pageSizeOptions: ['25', '50', '100', '200'],
-              showTotal: (total) => `Total: ${total} alumnos insolventes`
+              showTotal: (total) => `Total: ${total} alumnos solventes`
             }}
-            scroll={{ x: 1200 }}
+            scroll={{ x: 1300 }}
             bordered
-            rowClassName={() => 'insolvente-row'}
+            rowClassName={() => 'solvente-row'}
           />
         </Card>
       )}
 
-      {!loading && insolventes.length === 0 && (
+      {!loading && solventes.length === 0 && (
         <Card>
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <ExclamationCircleOutlined style={{ fontSize: 64, color: '#52c41a', marginBottom: 16 }} />
-            <p style={{ fontSize: 16, color: '#52c41a', fontWeight: 'bold' }}>
-              ¡Excelente! No hay alumnos insolventes
+            <CheckCircleOutlined style={{ fontSize: 64, color: '#d9d9d9', marginBottom: 16 }} />
+            <p style={{ fontSize: 16, color: '#999' }}>
+              No hay alumnos solventes en este mes
             </p>
-            <p style={{ fontSize: 14, color: '#999' }}>
-              Todos los alumnos están al día con sus pagos de {mesNombreActual}
+            <p style={{ fontSize: 14, color: '#bbb' }}>
+              Los alumnos solventes aparecerán aquí cuando realicen sus pagos
             </p>
           </div>
         </Card>
@@ -324,15 +313,15 @@ const Insolventes = () => {
       </div>
 
       <style jsx>{`
-        .insolvente-row {
-          background-color: #fff1f0;
+        .solvente-row {
+          background-color: #f6ffed;
         }
-        .insolvente-row:hover {
-          background-color: #ffe7e6 !important;
+        .solvente-row:hover {
+          background-color: #d9f7be !important;
         }
       `}</style>
     </div>
   );
 };
 
-export default Insolventes;
+export default ListadoSolventes;

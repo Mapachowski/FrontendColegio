@@ -31,6 +31,7 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons';
 
 const { Sider } = Layout;
@@ -155,6 +156,7 @@ const Sidebar = ({ user, onLogout, collapsed, setCollapsed }) => {
         { key: '6-3', label: 'Pago de Inscripción', path: '/dashboard/pagos/inscripcion', icon: <DollarOutlined /> },
         { key: '6-2', label: 'Buscar Recibo', path: '/dashboard/pagos/buscar-recibo', icon: <FileSearchOutlined /> },
         { key: '6-6', label: 'Insolventes', path: '/dashboard/pagos/insolventes', icon: <ExclamationCircleOutlined /> },
+        { key: '6-7', label: 'Listado Solventes', path: '/dashboard/pagos/solventes', icon: <CheckCircleOutlined /> },
       ].filter(Boolean),
     },
     {

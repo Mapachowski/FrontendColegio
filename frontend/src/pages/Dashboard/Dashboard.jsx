@@ -17,6 +17,7 @@ import BuscarRecibo from './Pagos/BuscarRecibo';
 import ReportePagosFechas from './Pagos/ReportePagosFechas';
 import PagosHoy from './Pagos/PagosHoy';
 import Insolventes from './Pagos/Insolventes';
+import ListadoSolventes from './Pagos/ListadoSolventes';
 import EditarAlumno from './Alumnos/EditarAlumno';
 import ListadoAlumnos from './Alumnos/FiltrosInscripciones';
 import EstudiantesRetirados from './Alumnos/EstudiantesRetirados';
@@ -70,6 +71,7 @@ const Dashboard = ({ user }) => {
             <Route path="/pagos/reporte-fechas" element={<ReportePagosFechas />} />
             <Route path="/pagos/pagos-hoy" element={<PagosHoy />} />
             <Route path="/pagos/insolventes" element={<Insolventes />} />
+            <Route path="/pagos/solventes" element={<ListadoSolventes />} />
             <Route path="/alumnos/editar" element={<EditarAlumno />} />
             <Route path="/alumnos/listado" element={<ListadoAlumnos />} />
             <Route path="/alumnos/estudiantes-retirados" element={<EstudiantesRetirados />} />
