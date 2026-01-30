@@ -18,6 +18,7 @@ import ReportePagosFechas from './Pagos/ReportePagosFechas';
 import PagosHoy from './Pagos/PagosHoy';
 import Insolventes from './Pagos/Insolventes';
 import ListadoSolventes from './Pagos/ListadoSolventes';
+import EliminarPagos from './Pagos/EliminarPagos';
 import EditarAlumno from './Alumnos/EditarAlumno';
 import ListadoAlumnos from './Alumnos/FiltrosInscripciones';
 import EstudiantesRetirados from './Alumnos/EstudiantesRetirados';
@@ -66,6 +67,7 @@ const Dashboard = ({ user }) => {
             <Route path="/migracion-usuarios" element={<MigracionUsuarios />} />
             <Route path="/inscripciones/inscripciones" element={<Inscripciones />} />
             <Route path="/pagos/crear" element={<CrearPago />} />
+            <Route path="/pagos/eliminar" element={<EliminarPagos />} />
             <Route path="/pagos/inscripcion" element={<CrearPagoInscripcion />} />
             <Route path="/pagos/buscar-recibo" element={<BuscarRecibo />} />
             <Route path="/pagos/reporte-fechas" element={<ReportePagosFechas />} />
