@@ -11,7 +11,8 @@ import {
   Card,
   Typography,
   InputNumber,
-  Space
+  Space,
+  Radio
 } from 'antd';
 import { DollarOutlined } from '@ant-design/icons';
 import apiClient from '../../../api/apiClient';
@@ -35,6 +36,8 @@ const CrearPagoInscripcion = () => {
   const [fechaPago, setFechaPago] = useState(dayjs());
   const [montoInscripcion, setMontoInscripcion] = useState(200); // Monto por defecto
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
+  const [tipoInscripcion, setTipoInscripcion] = useState('regular'); // 'regular' o 'mecanografia'
+  const [esPrimeroBasico, setEsPrimeroBasico] = useState(false);
   const user = JSON.parse(localStorage.getItem('user')) || { IdUsuario: null, rol: null };
   const navigate = useNavigate();
 
@@ -54,6 +57,15 @@ const CrearPagoInscripcion = () => {
     };
     fetchData();
   }, []);
+
+  // Cambiar monto cuando cambia el tipo de inscripción
+  useEffect(() => {
+    if (tipoInscripcion === 'mecanografia') {
+      setMontoInscripcion(40);
+    } else {
+      setMontoInscripcion(200);
+    }
+  }, [tipoInscripcion]);
 
   const handleSearchAlumno = async () => {
     if (!selectedAlumno) {
@@ -81,6 +93,17 @@ const CrearPagoInscripcion = () => {
   const handleRowDoubleClick = async (record) => {
     const data = record[0];
     const idAlumno = data.IdAlumno;
+    const grado = data.NombreGrado || '';
+    const esPrimero = grado.toLowerCase().includes('primero básico');
+
+    setEsPrimeroBasico(esPrimero);
+
+    // Si el tipo de inscripción es mecanografía pero el alumno no es de Primero Básico, cambiar a regular
+    if (tipoInscripcion === 'mecanografia' && !esPrimero) {
+      setTipoInscripcion('regular');
+      setMontoInscripcion(200);
+      message.warning('Inscripción Mecanografía solo disponible para Primero Básico.');
+    }
 
     // Guardar información completa del alumno
     setAlumnoSeleccionado({
@@ -133,13 +156,17 @@ const CrearPagoInscripcion = () => {
     setLoading(true);
 
     try {
+      // Determinar IdTipoPago y Concepto según el tipo de inscripción
+      const idTipoPago = tipoInscripcion === 'mecanografia' ? 4 : 3;
+      const concepto = tipoInscripcion === 'mecanografia' ? 'Inscripción Mecanografía' : 'Inscripción';
+
       const payload = {
         IdColaborador: user.IdUsuario,
         IdUsuario: user.IdUsuario,
         Fecha: fechaPago.format('YYYY-MM-DD'),
         IdAlumno: idAlumno,
-        IdTipoPago: 3, // Tipo de pago: Inscripción
-        Concepto: 'Inscripción',
+        IdTipoPago: idTipoPago,
+        Concepto: concepto,
         IdMetodoPago: values.IdMetodoPago || 1,
         Monto: montoInscripcion,
         NumeroRecibo: values.NumeroRecibo || null,
@@ -152,13 +179,18 @@ const CrearPagoInscripcion = () => {
 
       const response = await apiClient.post('/pagos', payload);
 
-      message.success('Pago de inscripción registrado exitosamente.');
+      const mensajeExito = tipoInscripcion === 'mecanografia'
+        ? 'Pago de Inscripción Mecanografía registrado exitosamente.'
+        : 'Pago de inscripción registrado exitosamente.';
+
+      message.success(mensajeExito);
 
       // Registrar en bitácora
-      await registrarBitacora(
-        'Creación de Pago',
-        `Pago de Inscripción registrado para Alumno ID: ${idAlumno}. Monto: Q${montoInscripcion.toFixed(2)}`
-      );
+      const descripcionBitacora = tipoInscripcion === 'mecanografia'
+        ? `Pago de Inscripción Mecanografía registrado para Alumno ID: ${idAlumno}. Monto: Q${montoInscripcion.toFixed(2)}`
+        : `Pago de Inscripción registrado para Alumno ID: ${idAlumno}. Monto: Q${montoInscripcion.toFixed(2)}`;
+
+      await registrarBitacora('Creación de Pago', descripcionBitacora);
 
       // Limpiar formulario para nuevo pago
       handleNuevoPago();
@@ -178,6 +210,8 @@ const CrearPagoInscripcion = () => {
     setAlumnoSeleccionado(null);
     setMontoInscripcion(200);
     setFechaPago(dayjs());
+    setTipoInscripcion('regular');
+    setEsPrimeroBasico(false);
     message.info('Listo para un nuevo pago de inscripción.');
   };
 
@@ -267,6 +301,28 @@ const CrearPagoInscripcion = () => {
             )}
           </div>
 
+          {/* Tipo de Inscripción */}
+          <div style={{ marginBottom: 24, textAlign: 'center' }}>
+            <strong style={{ display: 'block', marginBottom: 12 }}>Tipo de Inscripción</strong>
+            <Radio.Group
+              value={tipoInscripcion}
+              onChange={(e) => setTipoInscripcion(e.target.value)}
+              buttonStyle="solid"
+              size="large"
+              disabled={!form.getFieldValue('IdAlumno')}
+            >
+              <Radio.Button value="regular">Inscripción Regular</Radio.Button>
+              {esPrimeroBasico && (
+                <Radio.Button value="mecanografia">Inscripción Mecanografía</Radio.Button>
+              )}
+            </Radio.Group>
+            {!form.getFieldValue('IdAlumno') && (
+              <div style={{ marginTop: 8, color: '#888', fontSize: 12 }}>
+                Selecciona un alumno para ver opciones
+              </div>
+            )}
+          </div>
+
           {/* Monto de Inscripción */}
           <Form.Item label="Monto de Inscripción" required>
             <InputNumber
@@ -278,7 +334,13 @@ const CrearPagoInscripcion = () => {
               style={{ width: '100%' }}
               formatter={(value) => `Q ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
               parser={(value) => value.replace(/Q\s?|(,*)/g, '')}
+              disabled={tipoInscripcion === 'mecanografia'}
             />
+            {tipoInscripcion === 'mecanografia' && (
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
+                El monto para Inscripción Mecanografía es fijo: Q 40.00
+              </Text>
+            )}
           </Form.Item>
 
           {/* Método de Pago */}
