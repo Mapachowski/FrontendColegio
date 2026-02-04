@@ -100,6 +100,7 @@ const ListadoResponsables = () => {
     { title: 'Nombre Completo', dataIndex: 'NombreResponsable', width: 250 },
     { title: 'DPI', dataIndex: 'DPI', width: 150, render: (text) => text || '-' },
     { title: 'NIT', dataIndex: 'NIT', width: 120, render: (text) => text || '-' },
+    { title: 'Teléfono Contacto', dataIndex: 'TelefonoContacto', width: 150, render: (text) => text || '-' },
     { title: 'Cantidad Hijos', dataIndex: 'CantidadHijos', width: 130, align: 'center' },
     {
       title: 'Nombres de Hijos',
@@ -122,6 +123,7 @@ const ListadoResponsables = () => {
       'Nombre Completo': r.NombreResponsable,
       'DPI': r.DPI || '-',
       'NIT': r.NIT || '-',
+      'Teléfono Contacto': r.TelefonoContacto || '-',
       'Cantidad Hijos': r.CantidadHijos,
       'Nombres de Hijos': r.NombresHijos || '-'
     }));
@@ -131,7 +133,7 @@ const ListadoResponsables = () => {
 
     const wscols = [
       { wch: 6 }, { wch: 35 }, { wch: 18 },
-      { wch: 15 }, { wch: 15 }, { wch: 60 }
+      { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 60 }
     ];
     ws['!cols'] = wscols;
 
@@ -204,11 +206,21 @@ const ListadoResponsables = () => {
     }
   }, [activeTab, mostrarTodosActivos, cargarResponsablesActivos]);
 
+  // Ejecutar búsqueda automática cuando cambien los filtros en "Por Grado del Hijo"
+  useEffect(() => {
+    // Solo ejecutar si ya hay resultados previos (ya se buscó una vez) y estamos en la pestaña 3
+    if (activeTab === '3' && responsablesPorGrado.length > 0 && filtros.IdGrado) {
+      buscarPorGrado();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtros.IdGrado, filtros.IdSeccion, filtros.IdJornada, filtros.p_CicloEscolar, mostrarPorResponsable, mostrarTodosPorGrado]);
+
   // Columnas dinámicas basadas en si se muestran responsables o no
   const getColumnasFamilias = () => {
     const columnasBase = [
       { title: '#', render: (_, __, i) => i + 1, width: 60, fixed: 'left' },
       { title: 'Nombre Familia', dataIndex: 'NombreFamilia', width: 200 },
+      { title: 'Teléfono Contacto', dataIndex: 'TelefonoContacto', width: 150, render: (text) => text || '-' },
     ];
 
     if (mostrarResponsablesFamilias === 'si') {
@@ -278,6 +290,7 @@ const ListadoResponsables = () => {
     const filas = familiasCompletas.map((f, i) => ({
       '#': i + 1,
       'Nombre Familia': f.NombreFamilia,
+      'Teléfono Contacto': f.TelefonoContacto || '-',
       'Responsable 1': f.Responsable1Nombre || '-',
       'Tipo 1': f.Responsable1Tipo || '-',
       'DPI 1': f.Responsable1DPI || '-',
@@ -295,8 +308,8 @@ const ListadoResponsables = () => {
     const ws = XLSX.utils.json_to_sheet(filas, { origin: 'A8' });
 
     const wscols = [
-      { wch: 6 }, { wch: 12 }, { wch: 25 }, { wch: 30 }, { wch: 18 },
-      { wch: 30 }, { wch: 18 }, { wch: 30 }, { wch: 18 }, { wch: 15 }, { wch: 80 }
+      { wch: 6 }, { wch: 25 }, { wch: 18 }, { wch: 30 }, { wch: 18 },
+      { wch: 30 }, { wch: 18 }, { wch: 30 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 80 }
     ];
     ws['!cols'] = wscols;
 
@@ -385,6 +398,7 @@ const ListadoResponsables = () => {
         { title: 'Responsable', dataIndex: 'NombreResponsable', width: 250 },
         { title: 'DPI', dataIndex: 'DPI', width: 150, render: (text) => text || '-' },
         { title: 'NIT', dataIndex: 'NIT', width: 120, render: (text) => text || '-' },
+        { title: 'Teléfono Contacto', dataIndex: 'TelefonoContacto', width: 150, render: (text) => text || '-' },
         { title: 'Carnet Hijo', dataIndex: 'IdAlumno', width: 120 },
         { title: 'Nombre Hijo', dataIndex: 'NombreHijo', width: 250 },
         { title: 'Grado', dataIndex: 'Grado', width: 180 },
@@ -401,6 +415,7 @@ const ListadoResponsables = () => {
         { title: 'Nombre Alumno', dataIndex: 'NombreAlumno', width: 250 },
         { title: 'DPI Responsable', dataIndex: 'DPIResponsable', width: 150, render: (text) => text || '-' },
         { title: 'NIT Responsable', dataIndex: 'NITREsponsable', width: 120, render: (text) => text || '-' },
+        { title: 'Teléfono Contacto', dataIndex: 'TelefonoContacto', width: 150, render: (text) => text || '-' },
         { title: 'Grado', dataIndex: 'Grado', width: 180 },
         { title: 'Sección', dataIndex: 'Seccion', width: 100 },
         { title: 'Jornada', dataIndex: 'Jornada', width: 120 },
@@ -420,29 +435,75 @@ const ListadoResponsables = () => {
     const seccion = catalogos.secciones.find(s => s.IdSeccion === filtros.IdSeccion)?.NombreSeccion || 'Todas';
     const jornada = catalogos.jornadas.find(j => j.IdJornada === filtros.IdJornada)?.NombreJornada || 'Todas';
 
-    const filas = responsablesPorGrado.map((r, i) => ({
-      '#': i + 1,
-      'Responsable': r.NombreResponsable,
-      'DPI': r.DPI || '-',
-      'NIT': r.NIT || '-',
-      'Carnet Hijo': r.IdAlumno,
-      'Nombre Hijo': r.NombreHijo,
-      'Grado': r.Grado,
-      'Sección': r.Seccion,
-      'Jornada': r.Jornada,
-      'Familia': r.NombreFamilia
-    }));
+    let filas;
+    let wscols;
+    let titulo;
+
+    if (mostrarPorResponsable) {
+      // Vista por Responsable
+      titulo = 'LISTADO DE RESPONSABLES POR GRADO';
+      filas = responsablesPorGrado.map((r, i) => ({
+        '#': i + 1,
+        'Responsable': r.NombreResponsable,
+        'DPI': r.DPI || '-',
+        'NIT': r.NIT || '-',
+        'Teléfono Contacto': r.TelefonoContacto || '-',
+        'Carnet Hijo': r.IdAlumno,
+        'Nombre Hijo': r.NombreHijo,
+        'Grado': r.Grado,
+        'Sección': r.Seccion,
+        'Jornada': r.Jornada,
+        'Familia': r.NombreFamilia
+      }));
+
+      wscols = [
+        { wch: 6 },   // #
+        { wch: 35 },  // Responsable
+        { wch: 18 },  // DPI
+        { wch: 15 },  // NIT
+        { wch: 18 },  // Teléfono Contacto
+        { wch: 15 },  // Carnet Hijo
+        { wch: 35 },  // Nombre Hijo
+        { wch: 22 },  // Grado
+        { wch: 12 },  // Sección
+        { wch: 15 },  // Jornada
+        { wch: 25 }   // Familia
+      ];
+    } else {
+      // Vista por Familia
+      titulo = 'LISTADO DE FAMILIAS POR GRADO';
+      filas = responsablesPorGrado.map((r, i) => ({
+        '#': i + 1,
+        'Familia': r.Familia,
+        'Carnet Hijo': r.CarnetHijo,
+        'Nombre Alumno': r.NombreAlumno,
+        'DPI Responsable': r.DPIResponsable || '-',
+        'NIT Responsable': r.NITREsponsable || '-',
+        'Teléfono Contacto': r.TelefonoContacto || '-',
+        'Grado': r.Grado,
+        'Sección': r.Seccion,
+        'Jornada': r.Jornada
+      }));
+
+      wscols = [
+        { wch: 6 },   // #
+        { wch: 25 },  // Familia
+        { wch: 15 },  // Carnet Hijo
+        { wch: 35 },  // Nombre Alumno
+        { wch: 18 },  // DPI Responsable
+        { wch: 15 },  // NIT Responsable
+        { wch: 18 },  // Teléfono Contacto
+        { wch: 22 },  // Grado
+        { wch: 12 },  // Sección
+        { wch: 15 }   // Jornada
+      ];
+    }
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(filas, { origin: 'A10' });
-
-    const wscols = [
-      { wch: 6 }, { wch: 35 }, { wch: 18 }, { wch: 15 },
-      { wch: 15 }, { wch: 35 }, { wch: 22 }, { wch: 12 }, { wch: 15 }, { wch: 25 }
-    ];
     ws['!cols'] = wscols;
 
-    XLSX.utils.sheet_add_aoa(ws, [['LISTADO DE RESPONSABLES POR GRADO']], { origin: 'A1' });
+    XLSX.utils.sheet_add_aoa(ws, [[titulo]], { origin: 'A1' });
     ws['A1'].s = { font: { name: 'Arial', sz: 18, bold: true }, alignment: { horizontal: 'center' } };
 
     XLSX.utils.sheet_add_aoa(ws, [[`Ciclo: ${filtros.p_CicloEscolar} | Grado: ${grado} | Sección: ${seccion} | Jornada: ${jornada}`]], { origin: 'A3' });
@@ -452,8 +513,13 @@ const ListadoResponsables = () => {
     XLSX.utils.sheet_add_aoa(ws, [[`Generado el: ${hoy}`]], { origin: 'A4' });
     ws['A4'].s = { font: { name: 'Arial', sz: 10 }, alignment: { horizontal: 'center' } };
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Responsables por Grado');
-    const filename = `Responsables_Grado_${grado.replace(/ /g, '_')}_${hoy.replace(/\//g, '-')}.xlsx`;
+    const sheetName = mostrarPorResponsable ? 'Responsables por Grado' : 'Familias por Grado';
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+    const filename = mostrarPorResponsable
+      ? `Responsables_Grado_${grado.replace(/ /g, '_')}_${hoy.replace(/\//g, '-')}.xlsx`
+      : `Familias_Grado_${grado.replace(/ /g, '_')}_${hoy.replace(/\//g, '-')}.xlsx`;
+
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     saveAs(new Blob([excelBuffer]), filename);
     message.success('Excel generado correctamente');
