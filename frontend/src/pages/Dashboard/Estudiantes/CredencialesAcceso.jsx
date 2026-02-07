@@ -196,7 +196,7 @@ const CredencialesAcceso = () => {
   ];
 
   // ==================== FAMILIAS ====================
-  // Buscar usuarios de tipo familia (IdRol = 3)
+  // Buscar familias usando responsables activos (que ya traen IdUsuario, IdFamilia, NombresHijos)
   const buscarFamilias = async () => {
     if (!busquedaFamilias.trim()) {
       message.warning('Por favor ingresa un criterio de búsqueda');
@@ -207,102 +207,75 @@ const CredencialesAcceso = () => {
     const busquedaLower = busquedaFamilias.toLowerCase().trim();
 
     try {
-      // Obtener responsables activos que tienen usuario
+      // Obtener responsables activos (ya trae IdUsuario, IdFamilia, NombresHijos, CantidadHijos)
       const response = await apiClient.get('/responsables/activos');
 
-      // Obtener todos los usuarios con IdRol = 3 (Familia)
-      const usuariosResponse = await apiClient.get('/usuarios');
-
-      let usuariosFamilia = [];
-      if (usuariosResponse.data.success && usuariosResponse.data.data) {
-        let todosUsuarios = usuariosResponse.data.data;
-        if (!Array.isArray(todosUsuarios)) {
-          todosUsuarios = Object.values(todosUsuarios);
-        }
-        // Filtrar solo usuarios con IdRol = 3
-        usuariosFamilia = todosUsuarios.filter(u => u.IdRol === 3);
-      }
-
-      // Primero: Buscar directamente en usuarios de familia
-      const usuariosFiltrados = usuariosFamilia.filter((usuario) => {
-        const coincide =
-          (usuario.NombreUsuario || '').toLowerCase().includes(busquedaLower) ||
-          (usuario.NombreCompleto || '').toLowerCase().includes(busquedaLower) ||
-          String(usuario.IdUsuario || '').includes(busquedaFamilias);
-        return coincide;
-      });
-
-
-      // Procesar responsables si hay datos
       let responsablesLimpios = [];
       if (response.data.success && response.data.data) {
-        // El primer elemento del array contiene los datos reales
         const datosReales = response.data.data[0];
         if (datosReales) {
           responsablesLimpios = Object.values(datosReales);
         }
       }
 
-      // Combinar: crear lista de familias con usuario
-      const familiasResultado = [];
+      // Filtrar responsables que coincidan con la búsqueda y tengan IdUsuario
+      const familiasResultado = responsablesLimpios
+        .filter(r => {
+          // Solo responsables con usuario asociado
+          if (!r.IdUsuario) return false;
 
-      // Opción 1: Usuarios familia que coinciden con la búsqueda
-      usuariosFiltrados.forEach(usuario => {
-        // Buscar si hay un responsable asociado
-        const responsable = responsablesLimpios.find(r =>
-          r.DPI === usuario.NombreUsuario ||
-          r.IdUsuario === usuario.IdUsuario
-        );
-
-        familiasResultado.push({
-          IdResponsable: responsable?.IdResponsable || null,
-          NombreResponsable: responsable?.NombreResponsable || usuario.NombreCompleto || usuario.NombreUsuario,
-          TipoResponsable: responsable?.TipoResponsable || 'Familia',
-          DPI: responsable?.DPI || usuario.NombreUsuario,
-          NIT: responsable?.NIT || null,
-          NombresHijos: responsable?.NombresHijos || null,
-          CantidadHijos: responsable?.CantidadHijos || 0,
-          Usuario: usuario,
-          IdUsuario: usuario.IdUsuario
-        });
-      });
-
-      // Opción 2: Responsables que coinciden con la búsqueda y tienen usuario
-      responsablesLimpios.forEach(responsable => {
-        const coincideBusqueda =
-          (responsable.NombreResponsable || '').toLowerCase().includes(busquedaLower) ||
-          (responsable.DPI || '').toLowerCase().includes(busquedaLower) ||
-          (responsable.NIT || '').toLowerCase().includes(busquedaLower) ||
-          String(responsable.IdResponsable || '').includes(busquedaFamilias);
-
-        if (coincideBusqueda) {
-          // Buscar usuario asociado
-          const usuario = usuariosFamilia.find(u =>
-            u.NombreUsuario === responsable.DPI ||
-            u.IdUsuario === responsable.IdUsuario
+          // Filtrar por búsqueda
+          return (
+            (r.NombreResponsable || '').toLowerCase().includes(busquedaLower) ||
+            (r.DPI || '').toLowerCase().includes(busquedaLower) ||
+            (r.NIT || '').toLowerCase().includes(busquedaLower) ||
+            (r.NombresHijos || '').toLowerCase().includes(busquedaLower) ||
+            (r.TelefonoContacto || '').includes(busquedaFamilias) ||
+            String(r.IdResponsable || '').includes(busquedaFamilias)
           );
+        })
+        .map(r => ({
+          IdResponsable: r.IdResponsable,
+          NombreResponsable: r.NombreResponsable,
+          TipoResponsable: r.TipoResponsable || 'Familia',
+          DPI: r.DPI,
+          NIT: r.NIT,
+          NombresHijos: r.NombresHijos,
+          CantidadHijos: r.CantidadHijos,
+          IdUsuario: r.IdUsuario,
+          IdFamilia: r.IdFamilia,
+          Usuario: { IdUsuario: r.IdUsuario }
+        }));
 
-          if (usuario) {
-            // Verificar que no esté duplicado
-            const yaExiste = familiasResultado.some(f => f.IdUsuario === usuario.IdUsuario);
-            if (!yaExiste) {
-              familiasResultado.push({
-                ...responsable,
-                Usuario: usuario,
-                IdUsuario: usuario.IdUsuario
-              });
-            }
-          }
+      // Eliminar duplicados por IdUsuario (una familia puede tener varios responsables)
+      const familiasUnicas = [];
+      const idsVistos = new Set();
+      familiasResultado.forEach(f => {
+        if (!idsVistos.has(f.IdUsuario)) {
+          idsVistos.add(f.IdUsuario);
+          familiasUnicas.push(f);
         }
       });
 
+      // Obtener NombreUsuario para cada familia encontrada
+      const familiasConUsuario = await Promise.all(
+        familiasUnicas.map(async (familia) => {
+          try {
+            const res = await apiClient.get(`/usuarios/${familia.IdUsuario}`);
+            const usuario = res.data.data || res.data;
+            return { ...familia, Usuario: usuario };
+          } catch {
+            return familia;
+          }
+        })
+      );
 
-      setFamilias(familiasResultado);
+      setFamilias(familiasConUsuario);
 
-      if (familiasResultado.length === 0) {
+      if (familiasConUsuario.length === 0) {
         message.info('No se encontraron familias con usuario que coincidan con la búsqueda');
       } else {
-        message.success(`${familiasResultado.length} familia(s) encontrada(s)`);
+        message.success(`${familiasConUsuario.length} familia(s) encontrada(s)`);
       }
     } catch (error) {
       message.error('Error al buscar familias');
@@ -508,7 +481,7 @@ const CredencialesAcceso = () => {
             <Space direction="vertical" style={{ width: '100%' }} size="large">
               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                 <Input
-                  placeholder="Buscar por nombre, DPI, NIT o nombre de usuario..."
+                  placeholder="Buscar por nombre familia, DPI  o nombre del responsable..."
                   value={busquedaFamilias}
                   onChange={(e) => setBusquedaFamilias(e.target.value)}
                   onPressEnter={buscarFamilias}

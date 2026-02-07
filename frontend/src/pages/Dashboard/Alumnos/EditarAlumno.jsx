@@ -136,6 +136,7 @@ const EditarAlumno = () => {
           const familiaFromAPI = {
             IdFamilia: record.IdFamilia,
             NombreFamilia: record.NombreFamilia,
+            IdUsuario: familiaCompleta.IdUsuario || null,
             NombreRecibo: familiaCompleta.NombreRecibo || '',
             TelefonoRecibo: familiaCompleta.TelefonoContacto || record.TelefonoContacto || '',
             CorreoElectronico: familiaCompleta.EmailContacto || record.EmailContacto || '',

@@ -1,12 +1,16 @@
 // src/pages/dashboard/alumnos/components/EditarFamiliaModal.jsx
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, Button, Space, Card, Row, Col, message, Spin, Tag } from 'antd';
+import { UserOutlined, TeamOutlined } from '@ant-design/icons';
 import apiClient from '../../../../api/apiClient';
 
 const EditarFamiliaModal = ({ open, onCancel, familiaData, onFamiliaActualizada }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [showResponsables, setShowResponsables] = useState(false);
+  const [showUsuario, setShowUsuario] = useState(false);
+  const [usuarioFamilia, setUsuarioFamilia] = useState(null);
+  const [loadingUsuario, setLoadingUsuario] = useState(false);
   const [padre, setPadre] = useState(null);
   const [madre, setMadre] = useState(null);
   const [otro, setOtro] = useState(null);
@@ -43,6 +47,7 @@ const EditarFamiliaModal = ({ open, onCancel, familiaData, onFamiliaActualizada 
   useEffect(() => {
     if (familiaData && open) {
       form.setFieldsValue({
+        NombreFamilia: familiaData.NombreFamilia || '',
         NombreRecibo: familiaData.NombreRecibo || '',
         TelefonoRecibo: familiaData.TelefonoRecibo || '',
         CorreoElectronico: familiaData.CorreoElectronico || '',
@@ -50,6 +55,32 @@ const EditarFamiliaModal = ({ open, onCancel, familiaData, onFamiliaActualizada 
       });
     }
   }, [familiaData, open, form]);
+
+  // Cargar usuario de la familia cuando se muestra la sección
+  const cargarUsuarioFamilia = async () => {
+    if (!familiaData?.IdUsuario) {
+      setUsuarioFamilia(null);
+      return;
+    }
+    setLoadingUsuario(true);
+    try {
+      const res = await apiClient.get(`/usuarios/${familiaData.IdUsuario}`);
+      const datos = res.data.data || res.data;
+      setUsuarioFamilia(datos);
+    } catch (error) {
+      message.error('Error al cargar datos del usuario');
+      setUsuarioFamilia(null);
+    } finally {
+      setLoadingUsuario(false);
+    }
+  };
+
+  const handleToggleUsuario = () => {
+    if (!showUsuario && !usuarioFamilia) {
+      cargarUsuarioFamilia();
+    }
+    setShowUsuario(!showUsuario);
+  };
 
   // Prellenar responsables cuando se muestran
   useEffect(() => {
@@ -86,6 +117,7 @@ const EditarFamiliaModal = ({ open, onCancel, familiaData, onFamiliaActualizada 
 
       // 1. Actualizar datos de familia
       await apiClient.put(`/familias/${familiaData.IdFamilia}`, {
+        NombreFamilia: values.NombreFamilia,
         NombreRecibo: values.NombreRecibo,
         TelefonoContacto: values.TelefonoRecibo,
         EmailContacto: values.CorreoElectronico,
@@ -168,6 +200,7 @@ const EditarFamiliaModal = ({ open, onCancel, familiaData, onFamiliaActualizada 
       // Actualizar datos en el componente padre
       const familiaActualizada = {
         ...familiaData,
+        NombreFamilia: values.NombreFamilia,
         NombreRecibo: values.NombreRecibo,
         TelefonoRecibo: values.TelefonoRecibo,
         CorreoElectronico: values.CorreoElectronico,
@@ -196,10 +229,17 @@ const EditarFamiliaModal = ({ open, onCancel, familiaData, onFamiliaActualizada 
         </div>
       ) : (
         <Form form={form} layout="vertical">
+          <Card title="Datos de Familia" style={{ marginBottom: 24 }}>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item label="Nombre de la Familia" name="NombreFamilia" rules={[{ required: true, message: 'El nombre de la familia es requerido' }]}>
+                  <Input placeholder="Ej: Pérez López" style={{ fontSize: 16, fontWeight: 'bold' }} />
+                </Form.Item>
+              </Col>
+            </Row>
+          </Card>
+
           <Card title="Datos de Facturación" style={{ marginBottom: 24 }}>
-            <div style={{ marginBottom: 16, padding: 12, background: '#f0f5ff', borderRadius: 8, border: '1px solid #d6e4ff' }}>
-              <strong>Familia:</strong> <span style={{ color: '#1890ff', fontSize: 16 }}>{familiaData?.NombreFamilia || 'No especificado'}</span>
-            </div>
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item label="Nombre para recibo" name="NombreRecibo">
@@ -226,16 +266,58 @@ const EditarFamiliaModal = ({ open, onCancel, familiaData, onFamiliaActualizada 
             </Row>
           </Card>
 
-          <div style={{ textAlign: 'center', margin: '30px 0' }}>
+          <div style={{ textAlign: 'center', margin: '30px 0', display: 'flex', justifyContent: 'center', gap: 16 }}>
             <Button
               type="dashed"
               size="large"
+              icon={<TeamOutlined />}
               onClick={() => setShowResponsables(!showResponsables)}
-              style={{ width: 300 }}
+              style={{ width: 250 }}
             >
               {showResponsables ? 'Ocultar Responsables' : 'Editar Responsables'}
             </Button>
+            <Button
+              type="dashed"
+              size="large"
+              icon={<UserOutlined />}
+              onClick={handleToggleUsuario}
+              style={{ width: 250 }}
+              disabled={!familiaData?.IdUsuario}
+            >
+              {showUsuario ? 'Ocultar Usuario' : 'Ver Usuario'}
+            </Button>
           </div>
+
+          {showUsuario && (
+            <Card title="Usuario de la Familia" style={{ marginTop: 16, marginBottom: 16 }}>
+              {loadingUsuario ? (
+                <div style={{ textAlign: 'center', padding: 24 }}>
+                  <Spin />
+                </div>
+              ) : usuarioFamilia ? (
+                <div style={{ padding: 16, background: '#f6ffed', borderRadius: 8, border: '1px solid #b7eb8f' }}>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <div style={{ marginBottom: 8 }}>
+                        <strong style={{ color: '#595959' }}>Nombre de Usuario:</strong>
+                      </div>
+                      <Input value={usuarioFamilia.NombreUsuario || '-'} disabled style={{ color: '#262626', backgroundColor: '#fff' }} />
+                    </Col>
+                    <Col span={12}>
+                      <div style={{ marginBottom: 8 }}>
+                        <strong style={{ color: '#595959' }}>Nombre Completo:</strong>
+                      </div>
+                      <Input value={usuarioFamilia.NombreCompleto || '-'} disabled style={{ color: '#262626', backgroundColor: '#fff' }} />
+                    </Col>
+                  </Row>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', color: '#999', padding: 16 }}>
+                  No se encontró usuario asociado a esta familia
+                </div>
+              )}
+            </Card>
+          )}
 
           {showResponsables && (
             <Card title="Responsables" style={{ marginTop: 16 }}>
